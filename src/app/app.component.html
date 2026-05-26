@@ -1,0 +1,175 @@
+<div class="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 font-sans transition-colors duration-200">
+  
+  <!-- SIDEBAR -->
+  <aside 
+    [class.w-64]="!isSidebarCollapsed" 
+    [class.w-20]="isSidebarCollapsed" 
+    class="flex-shrink-0 bg-white dark:bg-zinc-900 border-r border-zinc-200 dark:border-zinc-800 flex flex-col justify-between transition-all duration-300 relative z-30 shadow-md">
+    
+    <div>
+      <!-- Sidebar Brand Header -->
+      <div class="h-16 flex items-center px-4 border-b border-zinc-100 dark:border-zinc-800 justify-between overflow-hidden">
+        <div class="flex items-center gap-3">
+          <!-- Pulse heart beat icon -->
+          <div class="relative flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+          </div>
+          <span class="font-bold text-lg tracking-wider text-emerald-600 dark:text-emerald-400 transition-opacity duration-200" [class.opacity-0]="isSidebarCollapsed" [class.pointer-events-none]="isSidebarCollapsed">
+            BIOMED-MS
+          </span>
+        </div>
+        
+        <button 
+          (click)="toggleSidebar()" 
+          class="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">
+          <i class="pi" [class.pi-angle-double-left]="!isSidebarCollapsed" [class.pi-angle-double-right]="isSidebarCollapsed"></i>
+        </button>
+      </div>
+
+      <!-- District/Provincial Badge -->
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 overflow-hidden" *ngIf="!isSidebarCollapsed">
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-zinc-800 dark:to-zinc-800/50 p-2.5 rounded-xl border border-emerald-100/50 dark:border-zinc-700">
+          <p class="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">Location Context</p>
+          <p class="text-xs font-semibold truncate text-zinc-700 dark:text-zinc-300">Sabaragamuwa Province</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="p-3 space-y-1.5">
+        <!-- Dashboard -->
+        <a 
+          routerLink="/dashboard" 
+          routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white" 
+          [routerLinkActiveOptions]="{exact: true}"
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Dashboard'">
+          <i class="pi pi-th-large text-lg group-hover:scale-110 transition-transform"></i>
+          <span class="text-sm font-medium transition-all" [class.opacity-0]="isSidebarCollapsed" [class.w-0]="isSidebarCollapsed">Dashboard</span>
+        </a>
+
+        <!-- Inventory (Asset Registry) -->
+        <a 
+          routerLink="/inventory" 
+          routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white" 
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Asset Registry'">
+          <i class="pi pi-box text-lg group-hover:scale-110 transition-transform"></i>
+          <span class="text-sm font-medium transition-all" [class.opacity-0]="isSidebarCollapsed" [class.w-0]="isSidebarCollapsed">Asset Registry</span>
+        </a>
+
+        <!-- Repairs & Work Orders -->
+        <a 
+          *ngIf="hasAccess('repairs')"
+          routerLink="/repairs" 
+          routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white" 
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Repairs & Work Orders'">
+          <i class="pi pi-wrench text-lg group-hover:scale-110 transition-transform"></i>
+          <span class="text-sm font-medium transition-all" [class.opacity-0]="isSidebarCollapsed" [class.w-0]="isSidebarCollapsed">Repairs & Orders</span>
+        </a>
+
+        <!-- Procurement & Store -->
+        <a 
+          *ngIf="hasAccess('procurement')"
+          routerLink="/procurement" 
+          routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white" 
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Procurement & Store'">
+          <i class="pi pi-shopping-cart text-lg group-hover:scale-110 transition-transform"></i>
+          <span class="text-sm font-medium transition-all" [class.opacity-0]="isSidebarCollapsed" [class.w-0]="isSidebarCollapsed">Procurement & Store</span>
+        </a>
+
+        <!-- Audit Log -->
+        <a 
+          *ngIf="hasAccess('audit')"
+          routerLink="/audit" 
+          routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white" 
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Audit Log'">
+          <i class="pi pi-history text-lg group-hover:scale-110 transition-transform"></i>
+          <span class="text-sm font-medium transition-all" [class.opacity-0]="isSidebarCollapsed" [class.w-0]="isSidebarCollapsed">Audit System</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Footer (Active User Profile Info) -->
+    <div class="p-3 border-t border-zinc-100 dark:border-zinc-800 overflow-hidden">
+      <div class="flex items-center gap-3 px-2 py-1">
+        <div class="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center flex-shrink-0">
+          <span class="text-emerald-700 dark:text-emerald-400 font-bold text-sm">
+            {{ currentUser?.fullName ? currentUser?.fullName?.charAt(0) : 'U' }}
+          </span>
+        </div>
+        <div class="min-w-0 flex-1 transition-all" [class.opacity-0]="isSidebarCollapsed" [class.w-0]="isSidebarCollapsed">
+          <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">{{ currentUser?.fullName }}</p>
+          <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-medium truncate">{{ currentUser?.role }}</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    
+    <!-- TOP HEADER -->
+    <header class="h-16 flex-shrink-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-6 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+      
+      <!-- Left side: Breadcrumb / System Title -->
+      <div class="flex items-center gap-3">
+        <div class="hidden md:flex items-center gap-2">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Emblem_of_Sri_Lanka.svg" alt="Sri Lanka Crest" class="h-8 w-auto opacity-80" />
+          <div class="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
+        </div>
+        <div>
+          <h1 class="text-sm md:text-base font-bold tracking-tight text-zinc-950 dark:text-zinc-50">BIOMED-MS</h1>
+          <p class="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold tracking-wider uppercase">Sabaragamuwa Province Biomedical Unit</p>
+        </div>
+      </div>
+
+      <!-- Right side: Controls -->
+      <div class="flex items-center gap-4">
+        
+        <!-- Live Role Switcher Widget -->
+        <div class="flex items-center gap-2 bg-zinc-100 dark:bg-zinc-800 p-1.5 rounded-xl border border-zinc-200 dark:border-zinc-700">
+          <label for="role-switcher" class="text-[10px] font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 px-2 hidden lg:inline">
+            Active Role:
+          </label>
+          <select 
+            id="role-switcher" 
+            [(ngModel)]="selectedUserId" 
+            (change)="switchRole(selectedUserId)"
+            class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium text-zinc-800 dark:text-zinc-200 max-w-[200px] cursor-pointer">
+            <option *ngFor="let u of users" [value]="u.id">
+              {{ u.fullName }} ({{ u.role }})
+            </option>
+          </select>
+        </div>
+
+        <!-- Dark/Light Theme Toggle -->
+        <button 
+          (click)="toggleDarkMode()" 
+          class="p-2 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+          [title]="isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <i class="pi" [class.pi-sun]="isDarkMode" [class.pi-moon]="!isDarkMode"></i>
+        </button>
+
+      </div>
+    </header>
+
+    <!-- CONTENT WRAPPER -->
+    <main class="flex-1 p-6 max-w-7xl w-full mx-auto">
+      <!-- Animated Routing Outlet Wrapper -->
+      <div class="animate-fade-in">
+        <router-outlet></router-outlet>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="py-4 px-6 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400 bg-white dark:bg-zinc-900 flex justify-between items-center">
+      <p>&copy; 2026 Provincial Health Services, Sabaragamuwa Province, Sri Lanka.</p>
+      <p class="font-medium text-emerald-600 dark:text-emerald-400">BIOMED-MS Pilot v1.0</p>
+    </footer>
+
+  </div>
+</div>

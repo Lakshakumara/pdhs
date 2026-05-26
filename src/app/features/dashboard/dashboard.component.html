@@ -1,0 +1,272 @@
+<!-- Welcome Header -->
+<div class="mb-8">
+  <div class="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-950 dark:to-zinc-900 rounded-2xl p-6 text-white border border-emerald-500/10 shadow-lg relative overflow-hidden">
+    <div class="absolute -right-16 -top-16 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+    <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-xl"></div>
+    
+    <div class="relative z-10">
+      <span class="bg-white/20 dark:bg-emerald-800/40 text-emerald-100 text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full">
+        Active Session: {{ currentUser?.role }}
+      </span>
+      <h2 class="text-2xl font-bold mt-3">Ayubowan, {{ currentUser?.fullName }}</h2>
+      <p class="text-emerald-100/90 text-sm mt-1">
+        Managing biomedical assets and technical workflows for Sabaragamuwa Province, Sri Lanka.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- KPI CARDS GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  
+  <!-- Total Assets Card -->
+  <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    <div>
+      <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Registered Assets</p>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ totalAssets }}</h3>
+      <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 inline-block">
+        <i class="pi pi-check-circle mr-1"></i>In Registry
+      </span>
+    </div>
+    <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+      <i class="pi pi-box text-xl"></i>
+    </div>
+  </div>
+
+  <!-- Active Repairs Card -->
+  <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    <div>
+      <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Repair Work</p>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ activeRepairs }}</h3>
+      <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold mt-1 inline-block">
+        <i class="pi pi-cog mr-1"></i>In Technical Queue
+      </span>
+    </div>
+    <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900 flex items-center justify-center text-teal-600 dark:text-teal-400">
+      <i class="pi pi-wrench text-xl"></i>
+    </div>
+  </div>
+
+  <!-- Pending Requests Card -->
+  <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    <div>
+      <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Unassigned Requests</p>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ pendingRequests }}</h3>
+      <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-1 inline-block">
+        <i class="pi pi-exclamation-triangle mr-1"></i>Awaiting Acknowledge
+      </span>
+    </div>
+    <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400">
+      <i class="pi pi-hourglass text-xl"></i>
+    </div>
+  </div>
+
+  <!-- Store Alerts / Procurement Spend -->
+  <div 
+    *ngIf="currentUser?.role === 'System Administrator' || currentUser?.role === 'Procurement Officer' || currentUser?.role === 'Biomedical Technician'"
+    class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    <div>
+      <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Spare Parts Warning</p>
+      <h3 class="text-3xl font-bold mt-1" [class.text-red-500]="lowStockAlerts > 0" [class.text-zinc-950]="lowStockAlerts === 0" [class.dark:text-zinc-50]="lowStockAlerts === 0">
+        {{ lowStockAlerts }}
+      </h3>
+      <span class="text-[10px] font-semibold mt-1 inline-block" [class.text-red-500]="lowStockAlerts > 0" [class.text-zinc-500]="lowStockAlerts === 0">
+        <i class="pi pi-bell mr-1"></i>{{ lowStockAlerts > 0 ? 'Critical low stock!' : 'Stock levels normal' }}
+      </span>
+    </div>
+    <div class="w-12 h-12 rounded-xl flex items-center justify-center" [class.bg-red-50]="lowStockAlerts > 0" [class.dark:bg-red-950/40]="lowStockAlerts > 0" [class.text-red-500]="lowStockAlerts > 0" [class.bg-zinc-100]="lowStockAlerts === 0" [class.dark:bg-zinc-800]="lowStockAlerts === 0" [class.text-zinc-500]="lowStockAlerts === 0">
+      <i class="pi pi-bell text-xl"></i>
+    </div>
+  </div>
+
+  <div 
+    *ngIf="currentUser?.role === 'PDHS Viewer' || currentUser?.role === 'RDHS Officer' || currentUser?.role === 'Institution User'"
+    class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+    <div>
+      <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Procurement Spend</p>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">LKR {{ totalProcurementSpend | number }}</h3>
+      <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1 inline-block">
+        <i class="pi pi-credit-card mr-1"></i>Approved tenders
+      </span>
+    </div>
+    <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+      <i class="pi pi-credit-card text-xl"></i>
+    </div>
+  </div>
+
+</div>
+
+<!-- TWO COLUMN GRID LAYOUT -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+  
+  <!-- LEFT COLUMN (2/3 width on large screens): Urgent Repair Requests + Distribution -->
+  <div class="lg:col-span-2 space-y-8">
+    
+    <!-- Urgent repairs box -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div>
+          <h4 class="font-bold text-zinc-900 dark:text-zinc-100">Critical & Urgent Work Orders</h4>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">Biomedical repair requests needing immediate resolution</p>
+        </div>
+        <a routerLink="/repairs" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300">
+          View All Work Orders &rarr;
+        </a>
+      </div>
+
+      <div class="divide-y divide-zinc-100 dark:divide-zinc-800">
+        <div class="p-6 text-center text-zinc-500 text-sm" *ngIf="urgentRepairs.length === 0">
+          <i class="pi pi-check-circle text-2xl text-emerald-500 mb-2 block"></i>
+          No active critical/urgent repairs found. Great job!
+        </div>
+
+        <div *ngFor="let req of urgentRepairs" class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-zinc-50/40 dark:hover:bg-zinc-800/20 transition-colors">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <span class="text-xs font-mono font-bold text-zinc-500 bg-zinc-100 dark:bg-zinc-850 px-2 py-0.5 rounded">
+                {{ req.id }}
+              </span>
+              <span 
+                [class.bg-rose-550]="req.priority === 'Emergency'"
+                [class.text-rose-100]="req.priority === 'Emergency'"
+                [class.bg-amber-500]="req.priority === 'Urgent'"
+                [class.text-amber-50]="req.priority === 'Urgent'"
+                class="text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-rose-500 text-white">
+                {{ req.priority }}
+              </span>
+              <span class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium">
+                {{ req.submissionDate | date:'shortTime' }} ({{ req.submissionDate | date:'MMM d' }})
+              </span>
+            </div>
+            <h5 class="font-bold text-sm text-zinc-900 dark:text-zinc-100 mt-2">
+              {{ req.equipmentName }}
+            </h5>
+            <p class="text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1 truncate max-w-md">
+              <span class="text-zinc-400 dark:text-zinc-500 font-semibold">{{ getInstitutionName(req.institutionId) }}:</span>
+              {{ req.faultDescription }}
+            </p>
+          </div>
+          
+          <div class="flex items-center gap-3">
+            <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+              SN: <span class="font-mono text-zinc-700 dark:text-zinc-300">{{ req.equipmentSerialNumber }}</span>
+            </span>
+            <a 
+              [routerLink]="['/repairs']"
+              class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-lg transition-colors border border-emerald-100/50 dark:border-emerald-900/50">
+              Manage Job
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Equipment breakdown by category -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+      <h4 class="font-bold text-zinc-900 dark:text-zinc-100 mb-1">Equipment Category Distribution</h4>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-6">Percentage breakdown of biomedical inventory items</p>
+      
+      <div class="space-y-4">
+        <div *ngFor="let cat of categoryDistribution">
+          <div class="flex justify-between text-xs font-semibold mb-1 text-zinc-700 dark:text-zinc-300">
+            <span>{{ cat.category }}</span>
+            <span>{{ cat.count }} units ({{ cat.percent }}%)</span>
+          </div>
+          <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden">
+            <div 
+              class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2.5 rounded-full" 
+              [style.width.%]="cat.percent">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT COLUMN (1/3 width on large screens): Store Alerts + System Activity -->
+  <div class="space-y-8">
+    
+    <!-- Store items stock status -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h4 class="font-bold text-zinc-900 dark:text-zinc-100">Spare Parts Warning</h4>
+          <p class="text-xs text-zinc-500 dark:text-zinc-400">PDHS Biomedical Store stock watch</p>
+        </div>
+        <span class="w-2.5 h-2.5 rounded-full" [class.bg-red-500]="lowStockItems.length > 0" [class.bg-emerald-500]="lowStockItems.length === 0"></span>
+      </div>
+
+      <div class="text-center p-4 text-zinc-500 text-sm" *ngIf="lowStockItems.length === 0">
+        <i class="pi pi-check text-emerald-500 text-lg mr-1.5"></i> All stock levels healthy
+      </div>
+
+      <div class="space-y-4" *ngIf="lowStockItems.length > 0">
+        <div *ngFor="let item of lowStockItems" class="p-3 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-100/50 dark:border-red-900/20">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[150px]">{{ item.name }}</p>
+              <p class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase mt-0.5">{{ item.category }}</p>
+            </div>
+            <span class="px-2 py-0.5 bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 text-[10px] font-bold rounded-md">
+              Low Stock
+            </span>
+          </div>
+          
+          <div class="mt-3">
+            <div class="flex justify-between text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 mb-1">
+              <span>Stock Status: {{ item.currentStock }} / {{ item.minStockThreshold }} (Min)</span>
+              <span>{{ item.unitOfMeasure }}</span>
+            </div>
+            <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+              <div 
+                class="bg-red-500 h-1.5 rounded-full" 
+                [style.width.%]="(item.currentStock / item.minStockThreshold) * 100">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <a routerLink="/procurement" class="block text-center text-xs font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 mt-2">
+          Create Procurement PO &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Shortcuts -->
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-6 shadow-sm">
+      <h4 class="font-bold text-zinc-900 dark:text-zinc-100 mb-1">Quick Actions</h4>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400 mb-6">Shortcuts to main modules</p>
+      
+      <div class="grid grid-cols-2 gap-4">
+        
+        <!-- Action 1 -->
+        <a routerLink="/inventory" class="p-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-colors">
+          <i class="pi pi-plus text-emerald-600 dark:text-emerald-400 text-lg mb-1.5"></i>
+          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Register Asset</span>
+        </a>
+
+        <!-- Action 2 -->
+        <a routerLink="/repairs" class="p-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-colors">
+          <i class="pi pi-wrench text-teal-600 dark:text-teal-400 text-lg mb-1.5"></i>
+          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Repair Queue</span>
+        </a>
+
+        <!-- Action 3 -->
+        <a routerLink="/procurement" class="p-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-colors">
+          <i class="pi pi-shopping-cart text-indigo-600 dark:text-indigo-400 text-lg mb-1.5"></i>
+          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">Procure Parts</span>
+        </a>
+
+        <!-- Action 4 -->
+        <a routerLink="/audit" class="p-3 bg-zinc-50 hover:bg-zinc-100 dark:bg-zinc-800/40 dark:hover:bg-zinc-800/80 rounded-xl border border-zinc-200/50 dark:border-zinc-700/50 flex flex-col items-center justify-center text-center transition-colors">
+          <i class="pi pi-history text-amber-600 dark:text-amber-400 text-lg mb-1.5"></i>
+          <span class="text-xs font-bold text-zinc-800 dark:text-zinc-200">System Logs</span>
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

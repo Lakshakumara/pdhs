@@ -1,0 +1,439 @@
+<div class="space-y-6">
+  
+  <!-- Header / Action bar -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-zinc-950 dark:text-zinc-50">Procurement & Store Administration</h2>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400">Manage government procurement plans, PO workflows, goods receipt verification, and spare parts store</p>
+    </div>
+    
+    <div class="flex gap-2">
+      <button 
+        *ngIf="isProcurementOfficer() && activeTab === 'plans'"
+        (click)="openPlanModal()" 
+        class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors flex items-center gap-2">
+        <i class="pi pi-plus"></i> Create Procurement Plan
+      </button>
+
+      <button 
+        *ngIf="isProcurementOfficer() && activeTab === 'po'"
+        (click)="openPOModal()" 
+        class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors flex items-center gap-2">
+        <i class="pi pi-plus"></i> Generate Purchase Order (PO)
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab Switcher Navigation -->
+  <div class="flex border-b border-zinc-200 dark:border-zinc-800 gap-1 overflow-x-auto">
+    <button 
+      (click)="activeTab = 'store'"
+      [class.border-emerald-500]="activeTab === 'store'"
+      [class.text-emerald-600]="activeTab === 'store'"
+      [class.dark:text-emerald-400]="activeTab === 'store'"
+      [class.border-transparent]="activeTab !== 'store'"
+      class="px-4 py-3 border-b-2 text-xs font-bold transition-all text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
+      <i class="pi pi-box mr-1.5"></i>Spare Parts Store
+    </button>
+    <button 
+      (click)="activeTab = 'po'"
+      [class.border-emerald-500]="activeTab === 'po'"
+      [class.text-emerald-600]="activeTab === 'po'"
+      [class.dark:text-emerald-400]="activeTab === 'po'"
+      [class.border-transparent]="activeTab !== 'po'"
+      class="px-4 py-3 border-b-2 text-xs font-bold transition-all text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
+      <i class="pi pi-file mr-1.5"></i>Purchase Orders (PO)
+    </button>
+    <button 
+      (click)="activeTab = 'plans'"
+      [class.border-emerald-500]="activeTab === 'plans'"
+      [class.text-emerald-600]="activeTab === 'plans'"
+      [class.dark:text-emerald-400]="activeTab === 'plans'"
+      [class.border-transparent]="activeTab !== 'plans'"
+      class="px-4 py-3 border-b-2 text-xs font-bold transition-all text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
+      <i class="pi pi-map mr-1.5"></i>Annual Planning
+    </button>
+    <button 
+      (click)="activeTab = 'grn'"
+      [class.border-emerald-500]="activeTab === 'grn'"
+      [class.text-emerald-600]="activeTab === 'grn'"
+      [class.dark:text-emerald-400]="activeTab === 'grn'"
+      [class.border-transparent]="activeTab !== 'grn'"
+      class="px-4 py-3 border-b-2 text-xs font-bold transition-all text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300">
+      <i class="pi pi-check-circle mr-1.5"></i>Goods Received (GRN)
+    </button>
+  </div>
+
+  <!-- TAB CONTENT 1: SPARE PARTS STORE -->
+  <div *ngIf="activeTab === 'store'" class="space-y-4 animate-fade-in">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-850">
+              <th class="p-4">Item Name</th>
+              <th class="p-4">Category</th>
+              <th class="p-4 text-center">Current Stock</th>
+              <th class="p-4 text-center">Safety Threshold</th>
+              <th class="p-4 text-right">Estimated Cost per Unit</th>
+              <th class="p-4">Stock Status</th>
+              <th class="p-4 text-right" *ngIf="isProcurementOfficer()">Quick Stock Edit</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-850 text-xs">
+            <tr *ngFor="let item of inventoryItems" class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
+              <td class="p-4 font-bold text-zinc-900 dark:text-zinc-50">{{ item.name }}</td>
+              <td class="p-4 uppercase tracking-wider text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold">{{ item.category }}</td>
+              <td class="p-4 text-center font-bold text-sm">{{ item.currentStock }} {{ item.unitOfMeasure }}</td>
+              <td class="p-4 text-center text-zinc-550">{{ item.minStockThreshold }} {{ item.unitOfMeasure }}</td>
+              <td class="p-4 text-right font-mono font-medium text-zinc-600 dark:text-zinc-400">LKR {{ item.costPerUnit | number }}</td>
+              <td class="p-4">
+                <span 
+                  *ngIf="item.currentStock > item.minStockThreshold"
+                  class="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-full text-[9px] font-extrabold uppercase tracking-wider">
+                  Healthy
+                </span>
+                <span 
+                  *ngIf="item.currentStock <= item.minStockThreshold"
+                  class="px-2.5 py-0.5 bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-400 rounded-full text-[9px] font-extrabold uppercase tracking-wider">
+                  Low Stock
+                </span>
+              </td>
+              <td class="p-4 text-right" *ngIf="isProcurementOfficer()">
+                <button 
+                  (click)="manualRestock(item.id)"
+                  class="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-250 font-bold rounded text-[10px] transition-colors border border-zinc-200 dark:border-zinc-700">
+                  <i class="pi pi-plus mr-1"></i> Restock
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 2: PURCHASE ORDERS (PO) -->
+  <div *ngIf="activeTab === 'po'" class="space-y-4 animate-fade-in">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-850">
+              <th class="p-4">PO Number</th>
+              <th class="p-4">Order Date</th>
+              <th class="p-4">Supplier Name</th>
+              <th class="p-4">Items Summary</th>
+              <th class="p-4 text-right">Total Billing (LKR)</th>
+              <th class="p-4">Approval Status</th>
+              <th class="p-4 text-right">Workflow Action</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-850 text-xs">
+            <tr *ngIf="purchaseOrders.length === 0">
+              <td colspan="7" class="p-8 text-center text-zinc-500">No purchase orders generated.</td>
+            </tr>
+            <tr *ngFor="let po of purchaseOrders" class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
+              <td class="p-4 font-mono font-bold text-emerald-600 dark:text-emerald-450">{{ po.poNumber }}</td>
+              <td class="p-4 text-zinc-500">{{ po.orderDate | date:'mediumDate' }}</td>
+              <td class="p-4 font-medium">{{ po.supplierName }}</td>
+              <td class="p-4">
+                <div *ngFor="let item of po.items" class="text-zinc-700 dark:text-zinc-300 font-medium">
+                  • {{ item.description }} (x{{ item.quantity }})
+                </div>
+                <div class="text-[9px] text-zinc-400 mt-1 font-semibold tracking-wider uppercase" *ngIf="po.linkedRepairWorkOrderId">
+                  Linked Repair Job: <span class="font-mono text-zinc-500">{{ po.linkedRepairWorkOrderId }}</span>
+                </div>
+              </td>
+              <td class="p-4 text-right font-mono font-bold text-zinc-900 dark:text-zinc-50">LKR {{ po.totalCost | number }}</td>
+              <td class="p-4">
+                <span 
+                  [class.bg-amber-50]="po.approvalStatus === 'Pending'"
+                  [class.text-amber-700]="po.approvalStatus === 'Pending'"
+                  [class.bg-emerald-50]="po.approvalStatus === 'Approved'"
+                  [class.text-emerald-700]="po.approvalStatus === 'Approved'"
+                  [class.dark:bg-emerald-950/20]="po.approvalStatus === 'Approved'"
+                  [class.dark:text-emerald-400]="po.approvalStatus === 'Approved'"
+                  [class.bg-red-50]="po.approvalStatus === 'Rejected'"
+                  [class.text-red-700]="po.approvalStatus === 'Rejected'"
+                  class="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider">
+                  {{ po.approvalStatus }}
+                </span>
+              </td>
+              <td class="p-4 text-right space-x-1.5">
+                <!-- Admin approvals -->
+                <ng-container *ngIf="po.approvalStatus === 'Pending' && isAdmin()">
+                  <button (click)="approvePO(po.id)" class="px-2 py-1 bg-emerald-550 text-white rounded text-[10px] font-bold hover:bg-emerald-600 transition-colors">Approve</button>
+                  <button (click)="rejectPO(po.id)" class="px-2 py-1 bg-red-500 text-white rounded text-[10px] font-bold hover:bg-red-650 transition-colors">Reject</button>
+                </ng-container>
+                
+                <!-- GRN Recording -->
+                <ng-container *ngIf="po.approvalStatus === 'Approved' && isProcurementOfficer()">
+                  <!-- Check if already received -->
+                  <button 
+                    (click)="confirmGRN(po.id)"
+                    class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-[10px] transition-colors shadow">
+                    Log Goods Receipt
+                  </button>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 3: ANNUAL PLANNING -->
+  <div *ngIf="activeTab === 'plans'" class="space-y-4 animate-fade-in">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-850">
+              <th class="p-4">Item Plan Description</th>
+              <th class="p-4 text-center">Estimated Qty</th>
+              <th class="p-4 text-right">Estimated Cost (LKR)</th>
+              <th class="p-4">Procurement Method</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-850 text-xs">
+            <tr *ngFor="let plan of plans" class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
+              <td class="p-4 font-bold text-zinc-900 dark:text-zinc-50">{{ plan.itemDescription }}</td>
+              <td class="p-4 text-center font-semibold">{{ plan.estimatedQuantity }}</td>
+              <td class="p-4 text-right font-mono font-bold text-zinc-700 dark:text-zinc-300">LKR {{ plan.estimatedCost | number }}</td>
+              <td class="p-4">
+                <span class="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-850 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
+                  {{ plan.procurementMethod }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB CONTENT 4: GOODS RECEIVED NOTES (GRN) -->
+  <div *ngIf="activeTab === 'grn'" class="space-y-4 animate-fade-in">
+    <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-850">
+              <th class="p-4">GRN Number</th>
+              <th class="p-4">Received Date</th>
+              <th class="p-4">Linked PO</th>
+              <th class="p-4">Receipt Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 dark:divide-zinc-850 text-xs">
+            <tr *ngIf="grns.length === 0">
+              <td colspan="4" class="p-8 text-center text-zinc-500">No goods receipts registered. Complete a PO flow to trigger a GRN.</td>
+            </tr>
+            <tr *ngFor="let g of grns" class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
+              <td class="p-4 font-mono font-bold text-teal-650 dark:text-teal-400">{{ g.grnNumber }}</td>
+              <td class="p-4 text-zinc-550">{{ g.receivedDate | date:'mediumDate' }}</td>
+              <td class="p-4 font-mono text-zinc-600 dark:text-zinc-400">{{ g.poNumber }}</td>
+              <td class="p-4">
+                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 rounded text-[10px] font-bold">
+                  {{ g.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD PLAN -->
+  <div *ngIf="showPlanModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 shadow-xl animate-fade-in">
+      
+      <div class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-650 dark:text-emerald-400">Annual Budget Allocation</span>
+          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">Create Procurement Plan</h3>
+        </div>
+        <button (click)="closePlanModal()" class="p-1.5 rounded-lg hover:bg-zinc-250 dark:hover:bg-zinc-800 text-zinc-400 transition-colors">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        
+        <!-- Desc -->
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Plan Description *</label>
+          <input type="text" [(ngModel)]="planDesc" placeholder="e.g. ICU Defibrillators batch upgrade" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Qty -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Estimated Qty</label>
+            <input type="number" [(ngModel)]="planQty" min="1" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Cost -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Estimated Cost (LKR) *</label>
+            <input type="number" [(ngModel)]="planCost" min="0" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+        </div>
+
+        <!-- Method -->
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Government Procurement Method</label>
+          <select 
+            [(ngModel)]="planMethod" 
+            class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+            <option value="Petty Cash">Petty Cash</option>
+            <option value="Quotation">Quotation / Shopping Procedure</option>
+            <option value="Limited Tender">Limited National Bidding</option>
+            <option value="Open Tender">Open Competitive National Bidding</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-end gap-3">
+        <button (click)="closePlanModal()" class="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold rounded-xl transition-colors">
+          Cancel
+        </button>
+        <button (click)="savePlan()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors">
+          Submit Plan
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE PURCHASE ORDER (PO) -->
+  <div *ngIf="showPOModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-xl animate-fade-in">
+      
+      <div class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50 sticky top-0 z-10">
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-650 dark:text-emerald-400">Tender Verification</span>
+          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">Generate Purchase Order</h3>
+        </div>
+        <button (click)="closePOModal()" class="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 transition-colors">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Supplier selection -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Select Supplier *</label>
+            <select 
+              [(ngModel)]="poSupplierId" 
+              class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+              <option value="">-- Choose Supplier --</option>
+              <option *ngFor="let s of suppliers" [value]="s.id">
+                {{ s.name }} (Rating: {{ s.rating }} stars)
+              </option>
+            </select>
+          </div>
+
+          <!-- Traceability: Link to work order -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Link to active Repair Work Order (Traceability)</label>
+            <select 
+              [(ngModel)]="poLinkedWorkOrderId" 
+              class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+              <option value="">-- Standalone Procurement / Not Linked --</option>
+              <option *ngFor="let wo of activeWorkOrders" [value]="wo.id">
+                {{ wo.id }} (Repair request linked)
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Buffer subform for PO items -->
+        <div class="border border-zinc-200 dark:border-zinc-850 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-850/20">
+          <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Purchase Order Items Billing Lines</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
+            <div class="md:col-span-2">
+              <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Item Description / Name</label>
+              <input type="text" [(ngModel)]="tempItemDesc" placeholder="e.g. Goldway SpO2 Sensor (Reusable)" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Category</label>
+              <select [(ngModel)]="tempItemCat" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
+                <option value="new equipment">New Equipment</option>
+                <option value="spare part">Spare Part</option>
+                <option value="consumable">Consumables / Supplies</option>
+                <option value="service">Service Agreement / Plan</option>
+              </select>
+            </div>
+            <div>
+              <!-- Qty & Unit cost in row -->
+              <div class="flex gap-2">
+                <div class="w-20">
+                  <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Qty</label>
+                  <input type="number" [(ngModel)]="tempItemQty" min="1" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
+                </div>
+                <div class="flex-1">
+                  <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Unit Cost</label>
+                  <input type="number" [(ngModel)]="tempItemCost" min="0" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
+                </div>
+                <button 
+                  (click)="addItemToPO()"
+                  class="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center justify-center self-end h-[34px]">
+                  <i class="pi pi-plus text-xs"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PO items buffer table -->
+          <div class="border border-zinc-200 dark:border-zinc-750 rounded-lg overflow-hidden bg-white dark:bg-zinc-900" *ngIf="poItemsBuffer.length > 0">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold border-b border-zinc-200 dark:border-zinc-750">
+                <tr>
+                  <th class="p-2.5">Item Description</th>
+                  <th class="p-2.5">Category</th>
+                  <th class="p-2.5 text-center">Qty</th>
+                  <th class="p-2.5 text-right">Unit Price</th>
+                  <th class="p-2.5 text-right">Total</th>
+                  <th class="p-2.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tr *ngFor="let item of poItemsBuffer; let i = index">
+                  <td class="p-2.5 font-medium text-zinc-850 dark:text-zinc-250">{{ item.description }}</td>
+                  <td class="p-2.5 uppercase text-[9px] text-zinc-400 tracking-wider font-semibold">{{ item.category }}</td>
+                  <td class="p-2.5 text-center font-bold">{{ item.quantity }}</td>
+                  <td class="p-2.5 text-right font-mono text-zinc-500">LKR {{ item.unitCost | number }}</td>
+                  <td class="p-2.5 text-right font-mono font-bold text-zinc-800 dark:text-zinc-200">LKR {{ (item.quantity * item.unitCost) | number }}</td>
+                  <td class="p-2.5 text-right">
+                    <button (click)="removeItemFromPO(i)" class="p-1 hover:bg-red-50 text-red-500 rounded">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-end gap-3">
+        <button (click)="closePOModal()" class="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold rounded-xl transition-colors">
+          Cancel
+        </button>
+        <button (click)="savePO()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors">
+          Generate PO & Request Approval
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

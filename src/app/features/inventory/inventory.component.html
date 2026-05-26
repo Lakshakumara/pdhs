@@ -1,0 +1,504 @@
+<div class="space-y-6">
+  
+  <!-- Header / Action bar -->
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-zinc-950 dark:text-zinc-50">Biomedical Asset Registry</h2>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400">View and manage provincial medical equipment allocations</p>
+    </div>
+    
+    <button 
+      *ngIf="canRegister()"
+      (click)="openAddModal()" 
+      class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors flex items-center gap-2">
+      <i class="pi pi-plus"></i> Register New Equipment
+    </button>
+  </div>
+
+  <!-- Search and Filter Toolbar -->
+  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-4">
+    
+    <!-- Search -->
+    <div class="flex-1 relative">
+      <i class="pi pi-search absolute left-3 top-3 text-zinc-400"></i>
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (input)="applyFilters()"
+        placeholder="Search by name, manufacturer, serial number..." 
+        class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200" />
+    </div>
+
+    <!-- Category Filter -->
+    <select 
+      [(ngModel)]="selectedCategory" 
+      (change)="applyFilters()"
+      class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200 cursor-pointer">
+      <option value="">All Categories</option>
+      <option value="Diagnostic">Diagnostic</option>
+      <option value="Therapeutic">Therapeutic</option>
+      <option value="Life Support">Life Support</option>
+      <option value="Laboratory">Laboratory</option>
+      <option value="Radiology">Radiology</option>
+      <option value="General Medical">General Medical</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <!-- Status Filter -->
+    <select 
+      [(ngModel)]="selectedStatus" 
+      (change)="applyFilters()"
+      class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200 cursor-pointer">
+      <option value="">All Statuses</option>
+      <option value="PDHS Store">PDHS Store</option>
+      <option value="In Transit">In Transit</option>
+      <option value="Assigned">Assigned to Unit</option>
+    </select>
+
+  </div>
+
+  <!-- Assets Table -->
+  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead>
+          <tr class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-850">
+            <th class="p-4">Equipment Name</th>
+            <th class="p-4">Category</th>
+            <th class="p-4">Serial Number</th>
+            <th class="p-4">Manufacturer</th>
+            <th class="p-4">Assigned Location</th>
+            <th class="p-4">Status</th>
+            <th class="p-4 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-850 text-xs">
+          
+          <tr *ngIf="filteredEquipment.length === 0">
+            <td colspan="7" class="p-8 text-center text-zinc-500">
+              <i class="pi pi-box text-3xl mb-2 text-zinc-300 block"></i>
+              No equipment assets registered matching the filters.
+            </td>
+          </tr>
+
+          <tr *ngFor="let eq of filteredEquipment" class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
+            <!-- Name -->
+            <td class="p-4">
+              <div class="font-bold text-zinc-900 dark:text-zinc-50">{{ eq.name }}</div>
+              <div class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">{{ eq.modelNumber }}</div>
+            </td>
+            <!-- Category -->
+            <td class="p-4">
+              <span class="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
+                {{ eq.category }}
+              </span>
+            </td>
+            <!-- Serial -->
+            <td class="p-4 font-mono text-zinc-600 dark:text-zinc-400 font-semibold">{{ eq.serialNumber }}</td>
+            <!-- Manufacturer -->
+            <td class="p-4">{{ eq.manufacturer }}</td>
+            <!-- Location -->
+            <td class="p-4 font-medium text-zinc-700 dark:text-zinc-300">
+              {{ getInstitutionName(eq.assignedInstitutionId) }}
+            </td>
+            <!-- Status -->
+            <td class="p-4">
+              <span 
+                [class.bg-emerald-50]="eq.status === 'Assigned'"
+                [class.text-emerald-700]="eq.status === 'Assigned'"
+                [class.dark:bg-emerald-950/20]="eq.status === 'Assigned'"
+                [class.dark:text-emerald-400]="eq.status === 'Assigned'"
+                
+                [class.bg-blue-50]="eq.status === 'In Transit'"
+                [class.text-blue-700]="eq.status === 'In Transit'"
+                
+                [class.bg-amber-50]="eq.status === 'PDHS Store'"
+                [class.text-amber-700]="eq.status === 'PDHS Store'"
+                [class.dark:bg-amber-950/20]="eq.status === 'PDHS Store'"
+                [class.dark:text-amber-400]="eq.status === 'PDHS Store'"
+                
+                class="px-2 py-0.5 rounded text-[10px] font-bold">
+                {{ eq.status }}
+              </span>
+            </td>
+            <!-- Action buttons -->
+            <td class="p-4 text-right space-x-2">
+              <button 
+                (click)="openDetails(eq)"
+                class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 transition-colors"
+                title="View Component & Contract Details">
+                <i class="pi pi-eye text-sm"></i>
+              </button>
+              
+              <button 
+                *ngIf="eq.status === 'PDHS Store' && canAssign()"
+                (click)="openAssignModal(eq)"
+                class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 font-semibold rounded text-[10px] transition-colors border border-emerald-100/50 dark:border-emerald-900/50"
+                title="Assign Device to Institution">
+                Distribute
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL: EQUIPMENT DETAILS DRILL DOWN -->
+  <div *ngIf="showDetailModal && selectedEq" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-xl animate-fade-in">
+      
+      <!-- Modal Header -->
+      <div class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50 sticky top-0 z-10 backdrop-blur-md">
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">Specification & Registry Details</span>
+          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">{{ selectedEq.name }}</h3>
+        </div>
+        <button (click)="closeDetails()" class="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 transition-colors">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-6">
+        
+        <!-- Technical Specs Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-700">
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Manufacturer</p>
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.manufacturer }} ({{ selectedEq.countryOfOrigin }})</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Model / Batch</p>
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.modelNumber }} / {{ selectedEq.batchNumber }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Serial Number</p>
+            <p class="text-xs font-semibold font-mono text-zinc-800 dark:text-zinc-200">{{ selectedEq.serialNumber }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Assigned Location</p>
+            <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{ getInstitutionName(selectedEq.assignedInstitutionId) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Tender Ref</p>
+            <p class="text-xs font-semibold text-zinc-850 dark:text-zinc-200">{{ selectedEq.tenderNumber }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Purchase Order</p>
+            <p class="text-xs font-semibold text-zinc-850 dark:text-zinc-200">{{ selectedEq.purchaseOrderNumber }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Supplier Name</p>
+            <p class="text-xs font-semibold text-zinc-850 dark:text-zinc-200">{{ selectedEq.supplierName }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] uppercase font-bold text-zinc-400">Warranty</p>
+            <p class="text-xs font-semibold text-zinc-850 dark:text-zinc-200">{{ selectedEq.warrantyPeriodMonths }} Months (Rec: {{ selectedEq.dateOfReceipt | date:'mediumDate' }})</p>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div *ngIf="selectedEq.description">
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Equipment Description</h4>
+          <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">{{ selectedEq.description }}</p>
+        </div>
+
+        <!-- Child Components & Parts -->
+        <div>
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Tracked Components / Sub-assemblies</h4>
+          <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-750">
+                <tr>
+                  <th class="p-3">Component Name</th>
+                  <th class="p-3">Part Number</th>
+                  <th class="p-3">Serial Number</th>
+                  <th class="p-3">Type</th>
+                  <th class="p-3">Warranty Expiry</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tr *ngFor="let comp of selectedEq.components" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
+                  <td class="p-3 font-semibold">{{ comp.name }}</td>
+                  <td class="p-3 font-mono text-[10px] text-zinc-500">{{ comp.partNumber }}</td>
+                  <td class="p-3 font-mono">{{ comp.serialNumber || 'N/A' }}</td>
+                  <td class="p-3">
+                    <span 
+                      [class.bg-emerald-50]="comp.componentType === 'Serialized'"
+                      [class.text-emerald-700]="comp.componentType === 'Serialized'"
+                      [class.bg-orange-50]="comp.componentType === 'Consumable'"
+                      [class.text-orange-700]="comp.componentType === 'Consumable'"
+                      class="px-2 py-0.5 rounded text-[9px] font-bold">
+                      {{ comp.componentType }}
+                    </span>
+                  </td>
+                  <td class="p-3 text-zinc-500">{{ comp.expiryOrWarrantyDate ? (comp.expiryOrWarrantyDate | date:'mediumDate') : 'Same as parent' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Service Agreement Details -->
+        <div>
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Manufacturer Service Agreements (LTS)</h4>
+          <div class="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 rounded-xl">
+            <div class="flex justify-between items-start" *ngIf="selectedEq.servicePlan; else noPlan">
+              <div class="space-y-1">
+                <p class="text-xs font-bold text-zinc-850 dark:text-zinc-100">Active Service Agreement Ref: <span class="font-mono text-emerald-600 dark:text-emerald-400">{{ selectedEq.servicePlan.agreementReference }}</span></p>
+                <p class="text-[10px] text-zinc-500 dark:text-zinc-400">Contract Expiration Date: {{ selectedEq.servicePlan.expiryDate | date:'longDate' }}</p>
+                <p class="text-xs font-medium text-teal-650 dark:text-teal-400"><i class="pi pi-percentage mr-1"></i>Entitled to <span class="font-bold">{{ selectedEq.servicePlan.sparePartDiscountPercent }}% discount</span> on manufacturer spare parts</p>
+              </div>
+              <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-lg border border-emerald-100 dark:border-zinc-750">
+                <p class="text-[9px] uppercase font-bold text-zinc-400 tracking-wider">Yearly Pricing Matrix</p>
+                <div class="grid grid-cols-5 gap-2 mt-1.5 text-center">
+                  <div *ngFor="let key of [1,2,3,4,5]" class="px-1.5 py-0.5 bg-zinc-50 dark:bg-zinc-900 rounded">
+                    <p class="text-[8px] font-bold text-zinc-400">Yr {{ key }}</p>
+                    <p class="text-[9px] font-bold text-emerald-650 dark:text-emerald-400">{{ (selectedEq.servicePlan.yearlyPricing[key] / 1000) }}k</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noPlan>
+              <div class="text-center py-2 text-zinc-500 text-xs">
+                <i class="pi pi-info-circle mr-1 text-sm"></i> No manufacturer service agreement plan active for this equipment (utilizing standard warranty cycle).
+              </div>
+            </ng-template>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-end">
+        <button (click)="closeDetails()" class="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 text-xs font-bold rounded-xl transition-colors">
+          Close Spec View
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTER NEW ASSET -->
+  <div *ngIf="showAddModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-4xl max-h-[85vh] overflow-y-auto border border-zinc-200 dark:border-zinc-800 shadow-xl animate-fade-in">
+      
+      <!-- Header -->
+      <div class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50 sticky top-0 z-10">
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-650 dark:text-emerald-400">Equipment Setup</span>
+          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">Register Biomedical Equipment Asset</h3>
+        </div>
+        <button (click)="closeAddModal()" class="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 transition-colors">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="p-6 space-y-6">
+        
+        <!-- Form grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- Name -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Equipment Name *</label>
+            <input type="text" [(ngModel)]="newEqName" placeholder="e.g. Philips ECG Machine" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Model -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Model Number *</label>
+            <input type="text" [(ngModel)]="newEqModel" placeholder="e.g. PageWriter TC30" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Category -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Category</label>
+            <select [(ngModel)]="newEqCat" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+              <option value="Diagnostic">Diagnostic</option>
+              <option value="Therapeutic">Therapeutic</option>
+              <option value="Life Support">Life Support</option>
+              <option value="Laboratory">Laboratory</option>
+              <option value="Radiology">Radiology</option>
+              <option value="General Medical">General Medical</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <!-- Serial -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Serial Number *</label>
+            <input type="text" [(ngModel)]="newEqSerial" placeholder="e.g. SN-TC30-9901A" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono" />
+          </div>
+          <!-- Manufacturer -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Manufacturer</label>
+            <input type="text" [(ngModel)]="newEqMan" placeholder="e.g. Philips Medical" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Origin -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Country of Origin</label>
+            <input type="text" [(ngModel)]="newEqCountry" placeholder="e.g. USA" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Supplier -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Supplier / Agent</label>
+            <input type="text" [(ngModel)]="newEqSupplier" placeholder="e.g. MediEquipment Pvt Ltd" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Tender -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Tender Reference</label>
+            <input type="text" [(ngModel)]="newEqTender" placeholder="e.g. TND/2026/MED/201" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- PO -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Purchase Order</label>
+            <input type="text" [(ngModel)]="newEqPO" placeholder="e.g. PO-2026-9902A" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Qty -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Quantity Received</label>
+            <input type="number" [(ngModel)]="newEqQty" min="1" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+          <!-- Mfg Date -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Date of Manufacture</label>
+            <input type="date" [(ngModel)]="newEqMfgDate" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer" />
+          </div>
+          <!-- Warranty -->
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Warranty Period (Months)</label>
+            <input type="number" [(ngModel)]="newEqWarranty" min="0" class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Equipment Description</label>
+          <textarea [(ngModel)]="newEqDesc" placeholder="Describe the physical parameters and general purpose of this item..." class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 h-20 focus:outline-none focus:ring-1 focus:ring-emerald-500"></textarea>
+        </div>
+
+        <!-- Add sub-components sub-form -->
+        <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-850/20">
+          <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Add Sub-components / Tracked Parts</h4>
+          
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
+            <div>
+              <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part Name</label>
+              <input type="text" [(ngModel)]="tempCompName" placeholder="e.g. ECG Leads Cord" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-850 dark:text-zinc-250 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part / Model Number</label>
+              <input type="text" [(ngModel)]="tempCompPart" placeholder="e.g. PL-CORD-02" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-850 dark:text-zinc-250 focus:outline-none" />
+            </div>
+            <div>
+              <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Serial Number (Optional)</label>
+              <input type="text" [(ngModel)]="tempCompSerial" placeholder="e.g. B-998821" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-850 dark:text-zinc-250 focus:outline-none font-mono" />
+            </div>
+            <div class="flex gap-2">
+              <div class="flex-1">
+                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Component Type</label>
+                <select [(ngModel)]="tempCompType" class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-850 dark:text-zinc-250 focus:outline-none">
+                  <option value="Serialized">Serialized</option>
+                  <option value="Consumable">Consumable</option>
+                  <option value="Minor/Non-tracked">Minor/Non-tracked</option>
+                </select>
+              </div>
+              <button 
+                (click)="addComponentToBuffer()"
+                class="px-3.5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center justify-center">
+                <i class="pi pi-plus text-xs"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Buffer table -->
+          <div class="border border-zinc-200 dark:border-zinc-750 rounded-lg overflow-hidden bg-white dark:bg-zinc-900" *ngIf="componentBuffer.length > 0">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold border-b border-zinc-200 dark:border-zinc-750">
+                <tr>
+                  <th class="p-2.5">Name</th>
+                  <th class="p-2.5">Part No</th>
+                  <th class="p-2.5">Serial</th>
+                  <th class="p-2.5">Type</th>
+                  <th class="p-2.5 text-right">Remove</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <tr *ngFor="let item of componentBuffer; let i = index">
+                  <td class="p-2.5 font-medium">{{ item.name }}</td>
+                  <td class="p-2.5 font-mono text-[10px] text-zinc-400">{{ item.partNumber }}</td>
+                  <td class="p-2.5 font-mono">{{ item.serialNumber || 'N/A' }}</td>
+                  <td class="p-2.5">{{ item.componentType }}</td>
+                  <td class="p-2.5 text-right">
+                    <button (click)="removeComponentFromBuffer(i)" class="p-1 hover:bg-red-50 text-red-500 rounded">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-end gap-3">
+        <button (click)="closeAddModal()" class="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold rounded-xl transition-colors">
+          Cancel
+        </button>
+        <button (click)="saveEquipment()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors">
+          Register Equipment
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: ASSIGN EQUIPMENT -->
+  <div *ngIf="showAssignModal && selectedEq" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl w-full max-w-md border border-zinc-200 dark:border-zinc-800 shadow-xl animate-fade-in">
+      
+      <div class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-650 dark:text-emerald-400">Inventory Distribution</span>
+          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">Assign Equipment</h3>
+        </div>
+        <button (click)="closeAssignModal()" class="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 transition-colors">
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-zinc-500 leading-relaxed">
+          You are distributing **{{ selectedEq.name }}** (Serial: <span class="font-mono">{{ selectedEq.serialNumber }}</span>) out of the PDHS Biomedical store to a regional healthcare institution.
+        </p>
+
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Target Healthcare Institution</label>
+          <select 
+            [(ngModel)]="assignDestInstId" 
+            class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+            <option value="">-- Select Institution --</option>
+            <ng-container *ngFor="let inst of institutions">
+              <!-- Exclude PDHS/RDHS offices as assignments are meant for hospitals/clinics -->
+              <option *ngIf="inst.type !== 'PDHS Office' && inst.type !== 'RDHS Office'" [value]="inst.id">
+                {{ inst.name }} ({{ inst.type }})
+              </option>
+            </ng-container>
+          </select>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 flex justify-end gap-3">
+        <button (click)="closeAssignModal()" class="px-4 py-2 bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 text-xs font-bold rounded-xl transition-colors">
+          Cancel
+        </button>
+        <button (click)="submitAssignment()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors">
+          Confirm & Dispatch
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

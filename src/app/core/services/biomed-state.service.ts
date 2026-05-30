@@ -414,6 +414,7 @@ export class BiomedStateService {
   }
 
   private save(key: string, data: any) {
+    console.log('Item saving data', data)
     localStorage.setItem(`biomed_${key}`, JSON.stringify(data));
   }
 

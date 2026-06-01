@@ -85,9 +85,9 @@ export interface Equipment {
   serialNumber: string;
   batchNumber: string;
   quantityReceived: number;
-  dateOfManufacture: string;
-  dateOfReceipt: string;
-  expiryDate?: string;
+  dateOfManufacture: string | null;
+  dateOfReceipt: string | null;
+  expiryDate?: string | null;
   warrantyPeriodMonths: number;
   servicePlan?: ServicePlan;
   components: EquipmentComponent[];

@@ -42,8 +42,8 @@ export class InventoryComponent implements OnInit {
   public newEqSerial = '';
   public newEqBatch = '';
   public newEqQty = 1;
-  public newEqMfgDate = '';
-  public newEqReceiptDate = '';
+  public newEqMfgDate = null;
+  public newEqReceiptDate = null;
   public newEqWarranty = 12;
   // Sub-components adding buffer
   public componentBuffer: Omit<EquipmentComponent, 'id'>[] = [];
@@ -56,7 +56,7 @@ export class InventoryComponent implements OnInit {
   public assignEqId = '';
   public assignDestInstId = '';
 
-  constructor(private stateService: BiomedStateService) {}
+  constructor(private stateService: BiomedStateService) { }
 
   ngOnInit() {
     this.stateService.currentUser$.subscribe(u => {
@@ -95,7 +95,7 @@ export class InventoryComponent implements OnInit {
     // 2. Search filter
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      list = list.filter(e => 
+      list = list.filter(e =>
         e.name.toLowerCase().includes(term) ||
         e.serialNumber.toLowerCase().includes(term) ||
         e.modelNumber.toLowerCase().includes(term) ||
@@ -140,6 +140,7 @@ export class InventoryComponent implements OnInit {
   }
 
   public addComponentToBuffer() {
+    console.log('addComponentToBuffer click 143')
     if (!this.tempCompName.trim() || !this.tempCompPart.trim()) return;
     this.componentBuffer.push({
       name: this.tempCompName,
@@ -184,14 +185,25 @@ export class InventoryComponent implements OnInit {
       serialNumber: this.newEqSerial,
       batchNumber: this.newEqBatch,
       quantityReceived: this.newEqQty,
-      dateOfManufacture: this.newEqMfgDate || new Date().toISOString().split('T')[0],
-      dateOfReceipt: this.newEqReceiptDate || new Date().toISOString().split('T')[0],
+      dateOfManufacture: this.newEqMfgDate || null, //new Date().toISOString().split('T')[0],
+      dateOfReceipt: this.newEqReceiptDate || null,// || new Date().toISOString().split('T')[0],
       warrantyPeriodMonths: this.newEqWarranty,
       components,
       status: 'PDHS Store'
     };
 
-    this.stateService.addEquipment(eqData);
+    //this.stateService.addEquipment(eqData);
+
+    this.stateService.addEquipment(eqData).subscribe({
+      next: (result) => {
+        console.log('Equipment saved', result);
+        this.showAddModal = false;
+      },
+      error: (err) => {
+        console.error('Failed to save equipment', err);
+      }
+    });
+
     this.showAddModal = false;
   }
 
@@ -208,8 +220,8 @@ export class InventoryComponent implements OnInit {
     this.newEqSerial = '';
     this.newEqBatch = '';
     this.newEqQty = 1;
-    this.newEqMfgDate = '';
-    this.newEqReceiptDate = '';
+    this.newEqMfgDate = null;
+    this.newEqReceiptDate = null;
     this.newEqWarranty = 12;
     this.tempCompName = '';
     this.tempCompPart = '';

@@ -7,9 +7,9 @@ import {
   RepairRequest,
   WorkOrder,
   InventoryItem,
-  User,
-  Institution
+  Institution,
 } from '../../core/models/biomed.interface';
+import { UserFacadeService } from '../../core/services/user-facade.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -18,9 +18,8 @@ import {
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
-  public currentUser: User | null = null;
   public institutions: Institution[] = [];
-  
+
   // Master lists
   public allEquipment: Equipment[] = [];
   public allRequests: RepairRequest[] = [];
@@ -39,14 +38,16 @@ export class DashboardComponent implements OnInit {
   public lowStockItems: InventoryItem[] = [];
   public categoryDistribution: { category: string; count: number; percent: number }[] = [];
 
-  constructor(private stateService: BiomedStateService) {}
+  constructor(public userFacade: UserFacadeService, private stateService: BiomedStateService) { }
 
   ngOnInit() {
-    this.stateService.currentUser$.subscribe(u => {
-      this.currentUser = u;
+    //this.currentUser = this.userFacade.currentUser;
       this.calculateMetrics();
-    });
 
+    /* this.stateService.currentUserDto$.subscribe(u => {
+       this.currentUser = u;
+       this.calculateMetrics();
+     });*/
     this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
     });
@@ -79,25 +80,25 @@ export class DashboardComponent implements OnInit {
   }
 
   private calculateMetrics() {
-    if (!this.currentUser) return;
+    if (!this.userFacade.currentUser()) return;
 
-    const role = this.currentUser.role;
+    const role = this.userFacade.currentUser()?.roles;
     let filteredEquipment = [...this.allEquipment];
     let filteredRequests = [...this.allRequests];
 
     // Filter data based on user context
-    if (role === 'RDHS Officer' && this.currentUser.districtId) {
+    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'RDHS' && this.userFacade.currentUser()?.districtId) {
       // Filter by district institutions
       const districtInstIds = this.institutions
-        .filter(i => i.districtId === this.currentUser?.districtId)
+        .filter(i => i.districtId === this.userFacade.currentUser()?.districtId)
         .map(i => i.id);
 
       filteredEquipment = this.allEquipment.filter(e => e.assignedInstitutionId && districtInstIds.includes(e.assignedInstitutionId));
       filteredRequests = this.allRequests.filter(r => districtInstIds.includes(r.institutionId));
-    } else if (role === 'Institution User' && this.currentUser.institutionId) {
+    } else if (this.userFacade.currentUser()?.roles[0]?.role === 'INSTITUTION_USER' && this.userFacade.currentUser()?.institutionId) {
       // Filter by single institution
-      filteredEquipment = this.allEquipment.filter(e => e.assignedInstitutionId === this.currentUser?.institutionId);
-      filteredRequests = this.allRequests.filter(r => r.institutionId === this.currentUser?.institutionId);
+      filteredEquipment = this.allEquipment.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
+      filteredRequests = this.allRequests.filter(r => r.institutionId === this.userFacade.currentUser()?.institutionId);
     }
 
     // Set counts
@@ -106,10 +107,10 @@ export class DashboardComponent implements OnInit {
     // Filter requests
     const filteredReqIds = filteredRequests.map(r => r.id);
     const relatedOrders = this.allOrders.filter(o => filteredReqIds.includes(o.repairRequestId));
-    
+
     // Active repairs = requests that have a work order NOT 'Verified & Closed'
     this.activeRepairs = relatedOrders.filter(o => o.status !== 'Verified & Closed').length;
-    
+
     // Pending requests = work orders with status 'Submitted'
     this.pendingRequests = relatedOrders.filter(o => o.status === 'Submitted').length;
 

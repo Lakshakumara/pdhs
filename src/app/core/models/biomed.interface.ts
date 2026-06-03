@@ -1,3 +1,14 @@
+export interface ActiveRole {
+  role: RoleType;
+  scopeType: ScopeType;
+  scopeId: string | null;
+}
+
+export interface UserSession {
+  user: UserDto;
+  activeRole: ActiveRole;
+}
+
 export interface District {
   id: string;
   name: string;
@@ -25,7 +36,7 @@ export interface Institution {
   active: boolean;
 }
 
-export type UserRole =
+/*export type UserRole =
   | 'System Administrator'
   | 'Biomedical Technician'
   | 'Procurement Officer'
@@ -41,7 +52,53 @@ export interface User {
   districtId?: string; // Standard for RDHS Officer
   institutionId?: string; // Standard for Institution User
   active: boolean;
+}*/
+
+export interface UserDto {
+  id: string;
+  username: string;
+  fullName: string;
+  email?: string | null;
+
+  mustChangePassword: boolean;
+  active: boolean;
+
+  institutionId?: string | null;
+  institutionName?: string | null;
+
+  districtId?: string | null;
+  districtName?: string | null;
+
+  roles: UserRoleDto[];
+
+  createdAt: string;
+  updatedAt: string;
 }
+
+export interface UserRoleDto {
+  id: string;
+  role: RoleType;
+  scopeType: ScopeType;
+  scopeId: string | null;
+  assignedAt: string;
+  assignedById: string | null;
+}
+export type RoleType =
+  | 'SUPER_ADMIN_PDHS'
+  | 'ADMIN_PDHS'
+  | 'SUPER_ADMIN_RDHS'
+  | 'ADMIN_RDHS'
+  | 'SUPER_ADMIN_INSTITUTE'
+  | 'ADMIN_INSTITUTE'
+  | 'VIEWER_PDHS'
+  | 'VIEWER_RDHS'
+  | 'VIEWER_INSTITUTE'
+  | 'STORE_KEEPER'
+  | 'BIOMEDICAL_TECHNICIAN'
+  | 'PROCUREMENT_OFFICER'
+  | 'INSTITUTION_USER';
+  
+  export type ScopeType = 'PDHS' | 'RDHS' | 'INSTITUTE';
 
 export type EquipmentCategory =
   | 'Diagnostic'
@@ -54,10 +111,16 @@ export type EquipmentCategory =
 
 export interface ServicePlan {
   id: string;
-  agreementReference: string;
-  expiryDate: string;
-  sparePartDiscountPercent: number;
-  yearlyPricing: { [year: number]: number }; // Year 1 to Year 5 prices
+  agreementReference?: string;
+  expiryDate?: string;
+  noOfFreeService: number;
+  servicePerAnnum?: number;
+  serviceCosts?: any;
+  labourCosts?: any;
+  transportCosts?: any;
+  otherCosts?: any;
+  totalCosts?: any;
+  sparePartsCosts?: any;
 }
 
 export interface EquipmentComponent {

@@ -1,9 +1,11 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, effect, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from './core/services/biomed-state.service';
-import { User, UserRole } from './core/models/biomed.interface';
+import { RoleType, UserDto, } from './core/models/biomed.interface';
+import { AuthService } from './core/services/auth.service';
+import { UserFacadeService } from './core/services/user-facade.service';
 
 @Component({
   selector: 'app-root',
@@ -13,30 +15,48 @@ import { User, UserRole } from './core/models/biomed.interface';
 })
 export class App implements OnInit {
   protected readonly title = signal('pdhs');
-  
-  public currentUser: User | null = null;
-  public users: User[] = [];
-  public selectedUserId = '';
+
+  public users: UserDto[] = [];
+  public selectedUserId?: string;
   public isDarkMode = false;
   public isSidebarCollapsed = false;
 
-  constructor(private stateService: BiomedStateService) {}
-
-  ngOnInit() {
-    this.stateService.currentUser$.subscribe(user => {
-      this.currentUser = user;
+  constructor(public userFacade: UserFacadeService, private stateService: BiomedStateService) {
+    this.userFacade.loadCurrentUser('usr_admin');
+    effect(() => {
+      const user = this.userFacade.currentUser();
       if (user) {
-        this.selectedUserId = user.id;
+        this.selectedUserId = this.userFacade.currentUser()?.id;
+        console.log(user);
       }
     });
 
-    this.stateService.users$.subscribe(list => {
+    this.userFacade.getUserById('usr_admin')
+      .subscribe(user => {
+
+        const firstRole = user.roles[0];
+
+        this.userFacade.setSession(
+          user,
+          {
+            role: firstRole.role,
+            scopeType: firstRole.scopeType,
+            scopeId: firstRole.scopeId
+          }
+        );
+
+      });
+  }
+
+  ngOnInit() {
+
+    this.stateService.usersDto$.subscribe(list => {
       this.users = list;
     });
 
     // Check system preference for dark mode
-    if (localStorage.getItem('theme') === 'dark' || 
-        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    if (localStorage.getItem('theme') === 'dark' ||
+      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       this.isDarkMode = true;
       document.documentElement.classList.add('dark');
     } else {
@@ -46,7 +66,7 @@ export class App implements OnInit {
   }
 
   public switchRole(userId: string) {
-    this.stateService.switchUser(userId);
+    this.userFacade.switchUser(userId);
   }
 
   public toggleDarkMode() {
@@ -66,29 +86,28 @@ export class App implements OnInit {
 
   // Permission checks for UI modules
   public hasAccess(module: string): boolean {
-    if (!this.currentUser) return false;
-    
-    const role = this.currentUser.role;
-    
+    if (!this.userFacade.currentUser()) return false;
+
     switch (module) {
       case 'dashboard':
       case 'inventory':
         return true; // Everyone can view dashboard and inventory list
-      
+
       case 'repairs':
         // Everyone except Procurement Officers can view/manage repairs
-        return role !== 'Procurement Officer';
-        
+        return !this.userFacade.hasAnyRole(['PROCUREMENT_OFFICER']);
+
       case 'procurement':
         // Only Admin, Procurement Officers, and PDHS Viewers can access procurement
-        return role === 'System Administrator' || role === 'Procurement Officer' || role === 'PDHS Viewer';
-        
+        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'PROCUREMENT_OFFICER', 'VIEWER_PDHS']);//
+
       case 'audit':
         // Only Admin can view full audit logs
-        return role === 'System Administrator';
-        
+        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS']);
+
       default:
         return false;
     }
   }
+
 }

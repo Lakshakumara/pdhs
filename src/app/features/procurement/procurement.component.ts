@@ -8,10 +8,10 @@ import {
   GoodsReceivedNote,
   InventoryItem,
   Supplier,
-  User,
   WorkOrder,
   PurchaseOrderItem
 } from '../../core/models/biomed.interface';
+import { UserFacadeService } from '../../core/services/user-facade.service';
 
 @Component({
   selector: 'app-procurement',
@@ -20,7 +20,6 @@ import {
   styleUrl: './procurement.component.css'
 })
 export class ProcurementComponent implements OnInit {
-  public currentUser: User | null = null;
   
   // Lists
   public plans: ProcurementPlan[] = [];
@@ -53,12 +52,9 @@ export class ProcurementComponent implements OnInit {
   public tempItemCost = 0;
   public tempItemCat: 'new equipment' | 'spare part' | 'consumable' | 'service' = 'spare part';
 
-  constructor(private stateService: BiomedStateService) {}
+  constructor(private userFacade: UserFacadeService, private stateService: BiomedStateService) {}
 
   ngOnInit() {
-    this.stateService.currentUser$.subscribe(u => {
-      this.currentUser = u;
-    });
 
     this.stateService.procurementPlans$.subscribe(list => {
       this.plans = list;
@@ -208,12 +204,12 @@ export class ProcurementComponent implements OnInit {
 
   // Permissions helpers
   public isProcurementOfficer(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'System Administrator' || this.currentUser.role === 'Procurement Officer';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['PROCUREMENT_OFFICER','SUPER_ADMIN_PDHS']);
   }
 
   public isAdmin(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'System Administrator';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS']);
   }
 }

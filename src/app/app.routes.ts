@@ -22,5 +22,9 @@ export const routes: Routes = [
     path: 'audit',
     loadComponent: () => import('./features/audit/audit.component').then(m => m.AuditComponent)
   },
+  {
+    path: 'institute',
+    loadChildren: () => import('./features/institute/institute.routes').then(m => m.instituteRoutes)
+  },
   { path: '**', redirectTo: 'dashboard' }
 ];

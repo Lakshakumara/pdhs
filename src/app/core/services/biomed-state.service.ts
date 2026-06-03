@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 import {
   District,
   Institution,
-  User,
   Equipment,
   EquipmentComponent,
   EquipmentAssignment,
@@ -17,9 +16,9 @@ import {
   GoodsReceivedNote,
   InventoryItem,
   AuditLog,
-  UserRole,
   WorkOrderStatus,
-  RepairPriority
+  RepairPriority,
+  UserDto
 } from '../models/biomed.interface';
 
 @Injectable({
@@ -28,18 +27,17 @@ import {
 export class BiomedStateService {
   private baseUrl = 'http://localhost:3000/biomedical-state'; // Adjust if needed, or use environment variable
 
-  // Behavior Subjects for Reactivity
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
+  private currentUserDtoSubject = new BehaviorSubject<UserDto | null>(null);
+  public currentUserDto$ = this.currentUserDtoSubject.asObservable();
+
+  private usersSubject = new BehaviorSubject<UserDto[]>([]);
+  public usersDto$ = this.usersSubject.asObservable();
 
   private districtsSubject = new BehaviorSubject<District[]>([]);
   public districts$ = this.districtsSubject.asObservable();
 
   private institutionsSubject = new BehaviorSubject<Institution[]>([]);
   public institutions$ = this.institutionsSubject.asObservable();
-
-  private usersSubject = new BehaviorSubject<User[]>([]);
-  public users$ = this.usersSubject.asObservable();
 
   public equipmentSubject = new BehaviorSubject<Equipment[]>([]);
   public equipment$ = this.equipmentSubject.asObservable();
@@ -92,7 +90,7 @@ export class BiomedStateService {
     // Set default active user from fetched users or null
     this.usersSubject.subscribe(users => {
       if (users.length > 0) {
-        this.currentUserSubject.next(users[0]);
+        this.currentUserDtoSubject.next(users[0]);
       }
     });
   }
@@ -118,7 +116,7 @@ export class BiomedStateService {
 
   // Users
   private fetchUsers(): void {
-    this.http.get<User[]>(`${this.baseUrl}/users`)
+    this.http.get<UserDto[]>(`${this.baseUrl}/users`)
       .pipe(catchError(this.handleError))
       .subscribe(users => this.usersSubject.next(users));
   }
@@ -202,23 +200,8 @@ export class BiomedStateService {
     // setTimeout(() => this.fetchAuditLogs(), 1000);
   }
 
-  // Role Switcher API
-  public switchUser(userId: string): void {
-    // In a real app, you might send this to the backend to set session.
-    // For now, we'll just update the currentUserSubject from the users we have.
-    const users = this.usersSubject.value;
-    const match = users.find(u => u.id === userId);
-    if (match) {
-      this.currentUserSubject.next(match);
-      // Optionally, log audit (but backend might handle it via interceptor)
-      this.logAudit('UPDATE', 'UserSession', match.id, `Switched session active user to: ${match.fullName} (${match.role})`);
-    }
-  }
-
   // Equipment Master Actions
   public addEquipment(eq: Omit<Equipment, 'id'>): Observable<Equipment> {
-    console.log(`${this.baseUrl}/equipment`);
-    console.log('add equipment ', eq)
     return this.http.post<Equipment>(`${this.baseUrl}/equipment`, eq).pipe(
       tap(newEquipment => {
         // Optimistically update the list? We'll refetch for simplicity.
@@ -358,6 +341,38 @@ export class BiomedStateService {
         this.fetchInventoryItems();
         this.fetchEquipment();
         this.logAudit('CREATE', 'GoodsReceivedNote', grn.id, `Goods Received Note confirmed for PO: ${grn.poNumber}. Stock automatically updated.`);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+
+  // Institutions CRUD
+  public addInstitution(institution: Omit<Institution, 'id'>): Observable<Institution> {
+    return this.http.post<Institution>(`${this.baseUrl}/institutions`, institution).pipe(
+      tap(newInst => {
+        this.fetchInstitutions(); // refetch list
+        this.logAudit('CREATE', 'Institution', newInst.id, `Added new institution: ${newInst.name}`);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  public updateInstitution(institution: Institution): Observable<Institution> {
+    return this.http.put<Institution>(`${this.baseUrl}/institutions/${institution.id}`, institution).pipe(
+      tap(updatedInst => {
+        this.fetchInstitutions();
+        this.logAudit('UPDATE', 'Institution', updatedInst.id, `Updated institution: ${updatedInst.name}`);
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  public deleteInstitution(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/institutions/${id}`).pipe(
+      tap(() => {
+        this.fetchInstitutions();
+        this.logAudit('DELETE', 'Institution', id, `Deleted institution with id: ${id}`);
       }),
       catchError(this.handleError)
     );

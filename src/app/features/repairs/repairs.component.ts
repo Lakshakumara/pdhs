@@ -6,12 +6,13 @@ import {
   RepairRequest,
   WorkOrder,
   Equipment,
-  User,
   Institution,
   InventoryItem,
   RepairPriority,
-  WorkOrderStatus
+  WorkOrderStatus,
+  UserDto,
 } from '../../core/models/biomed.interface';
+import { UserFacadeService } from '../../core/services/user-facade.service';
 
 @Component({
   selector: 'app-repairs',
@@ -20,11 +21,11 @@ import {
   styleUrl: './repairs.component.css'
 })
 export class RepairsComponent implements OnInit {
-  public currentUser: User | null = null;
+  //public currentUser: UserDto | null = null;
   public requests: RepairRequest[] = [];
   public workOrders: WorkOrder[] = [];
   public filteredRequests: RepairRequest[] = [];
-  
+
   public institutions: Institution[] = [];
   public equipmentList: Equipment[] = []; // Sub-list of equipment for submitting request
   public inventoryItems: InventoryItem[] = []; // Store inventory list for technicians to pick spare parts
@@ -58,15 +59,12 @@ export class RepairsComponent implements OnInit {
   public tempPartId = '';
   public tempPartQty = 1;
 
-  constructor(private stateService: BiomedStateService) {}
+  constructor(private userFacade: UserFacadeService, private stateService: BiomedStateService) { }
 
   ngOnInit() {
-    this.stateService.currentUser$.subscribe(u => {
-      this.currentUser = u;
-      this.loadMyEquipment();
-      this.applyFilters();
-    });
 
+    this.loadMyEquipment();
+    this.applyFilters();
     this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
     });
@@ -92,10 +90,10 @@ export class RepairsComponent implements OnInit {
 
   // Pre-load equipment options for submitting request based on active user context
   private loadMyEquipment() {
-    if (!this.currentUser) return;
+    if (!this.userFacade.currentUser()) return;
     const allEq = this.stateService.equipmentSubject.value; // load direct list
-    if (this.currentUser.role === 'Institution User' && this.currentUser.institutionId) {
-      this.equipmentList = allEq.filter(e => e.assignedInstitutionId === this.currentUser?.institutionId);
+    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
+      this.equipmentList = allEq.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
     } else {
       this.equipmentList = allEq.filter(e => e.status === 'Assigned'); // Show all active assigned items
     }
@@ -108,19 +106,19 @@ export class RepairsComponent implements OnInit {
   }
 
   public applyFilters() {
-    if (!this.currentUser) return;
+    if (!this.userFacade.currentUser()) return;
 
-    const role = this.currentUser.role;
+    const role = this.userFacade.currentUser()?.roles[0]?.role;
     let list = [...this.requests];
 
     // 1. Role boundaries
-    if (role === 'RDHS Officer' && this.currentUser.districtId) {
+    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'RDHS' && this.userFacade.currentUser()?.districtId) {
       const districtInstIds = this.institutions
-        .filter(i => i.districtId === this.currentUser?.districtId)
+        .filter(i => i.districtId === this.userFacade.currentUser()?.districtId)
         .map(i => i.id);
       list = list.filter(r => districtInstIds.includes(r.institutionId));
-    } else if (role === 'Institution User' && this.currentUser.institutionId) {
-      list = list.filter(r => r.institutionId === this.currentUser?.institutionId);
+    } else if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
+      list = list.filter(r => r.institutionId === this.userFacade.currentUser()?.institutionId);
     }
 
     // 2. Status match (joins request with work order status)
@@ -139,7 +137,7 @@ export class RepairsComponent implements OnInit {
     // 4. Text search
     if (this.searchTerm.trim()) {
       const term = this.searchTerm.toLowerCase();
-      list = list.filter(r => 
+      list = list.filter(r =>
         r.id.toLowerCase().includes(term) ||
         r.equipmentName.toLowerCase().includes(term) ||
         r.faultDescription.toLowerCase().includes(term) ||
@@ -207,15 +205,15 @@ export class RepairsComponent implements OnInit {
 
     this.selectedWO = wo;
     this.diagnosisNotes = wo.diagnosisNotes || '';
-    
+
     // Load components of this equipment for inspection checklist
     const eqList = this.stateService.equipmentSubject.value;
     const eqObj = eqList.find(e => e.id === req.equipmentId);
-    
+
     if (wo.inspectedComponents && wo.inspectedComponents.length > 0) {
       this.techInspectedComponents = [...wo.inspectedComponents];
     } else {
-      this.techInspectedComponents = eqObj 
+      this.techInspectedComponents = eqObj
         ? eqObj.components.map(c => ({ componentId: c.id, componentName: c.name, inspected: false, conditionNotes: '' }))
         : [];
     }
@@ -309,20 +307,19 @@ export class RepairsComponent implements OnInit {
 
   // Role permissions helpers
   public canSubmit(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'Institution User' || this.currentUser.role === 'System Administrator';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' || this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS', 'ADMIN_RDHS', 'SUPER_ADMIN_RDHS', 'ADMIN_INSTITUTE', 'SUPER_ADMIN_INSTITUTE']);
   }
 
   public isTechnician(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'Biomedical Technician' || this.currentUser.role === 'System Administrator';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['BIOMEDICAL_TECHNICIAN', 'SUPER_ADMIN_PDHS']);
   }
 
   public isSupervisor(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'System Administrator';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS']);
   }
-
   // Helper status color classes
   public getStatusClass(status: WorkOrderStatus): string {
     switch (status) {

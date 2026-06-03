@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
-import { AuditLog, User } from '../../core/models/biomed.interface';
+import { AuditLog } from '../../core/models/biomed.interface';
+import { UserFacadeService } from '../../core/services/user-facade.service';
 
 @Component({
   selector: 'app-audit',
@@ -11,7 +12,6 @@ import { AuditLog, User } from '../../core/models/biomed.interface';
   styleUrl: './audit.component.css'
 })
 export class AuditComponent implements OnInit {
-  public currentUser: User | null = null;
   public logs: AuditLog[] = [];
   public filteredLogs: AuditLog[] = [];
 
@@ -19,12 +19,9 @@ export class AuditComponent implements OnInit {
   public searchTerm = '';
   public selectedAction = '';
 
-  constructor(private stateService: BiomedStateService) {}
+  constructor(public userFacade: UserFacadeService, private stateService: BiomedStateService) {}
 
   ngOnInit() {
-    this.stateService.currentUser$.subscribe(u => {
-      this.currentUser = u;
-    });
 
     this.stateService.auditLogs$.subscribe(list => {
       this.logs = list;

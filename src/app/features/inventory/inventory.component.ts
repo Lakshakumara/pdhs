@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
-import { Equipment, EquipmentCategory, User, Institution, EquipmentComponent } from '../../core/models/biomed.interface';
+import { Equipment, EquipmentCategory, Institution, EquipmentComponent, UserDto } from '../../core/models/biomed.interface';
+import { AuthService } from '../../core/services/auth.service';
+import { UserFacadeService } from '../../core/services/user-facade.service';
 
 @Component({
   selector: 'app-inventory',
@@ -11,7 +13,7 @@ import { Equipment, EquipmentCategory, User, Institution, EquipmentComponent } f
   styleUrl: './inventory.component.css'
 })
 export class InventoryComponent implements OnInit {
-  public currentUser: User | null = null;
+  //public currentUser: UserDto | null = null;
   public equipment: Equipment[] = [];
   public filteredEquipment: Equipment[] = [];
   public institutions: Institution[] = [];
@@ -20,6 +22,13 @@ export class InventoryComponent implements OnInit {
   public searchTerm = '';
   public selectedCategory = '';
   public selectedStatus = '';
+  public selectedInstitutionId = '';
+
+  // Pagination properties
+  public currentPage = 1;
+  public pageSize = 10;
+  public totalPages = 1;
+  public paginatedEquipment: Equipment[] = [];
 
   // Modal displays
   public showDetailModal = false;
@@ -52,17 +61,31 @@ export class InventoryComponent implements OnInit {
   public tempCompSerial = '';
   public tempCompType: 'Serialized' | 'Consumable' | 'Minor/Non-tracked' = 'Serialized';
 
+  // Service Plan State
+  public includeServicePlan = false;
+  public spRef = '';
+  public spExpiry: string | null = null;
+  public spFreeServices = 0;
+  public spServicePerAnnum = 0;
+  public spServiceCosts = [0, 0, 0, 0, 0];
+  public spLabourCosts = [0, 0, 0, 0, 0];
+  public spTransportCosts = [0, 0, 0, 0, 0];
+  public spOtherCosts = [0, 0, 0, 0, 0];
+  public spSparePartsCosts = [0, 0, 0, 0, 0];
+
+  // Spare Parts Cost adding buffer
+  public sparePartsCostsBuffer: any[] = [];
+  public tempSparePartName = '';
+  public tempSparePartCosts = [0, 0, 0, 0, 0];
+
   // Assignment Form State
   public assignEqId = '';
   public assignDestInstId = '';
 
-  constructor(private stateService: BiomedStateService) { }
+  constructor(private userFacade: UserFacadeService, private stateService: BiomedStateService) { }
 
   ngOnInit() {
-    this.stateService.currentUser$.subscribe(u => {
-      this.currentUser = u;
-      this.applyFilters();
-    });
+    this.applyFilters();
 
     this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
@@ -75,21 +98,21 @@ export class InventoryComponent implements OnInit {
   }
 
   public applyFilters() {
-    if (!this.currentUser) return;
-
-    const role = this.currentUser.role;
+    if (!this.userFacade.currentUser()) return;
     let list = [...this.equipment];
 
     // 1. Role-based view segregation
-    if (role === 'RDHS Officer' && this.currentUser.districtId) {
-      // Show only equipment in their district institutions
-      const districtInstIds = this.institutions
-        .filter(i => i.districtId === this.currentUser?.districtId)
-        .map(i => i.id);
-      list = list.filter(e => e.assignedInstitutionId && districtInstIds.includes(e.assignedInstitutionId));
-    } else if (role === 'Institution User' && this.currentUser.institutionId) {
+    const hasAccess = this.userFacade.hasAnyRole(['ADMIN_RDHS', 'SUPER_ADMIN_PDHS']);
+    if (hasAccess) {
+      // Show only equipment in their district institutions)
+      const currentInstitution = this.institutions.find(
+        i => i.id === this.userFacade.currentUser()?.institutionId
+      );
+
+      list = list.filter(e => e.assignedInstitutionId && this.userFacade.currentUser()?.districtId?.includes(e.assignedInstitutionId));
+    } else if (this.userFacade.hasAnyRole(['INSTITUTION_USER', 'ADMIN_INSTITUTE', 'VIEWER_INSTITUTE']) && this.userFacade.currentUser()?.institutionId) {
       // Show only equipment assigned to their institution
-      list = list.filter(e => e.assignedInstitutionId === this.currentUser?.institutionId);
+      list = list.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
     }
 
     // 2. Search filter
@@ -114,7 +137,45 @@ export class InventoryComponent implements OnInit {
       list = list.filter(e => e.status === this.selectedStatus);
     }
 
+    // 5. Institution filter
+    if (this.selectedInstitutionId) {
+      list = list.filter(e => e.assignedInstitutionId === this.selectedInstitutionId);
+    }
+
     this.filteredEquipment = list;
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  // Pagination Logic
+  public updatePagination() {
+    this.totalPages = Math.ceil(this.filteredEquipment.length / this.pageSize) || 1;
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages;
+    }
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    this.paginatedEquipment = this.filteredEquipment.slice(startIndex, startIndex + this.pageSize);
+  }
+
+  public nextPage() {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updatePagination();
+    }
+  }
+
+  public prevPage() {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updatePagination();
+    }
+  }
+
+  public goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
   }
 
   // Details Modal
@@ -160,6 +221,24 @@ export class InventoryComponent implements OnInit {
     this.componentBuffer.splice(idx, 1);
   }
 
+  public addSparePartCostToBuffer() {
+    if (!this.tempSparePartName.trim()) return;
+    this.sparePartsCostsBuffer.push({
+      name: this.tempSparePartName.trim(),
+      year1: this.tempSparePartCosts[0] || 0,
+      year2: this.tempSparePartCosts[1] || 0,
+      year3: this.tempSparePartCosts[2] || 0,
+      year4: this.tempSparePartCosts[3] || 0,
+      year5: this.tempSparePartCosts[4] || 0
+    });
+    this.tempSparePartName = '';
+    this.tempSparePartCosts = [0, 0, 0, 0, 0];
+  }
+
+  public removeSparePartCostFromBuffer(idx: number) {
+    this.sparePartsCostsBuffer.splice(idx, 1);
+  }
+
   public saveEquipment() {
     if (!this.newEqName.trim() || !this.newEqSerial.trim() || !this.newEqModel.trim()) {
       alert('Please fill out Name, Model, and Serial Number.');
@@ -191,6 +270,24 @@ export class InventoryComponent implements OnInit {
       components,
       status: 'PDHS Store'
     };
+
+    if (this.includeServicePlan) {
+      const yearObj = (arr: number[]) => {
+        return { year1: arr[0], year2: arr[1], year3: arr[2], year4: arr[3], year5: arr[4] };
+      };
+      eqData.servicePlan = {
+        id: `sp_${Date.now()}`,
+        agreementReference: this.spRef,
+        expiryDate: this.spExpiry || undefined,
+        noOfFreeService: this.spFreeServices,
+        servicePerAnnum: this.spServicePerAnnum,
+        serviceCosts: yearObj(this.spServiceCosts),
+        labourCosts: yearObj(this.spLabourCosts),
+        transportCosts: yearObj(this.spTransportCosts),
+        otherCosts: yearObj(this.spOtherCosts),
+        sparePartsCosts: this.sparePartsCostsBuffer
+      };
+    }
 
     //this.stateService.addEquipment(eqData);
 
@@ -226,6 +323,20 @@ export class InventoryComponent implements OnInit {
     this.tempCompName = '';
     this.tempCompPart = '';
     this.tempCompSerial = '';
+
+    this.includeServicePlan = false;
+    this.spRef = '';
+    this.spExpiry = null;
+    this.spFreeServices = 0;
+    this.spServicePerAnnum = 0;
+    this.spServiceCosts = [0, 0, 0, 0, 0];
+    this.spLabourCosts = [0, 0, 0, 0, 0];
+    this.spTransportCosts = [0, 0, 0, 0, 0];
+    this.spOtherCosts = [0, 0, 0, 0, 0];
+    this.spSparePartsCosts = [0, 0, 0, 0, 0];
+    this.sparePartsCostsBuffer = [];
+    this.tempSparePartName = '';
+    this.tempSparePartCosts = [0, 0, 0, 0, 0];
   }
 
   // Assign Modal
@@ -258,14 +369,34 @@ export class InventoryComponent implements OnInit {
 
   // Permission helper to check who can register assets (Admin and Procurement)
   public canRegister(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'System Administrator' || this.currentUser.role === 'Procurement Officer' || this.currentUser.role === 'Biomedical Technician';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS', 'PROCUREMENT_OFFICER', 'BIOMEDICAL_TECHNICIAN']);
   }
 
   // Permission helper to check who can assign assets (Admin and Technician)
   public canAssign(): boolean {
-    if (!this.currentUser) return false;
-    return this.currentUser.role === 'System Administrator' || this.currentUser.role === 'Biomedical Technician';
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']
+    )
+  }
+
+  public isAdmin(): boolean {
+    if (!this.userFacade.currentUser()) return false;
+    return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']);
+  }
+
+  public updateEquipment(eq: Equipment) {
+    alert('Update functionality to be implemented.');
+  }
+
+  public disposeEquipment(eq: Equipment) {
+    if (confirm(`Are you sure you want to dispose of ${eq.name}? This action is irreversible.`)) {
+      alert('Dispose functionality to be implemented.');
+    }
+  }
+
+  public viewRepairHistory(eq: Equipment) {
+    alert(`Showing repair history for ${eq.name} (To be implemented)`);
   }
 
   // Helper names

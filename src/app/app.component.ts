@@ -3,13 +3,15 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from './core/services/biomed-state.service';
-import { RoleType, UserDto, } from './core/models/biomed.interface';
-import { AuthService } from './core/services/auth.service';
+import { UserDto, } from './core/models/biomed.interface';
 import { UserFacadeService } from './core/services/user-facade.service';
+import { QueryService } from './core/services/query.service';
+import { ToastModule } from 'primeng/toast';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FormsModule],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FormsModule, ToastModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -21,35 +23,14 @@ export class App implements OnInit {
   public isDarkMode = false;
   public isSidebarCollapsed = false;
 
-  constructor(public userFacade: UserFacadeService, private stateService: BiomedStateService) {
-    this.userFacade.loadCurrentUser('usr_admin');
-    effect(() => {
-      const user = this.userFacade.currentUser();
-      if (user) {
-        this.selectedUserId = this.userFacade.currentUser()?.id;
-        console.log(user);
-      }
-    });
+  constructor(public userFacade: UserFacadeService,
+    private stateService: BiomedStateService,
+    public apiService: QueryService) {
 
-    this.userFacade.getUserById('usr_admin')
-      .subscribe(user => {
+    this.userFacade.setSessionById('usr_admin');
 
-        const firstRole = user.roles[0];
-
-        this.userFacade.setSession(
-          user,
-          {
-            role: firstRole.role,
-            scopeType: firstRole.scopeType,
-            scopeId: firstRole.scopeId
-          }
-        );
-
-      });
   }
-
   ngOnInit() {
-
     this.stateService.usersDto$.subscribe(list => {
       this.users = list;
     });
@@ -66,7 +47,7 @@ export class App implements OnInit {
   }
 
   public switchRole(userId: string) {
-    this.userFacade.switchUser(userId);
+    this.userFacade.setSessionById(userId)
   }
 
   public toggleDarkMode() {

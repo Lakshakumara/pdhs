@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { RoleType, ScopeType, UserDto, UserRoleDto } from '../models/biomed.interface';
+import { RoleType, UserDto, UserRoleDto } from '../models/biomed.interface';
+import { ScopeType } from '../auth/permission.types';
 
 @Injectable({
   providedIn: 'root'

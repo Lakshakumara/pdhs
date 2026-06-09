@@ -5,9 +5,16 @@ import { providePrimeNG } from 'primeng/config';
 import Aura from '@primeuix/themes/aura';
 
 import { routes } from './app.routes';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { userSessionInterceptor } from './core/auth/userSessionInterceptor';
+import { MessageService } from 'primeng/api';
+import { errorInterceptor } from './utils/errorInterceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideHttpClient(
+      withInterceptors([userSessionInterceptor, errorInterceptor])
+    ),
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideAnimationsAsync(),
@@ -19,6 +26,7 @@ export const appConfig: ApplicationConfig = {
           cssLayer: false
         }
       }
-    })
+    }),
+    MessageService,
   ]
 };

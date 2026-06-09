@@ -52,11 +52,11 @@ export class DashboardComponent implements OnInit {
       this.institutions = list;
     });
 
-    this.stateService.equipment$.subscribe(list => {
+    /*this.stateService.equipment$.subscribe(list => {
       this.allEquipment = list;
       this.calculateMetrics();
     });
-
+*/
     this.stateService.repairRequests$.subscribe(list => {
       this.allRequests = list;
       this.calculateMetrics();

@@ -1,34 +1,24 @@
 import { Injectable } from '@angular/core';
 import { RoleType } from '../models/biomed.interface';
-import { UserFacadeService } from './user-facade.service';
+import { UserFacadeService } from '../services/user-facade.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PermissionService {
+  constructor(private authFacade: UserFacadeService) { }
 
-  constructor(
-    private authFacade: UserFacadeService
-  ) {}
-
-  hasRole(
-    ...roles: RoleType[]
-  ): boolean {
-
+  hasRole(...roles: RoleType[]): boolean {
     const activeRole =
       this.authFacade.activeRole();
 
     if (!activeRole) {
       return false;
     }
-
-    return roles.includes(
-      activeRole.role
-    );
+    return roles.includes(activeRole.role);
   }
 
   canViewStock(): boolean {
-
     return this.hasRole(
       'SUPER_ADMIN_PDHS',
       'ADMIN_PDHS',
@@ -55,11 +45,17 @@ export class PermissionService {
       'SUPER_ADMIN_PDHS',
       'ADMIN_PDHS',
 
+      'STORE_KEEPER'
+    );
+  }
+  canAssignStock(): boolean {
+
+    return this.hasRole(
+      'SUPER_ADMIN_PDHS',
+      'ADMIN_PDHS',
+
       'SUPER_ADMIN_RDHS',
       'ADMIN_RDHS',
-
-      'SUPER_ADMIN_INSTITUTE',
-      'ADMIN_INSTITUTE',
 
       'STORE_KEEPER'
     );

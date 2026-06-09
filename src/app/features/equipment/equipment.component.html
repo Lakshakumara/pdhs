@@ -4,10 +4,10 @@
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
       <h2 class="text-xl font-bold text-zinc-950 dark:text-zinc-50">Biomedical Asset Registry</h2>
-      <p class="text-xs text-zinc-500 dark:text-zinc-400">View and manage provincial medical equipment allocations</p>
+      <p class="text-xs text-zinc-500 dark:text-zinc-400">View and manage provincial medical equipment allocations </p>
     </div>
 
-    <button *ngIf="canRegister()" (click)="openAddModal()"
+    <button *ngIf="permission.canEditStock()" (click)="openAddModal()"
       class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors flex items-center gap-2">
       <i class="pi pi-plus"></i> Register New Equipment
     </button>
@@ -20,13 +20,13 @@
     <!-- Search -->
     <div class="flex-1 relative">
       <i class="pi pi-search absolute left-3 top-3 text-zinc-400"></i>
-      <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()"
+      <input type="text" [(ngModel)]="searchTerm" (input)="getEquipment()"
         placeholder="Search by name, manufacturer, serial number..."
         class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200" />
     </div>
 
     <!-- Category Filter -->
-    <select [(ngModel)]="selectedCategory" (change)="applyFilters()"
+    <select [(ngModel)]="selectedCategory" (change)="getEquipment()"
       class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200 cursor-pointer">
       <option value="">All Categories</option>
       <option value="Diagnostic">Diagnostic</option>
@@ -39,14 +39,14 @@
     </select>
 
     <!-- Institution Filter -->
-    <select [(ngModel)]="selectedInstitutionId" (change)="applyFilters()"
+    <select [(ngModel)]="selectedInstitutionId" (change)="getEquipment()"
       class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200 cursor-pointer">
       <option value="">All Institutions</option>
-      <option *ngFor="let inst of institutions" [value]="inst.id">{{ inst.name }}</option>
+      <option *ngFor="let inst of institutions()" [value]="inst.id">{{ inst.name }}</option>
     </select>
 
     <!-- Status Filter -->
-    <select [(ngModel)]="selectedStatus" (change)="applyFilters()"
+    <select [(ngModel)]="selectedStatus" (change)="getEquipment()"
       class="bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 text-zinc-800 dark:text-zinc-200 cursor-pointer">
       <option value="">All Statuses</option>
       <option value="PDHS Store">PDHS Store</option>
@@ -63,7 +63,7 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr
-            class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-900">
+            class="bg-zinc-50/50 dark:bg-zinc-900/50 text-xs font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-200 dark:border-zinc-800">
             <th class="p-4">Equipment Name</th>
             <th class="p-4">Category</th>
             <th class="p-4">Serial Number</th>
@@ -73,17 +73,16 @@
             <th class="p-4 text-right">Actions</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-900 text-xs">
+        <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800 text-xs">
 
-          <tr *ngIf="paginatedEquipment.length === 0">
+          <tr *ngIf="equipments().length === 0">
             <td colspan="7" class="p-8 text-center text-zinc-500">
               <i class="pi pi-box text-3xl mb-2 text-zinc-300 block"></i>
               No equipment assets registered matching the filters.
             </td>
           </tr>
-
-          <tr *ngFor="let eq of paginatedEquipment"
-            class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
+          @for (eq of equipments(); track eq.id) {
+          <tr class="hover:bg-zinc-50/40 dark:hover:bg-zinc-800/10 transition-colors">
             <!-- Name -->
             <td class="p-4">
               <div class="font-bold text-zinc-900 dark:text-zinc-50">{{ eq.name }}</div>
@@ -102,7 +101,7 @@
             <td class="p-4">{{ eq.manufacturer }}</td>
             <!-- Location -->
             <td class="p-4 font-medium text-zinc-700 dark:text-zinc-300">
-              {{ getInstitutionName(eq.assignedInstitutionId) }}
+              {{ eq.assignedInstitution?.name }}
             </td>
             <!-- Status -->
             <td class="p-4">
@@ -143,31 +142,32 @@
                 <i class="pi pi-trash text-sm"></i>
               </button>
 
-              <button *ngIf="eq.status === 'PDHS Store' && canAssign()" (click)="openAssignModal(eq)"
+              <button *ngIf="eq.status === 'PDHS Store' && permission.canAssignStock()" (click)="openAssignModal(eq)"
                 class="ml-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 font-semibold rounded text-[10px] transition-colors border border-emerald-100/50 dark:border-emerald-900/50"
                 title="Assign Device to Institution">
                 Distribute
               </button>
             </td>
           </tr>
+          }
         </tbody>
       </table>
     </div>
 
     <!-- Pagination Footer -->
-    <div *ngIf="filteredEquipment.length > 0"
+    <div *ngIf="total() > 0"
       class="px-4 py-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-900/50">
       <span class="text-xs text-zinc-500 dark:text-zinc-400">
-        Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ (currentPage * pageSize) > filteredEquipment.length ?
-        filteredEquipment.length : (currentPage * pageSize) }} of {{ filteredEquipment.length }} entries
+        Showing {{ (currentPage() - 1) * pageSize() + 1 }} to {{ (currentPage() * pageSize()) > total()?
+        total() : (currentPage() * pageSize()) }} of {{ total() }} entries
       </span>
       <div class="flex gap-1">
-        <button (click)="prevPage()" [disabled]="currentPage === 1"
+        <button (click)="prevPage()" [disabled]="currentPage() === 1"
           class="px-3 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs disabled:opacity-50 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-zinc-700 dark:text-zinc-300"><i
             class="pi pi-angle-left"></i></button>
-        <button *ngFor="let p of [].constructor(totalPages); let i = index" (click)="goToPage(i + 1)"
-          [class.bg-emerald-500]="currentPage === i + 1" [class.text-white]="currentPage === i + 1"
-          [class.border-emerald-500]="currentPage === i + 1"
+        <button *ngFor="let p of [].constructor(totalPages()); let i = index" (click)="goToPage(i + 1)"
+          [class.bg-emerald-500]="currentPage() === i + 1" [class.text-white]="currentPage() === i + 1"
+          [class.border-emerald-500]="currentPage() === i + 1"
           class="px-3 py-1 rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors text-zinc-700 dark:text-zinc-300">
           {{ i + 1 }}
         </button>
@@ -223,23 +223,23 @@
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400">Assigned Location</p>
             <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{
-              getInstitutionName(selectedEq.assignedInstitutionId) }}</p>
+              selectedEq.assignedInstitution?.name}}</p>
           </div>
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400">Tender Ref</p>
-            <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-200">{{ selectedEq.tenderNumber }}</p>
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.tenderNumber }}</p>
           </div>
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400">Purchase Order</p>
-            <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-200">{{ selectedEq.purchaseOrderNumber }}</p>
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.purchaseOrderNumber }}</p>
           </div>
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400">Supplier Name</p>
-            <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-200">{{ selectedEq.supplierName }}</p>
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.supplierName }}</p>
           </div>
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400">Warranty</p>
-            <p class="text-xs font-semibold text-zinc-900 dark:text-zinc-200">{{ selectedEq.warrantyPeriodMonths }}
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.warrantyPeriodMonths }}
               Months (Rec: {{ selectedEq.dateOfReceipt | date:'mediumDate' }})</p>
           </div>
         </div>
@@ -290,12 +290,13 @@
 
         <!-- Service Agreement Details -->
         <div>
-          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Manufacturer Service Agreements (LTS)</h4>
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Manufacturer Service Agreements
+            (LTS)</h4>
           <div
             class="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 rounded-xl space-y-4">
             <div class="flex justify-between items-start" *ngIf="selectedEq.servicePlan; else noPlan">
               <div class="space-y-1">
-                <p class="text-xs font-bold text-zinc-900 dark:text-zinc-100">Active Service Agreement Ref: <span
+                <p class="text-xs font-bold text-zinc-800 dark:text-zinc-100">Active Service Agreement Ref: <span
                     class="font-mono text-emerald-600 dark:text-emerald-400">{{
                     selectedEq.servicePlan.agreementReference }}</span></p>
                 <p class="text-[10px] text-zinc-500 dark:text-zinc-400">Contract Expiration Date: {{
@@ -305,10 +306,13 @@
 
             <!-- Yearly Service Plan Cost Breakdown -->
             <div class="mt-4" *ngIf="selectedEq.servicePlan && selectedEq.servicePlan.serviceCosts">
-              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Yearly Service Plan Cost Breakdown (USD)</p>
-              <div class="border border-zinc-200 dark:border-zinc-900 rounded-xl overflow-hidden bg-white dark:bg-zinc-900">
+              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Yearly Service Plan Cost
+                Breakdown (LKR)</p>
+              <div
+                class="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-900">
                 <table class="w-full text-left text-xs border-collapse">
-                  <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-750">
+                  <thead
+                    class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-750">
                     <tr>
                       <th class="p-2.5">Cost Category</th>
                       <th class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">Year {{ y }}</th>
@@ -317,29 +321,35 @@
                   <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                     <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
                       <td class="p-2.5 font-medium text-zinc-800 dark:text-zinc-200">Service Cost</td>
-                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{ selectedEq.servicePlan.serviceCosts['year' + y] | number }}</td>
+                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{
+                        selectedEq.servicePlan.serviceCosts['year' + y] | number }}</td>
                     </tr>
                     <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
                       <td class="p-2.5 font-medium text-zinc-800 dark:text-zinc-200">Labour Cost</td>
-                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{ selectedEq.servicePlan.labourCosts['year' + y] | number }}</td>
+                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{
+                        selectedEq.servicePlan.labourCosts['year' + y] | number }}</td>
                     </tr>
                     <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
                       <td class="p-2.5 font-medium text-zinc-800 dark:text-zinc-200">Transport Cost</td>
-                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{ selectedEq.servicePlan.transportCosts['year' + y] | number }}</td>
+                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{
+                        selectedEq.servicePlan.transportCosts['year' + y] | number }}</td>
                     </tr>
                     <tr class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
                       <td class="p-2.5 font-medium text-zinc-800 dark:text-zinc-200">Other Cost</td>
-                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{ selectedEq.servicePlan.otherCosts['year' + y] | number }}</td>
+                      <td class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">{{
+                        selectedEq.servicePlan.otherCosts['year' + y] | number }}</td>
                     </tr>
                     <!-- Total Row -->
-                    <tr class="bg-zinc-50 dark:bg-zinc-900/10 font-bold border-t border-zinc-200 dark:border-zinc-700">
+                    <tr
+                      class="bg-zinc-50/50 dark:bg-zinc-100/10 font-bold border-t border-zinc-200 dark:border-zinc-700">
                       <td class="p-2.5 text-zinc-900 dark:text-zinc-100">Total Contract Cost</td>
-                      <td class="p-2.5 text-center text-emerald-600 dark:text-emerald-400" *ngFor="let y of [1,2,3,4,5]">
+                      <td class="p-2.5 text-center text-emerald-600 dark:text-emerald-400"
+                        *ngFor="let y of [1,2,3,4,5]">
                         {{ (
-                          (selectedEq.servicePlan.serviceCosts['year' + y] || 0) +
-                          (selectedEq.servicePlan.labourCosts['year' + y] || 0) +
-                          (selectedEq.servicePlan.transportCosts['year' + y] || 0) +
-                          (selectedEq.servicePlan.otherCosts['year' + y] || 0)
+                        (selectedEq.servicePlan.serviceCosts['year' + y] || 0) +
+                        (selectedEq.servicePlan.labourCosts['year' + y] || 0) +
+                        (selectedEq.servicePlan.transportCosts['year' + y] || 0) +
+                        (selectedEq.servicePlan.otherCosts['year' + y] || 0)
                         ) | number }}
                       </td>
                     </tr>
@@ -352,25 +362,32 @@
             <div class="mt-4" *ngIf="selectedEq.servicePlan && !selectedEq.servicePlan.serviceCosts">
               <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Yearly Plan Cost Matrix</p>
               <div class="grid grid-cols-5 gap-3">
-                <div *ngFor="let key of [1,2,3,4,5]" class="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 text-center">
+                <div *ngFor="let key of [1,2,3,4,5]"
+                  class="p-3 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 text-center">
                   <p class="text-[10px] font-bold text-zinc-400 uppercase">Year {{ key }}</p>
                   <!-- <p class="text-xs font-bold text-emerald-600 dark:text-emerald-450 mt-1">{{ selectedEq.servicePlan.yearlyPricing[key] | number }} LKR</p> -->
                 </div>
               </div>
             </div>
+
             <!-- Spare Parts Pricing Matrix -->
-            <div class="mt-4" *ngIf="selectedEq.servicePlan && selectedEq.servicePlan.sparePartsCosts && selectedEq.servicePlan.sparePartsCosts.length > 0">
-              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Estimated Spare Parts Pricing Matrix</p>
-              <div class="border border-zinc-200 dark:border-zinc-855 rounded-xl overflow-hidden bg-white dark:bg-zinc-900">
+            <div class="mt-4"
+              *ngIf="selectedEq.servicePlan && selectedEq.servicePlan.sparePartsCosts && selectedEq.servicePlan.sparePartsCosts.length > 0">
+              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Estimated Spare Parts Pricing
+                Matrix</p>
+              <div
+                class="border border-zinc-200 dark:border-zinc-855 rounded-xl overflow-hidden bg-white dark:bg-zinc-900">
                 <table class="w-full text-left text-xs border-collapse">
-                  <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-750">
+                  <thead
+                    class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-750">
                     <tr>
                       <th class="p-2.5">Spare Part Name</th>
                       <th class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">Year {{ y }}</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                    <tr *ngFor="let part of selectedEq.servicePlan.sparePartsCosts" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
+                    <tr *ngFor="let part of selectedEq.servicePlan.sparePartsCosts"
+                      class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
                       <td class="p-2.5 font-medium text-zinc-800 dark:text-zinc-200">{{ part.name }}</td>
                       <td class="p-2.5 text-center text-zinc-600 dark:text-zinc-400">{{ part.year1 | number }}</td>
                       <td class="p-2.5 text-center text-zinc-600 dark:text-zinc-400">{{ part.year2 | number }}</td>
@@ -416,9 +433,14 @@
       <div
         class="px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50/50 dark:bg-zinc-900/50 sticky top-0 z-10">
         <div>
-          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-650 dark:text-emerald-400">Equipment
-            Setup</span>
-          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">Register Biomedical Equipment Asset</h3>
+          <span class="text-[10px] uppercase font-bold tracking-wider">
+            {{ isEditMode ? 'Equipment Update' : 'Equipment Setup' }}
+          </span>
+          <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50">
+            {{ isEditMode
+            ? 'Update Biomedical Equipment Asset'
+            : 'Register Biomedical Equipment Asset' }}
+          </h3>
         </div>
         <button (click)="closeAddModal()"
           class="p-1.5 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 transition-colors">
@@ -533,7 +555,7 @@
         </div>
 
         <!-- Service Plan / Contract (New) -->
-        <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-emerald-50/20 dark:bg-emerald-900/10">
+        <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-emerald-50/20 dark:bg-zinc-900">
           <div class="flex items-center justify-between mb-4">
             <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">Manufacturer Service
               Plan</h4>
@@ -608,19 +630,22 @@
             </div>
 
             <!-- Add Est. Spare Parts costs sub-form -->
-            <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-900/10 mt-4">
-              <h5 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider font-semibold">Add Estimated Spare Parts Costs</h5>
-              
-              <div class="grid grid-cols-1 md:grid-cols-7 gap-3 items-end mb-4">
-                <div class="md:col-span-2">
+            <div
+              class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-emerald-900/10 mt-4">
+              <h5
+                class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider font-semibold">
+                Add Estimated Spare Parts Costs</h5>
+
+              <div class="grid grid-cols-1 md:grid-cols-9 gap-3 items-end mb-4">
+                <div class="md:col-span-3">
                   <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Spare Part Name</label>
-                  <input type="text" [(ngModel)]="tempSparePartName" placeholder="e.g. Helium Refill 50L"
-                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-250 focus:outline-none" />
+                  <input type="text" [(ngModel)]="tempSparePartName" placeholder="Part Name"
+                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
                 </div>
                 <div *ngFor="let y of [1,2,3,4,5]">
                   <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Year {{y}} (LKR)</label>
                   <input type="number" [(ngModel)]="tempSparePartCosts[y-1]"
-                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-250 focus:outline-none" />
+                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
                 </div>
                 <div class="flex justify-end">
                   <button (click)="addSparePartCostToBuffer()"
@@ -631,10 +656,12 @@
               </div>
 
               <!-- Spare Parts Costs Buffer Table -->
-              <div class="border border-zinc-200 dark:border-zinc-750 rounded-lg overflow-hidden bg-white dark:bg-zinc-900"
+              <div
+                class="border border-zinc-200 dark:border-zinc-750 rounded-lg overflow-hidden bg-white dark:bg-zinc-900"
                 *ngIf="sparePartsCostsBuffer.length > 0">
                 <table class="w-full text-left text-xs border-collapse">
-                  <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold border-b border-zinc-200 dark:border-zinc-750">
+                  <thead
+                    class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold border-b border-zinc-200 dark:border-zinc-750">
                     <tr>
                       <th class="p-2.5">Part Name</th>
                       <th class="p-2.5 text-center" *ngFor="let y of [1,2,3,4,5]">Year {{y}}</th>
@@ -650,7 +677,8 @@
                       <td class="p-2.5 text-center">{{ item.year4 | number }}</td>
                       <td class="p-2.5 text-center">{{ item.year5 | number }}</td>
                       <td class="p-2.5 text-right">
-                        <button (click)="removeSparePartCostFromBuffer(i)" class="p-1 hover:bg-red-50 text-red-500 rounded">
+                        <button (click)="removeSparePartCostFromBuffer(i)"
+                          class="p-1 hover:bg-red-50 text-red-500 rounded">
                           <i class="pi pi-trash"></i>
                         </button>
                       </td>
@@ -663,7 +691,7 @@
         </div>
 
         <!-- Add sub-components sub-form -->
-        <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-900/20">
+        <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-900">
           <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Add
             Sub-components / Tracked Parts</h4>
 
@@ -671,29 +699,29 @@
             <div>
               <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part Name</label>
               <input type="text" [(ngModel)]="tempCompName" placeholder="e.g. ECG Leads Cord"
-                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-250 focus:outline-none" />
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
             </div>
             <div>
               <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part / Model Number</label>
               <input type="text" [(ngModel)]="tempCompPart" placeholder="e.g. PL-CORD-02"
-                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-250 focus:outline-none" />
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
             </div>
             <div>
               <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Serial Number (Optional)</label>
               <input type="text" [(ngModel)]="tempCompSerial" placeholder="e.g. B-998821"
-                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-250 focus:outline-none font-mono" />
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none font-mono" />
             </div>
             <div class="flex gap-2">
               <div class="flex-1">
                 <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Component Type</label>
                 <select [(ngModel)]="tempCompType"
-                  class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-900 dark:text-zinc-250 focus:outline-none">
+                  class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none">
                   <option value="Serialized">Serialized</option>
                   <option value="Consumable">Consumable</option>
                   <option value="Minor/Non-tracked">Minor/Non-tracked</option>
                 </select>
               </div>
-              <button (click)="addComponentToBuffer()"
+              <button (click)="addPartsToBuffer()"
                 class="px-3.5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition-colors flex items-center justify-center">
                 <i class="pi pi-plus text-xs"></i>
               </button>
@@ -702,7 +730,7 @@
 
           <!-- Buffer table -->
           <div class="border border-zinc-200 dark:border-zinc-750 rounded-lg overflow-hidden bg-white dark:bg-zinc-900"
-            *ngIf="componentBuffer.length > 0">
+            *ngIf="partsBuffer.length > 0">
             <table class="w-full text-left text-xs border-collapse">
               <thead
                 class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 font-semibold border-b border-zinc-200 dark:border-zinc-750">
@@ -715,7 +743,7 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                <tr *ngFor="let item of componentBuffer; let i = index">
+                <tr *ngFor="let item of partsBuffer; let i = index">
                   <td class="p-2.5 font-medium">{{ item.name }}</td>
                   <td class="p-2.5 font-mono text-[10px] text-zinc-400">{{ item.partNumber }}</td>
                   <td class="p-2.5 font-mono">{{ item.serialNumber || 'N/A' }}</td>
@@ -742,7 +770,7 @@
         </button>
         <button (click)="saveEquipment()"
           class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow transition-colors">
-          Register Equipment
+          {{ isEditMode ? 'Update Equipment' : 'Register Equipment' }}
         </button>
       </div>
 
@@ -780,7 +808,7 @@
           <select [(ngModel)]="assignDestInstId"
             class="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl p-2.5 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer">
             <option value="">-- Select Institution --</option>
-            <ng-container *ngFor="let inst of institutions">
+            <ng-container *ngFor="let inst of institutions()">
               <!-- Exclude PDHS/RDHS offices as assignments are meant for hospitals/clinics -->
               <option *ngIf="inst.type !== 'PDHS Office' && inst.type !== 'RDHS Office'" [value]="inst.id">
                 {{ inst.name }} ({{ inst.type }})

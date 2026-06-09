@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
-import { Equipment, EquipmentCategory, Institution, EquipmentComponent, UserDto } from '../../core/models/biomed.interface';
-import { AuthService } from '../../core/services/auth.service';
+import { Equipment, EquipmentCategory, Institution, EquipmentParts } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
+import { UpsertService } from '../../core/services/upsert.service';
 
 @Component({
   selector: 'app-inventory',
@@ -55,7 +55,7 @@ export class InventoryComponent implements OnInit {
   public newEqReceiptDate = null;
   public newEqWarranty = 12;
   // Sub-components adding buffer
-  public componentBuffer: Omit<EquipmentComponent, 'id'>[] = [];
+  public componentBuffer: Omit<EquipmentParts, 'id'>[] = [];
   public tempCompName = '';
   public tempCompPart = '';
   public tempCompSerial = '';
@@ -82,7 +82,9 @@ export class InventoryComponent implements OnInit {
   public assignEqId = '';
   public assignDestInstId = '';
 
-  constructor(private userFacade: UserFacadeService, private stateService: BiomedStateService) { }
+  constructor(private userFacade: UserFacadeService,
+    private upsertService: UpsertService,
+    private stateService: BiomedStateService) { }
 
   ngOnInit() {
     this.applyFilters();
@@ -246,7 +248,7 @@ export class InventoryComponent implements OnInit {
     }
 
     // Save sub-components
-    const components: EquipmentComponent[] = this.componentBuffer.map((c, i) => ({
+    const parts: EquipmentParts[] = this.componentBuffer.map((c, i) => ({
       ...c,
       id: `eqc_${Date.now()}_${i}`
     }));
@@ -267,7 +269,7 @@ export class InventoryComponent implements OnInit {
       dateOfManufacture: this.newEqMfgDate || null, //new Date().toISOString().split('T')[0],
       dateOfReceipt: this.newEqReceiptDate || null,// || new Date().toISOString().split('T')[0],
       warrantyPeriodMonths: this.newEqWarranty,
-      components,
+      components: parts,
       status: 'PDHS Store'
     };
 
@@ -287,11 +289,12 @@ export class InventoryComponent implements OnInit {
         otherCosts: yearObj(this.spOtherCosts),
         sparePartsCosts: this.sparePartsCostsBuffer
       };
+
     }
 
     //this.stateService.addEquipment(eqData);
 
-    this.stateService.addEquipment(eqData).subscribe({
+    this.upsertService.upsertEquipment(eqData).subscribe({
       next: (result) => {
         console.log('Equipment saved', result);
         this.showAddModal = false;
@@ -362,7 +365,7 @@ export class InventoryComponent implements OnInit {
     if (!inst) return;
 
     // Direct assignment to institution
-    this.stateService.assignEquipment(this.assignEqId, this.assignDestInstId, 'Institution', 1);
+    //this.stateService.assignEquipment(this.assignEqId, this.assignDestInstId, 'Institution', 1);
     this.showAssignModal = false;
     this.selectedEq = null;
   }

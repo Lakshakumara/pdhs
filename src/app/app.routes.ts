@@ -11,6 +11,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/inventory/inventory.component').then(m => m.InventoryComponent)
   },
   {
+    path: 'equipment',
+    loadComponent: () => import('./features/equipment/equipment.component').then(m => m.EquipmentComponent)
+  },
+  {
     path: 'repairs',
     loadComponent: () => import('./features/repairs/repairs.component').then(m => m.RepairsComponent)
   },
@@ -25,6 +29,10 @@ export const routes: Routes = [
   {
     path: 'institute',
     loadChildren: () => import('./features/institute/institute.routes').then(m => m.instituteRoutes)
+  },
+   {
+    path: 'usermanagement',
+    loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent)
   },
   { path: '**', redirectTo: 'dashboard' }
 ];

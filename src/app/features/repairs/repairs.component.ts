@@ -13,6 +13,8 @@ import {
   UserDto,
 } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
+import { PermissionService } from '../../core/auth/permission.service';
+import { QueryService } from '../../core/services/query.service';
 
 @Component({
   selector: 'app-repairs',
@@ -59,19 +61,22 @@ export class RepairsComponent implements OnInit {
   public tempPartId = '';
   public tempPartQty = 1;
 
-  constructor(private userFacade: UserFacadeService, private stateService: BiomedStateService) { }
+  constructor(
+      public permission: PermissionService,
+          private queryService: QueryService,
+      public userApi: UserFacadeService, private stateService: BiomedStateService) { }
 
   ngOnInit() {
 
-    this.loadMyEquipment();
+    this.getEquipment();
     this.applyFilters();
-    this.stateService.institutions$.subscribe(list => {
+    /*this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
     });
 
     this.stateService.equipment$.subscribe(list => {
       this.loadMyEquipment();
-    });
+    });*/
 
     this.stateService.repairRequests$.subscribe(list => {
       this.requests = list;
@@ -89,65 +94,31 @@ export class RepairsComponent implements OnInit {
   }
 
   // Pre-load equipment options for submitting request based on active user context
-  private loadMyEquipment() {
-    if (!this.userFacade.currentUser()) return;
-    const allEq = this.stateService.equipmentSubject.value; // load direct list
-    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
-      this.equipmentList = allEq.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
-    } else {
-      this.equipmentList = allEq.filter(e => e.status === 'Assigned'); // Show all active assigned items
+  
+  getEquipment() {
+    if (this.userApi.currentSession() == null) {
+      console.log('return equipment sessionis null')
+      return
     }
+    this.queryService.getEquipment(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchTerm(),
+      this.selectedCategory(),
+      this.selectedStatus(),
+      this.selectedInstitutionId()
+    ).subscribe(result => {
+      this.equipments.set(result.items);
+      this.total.set(result.total);
+    });
   }
-
   public onEqChange() {
     this.reqCompId = '';
     const eq = this.equipmentList.find(e => e.id === this.reqEqId);
     this.selectedEqComponentsList = eq ? eq.components : [];
   }
 
-  public applyFilters() {
-    if (!this.userFacade.currentUser()) return;
-
-    const role = this.userFacade.currentUser()?.roles[0]?.role;
-    let list = [...this.requests];
-
-    // 1. Role boundaries
-    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'RDHS' && this.userFacade.currentUser()?.districtId) {
-      const districtInstIds = this.institutions
-        .filter(i => i.districtId === this.userFacade.currentUser()?.districtId)
-        .map(i => i.id);
-      list = list.filter(r => districtInstIds.includes(r.institutionId));
-    } else if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
-      list = list.filter(r => r.institutionId === this.userFacade.currentUser()?.institutionId);
-    }
-
-    // 2. Status match (joins request with work order status)
-    if (this.selectedStatus) {
-      list = list.filter(r => {
-        const order = this.workOrders.find(o => o.repairRequestId === r.id);
-        return order?.status === this.selectedStatus;
-      });
-    }
-
-    // 3. Priority match
-    if (this.selectedPriority) {
-      list = list.filter(r => r.priority === this.selectedPriority);
-    }
-
-    // 4. Text search
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      list = list.filter(r =>
-        r.id.toLowerCase().includes(term) ||
-        r.equipmentName.toLowerCase().includes(term) ||
-        r.faultDescription.toLowerCase().includes(term) ||
-        r.equipmentSerialNumber.toLowerCase().includes(term) ||
-        r.institutionName.toLowerCase().includes(term)
-      );
-    }
-
-    this.filteredRequests = list;
-  }
+  
 
   // Get matching work order
   public getWO(reqId: string): WorkOrder | undefined {
@@ -346,3 +317,58 @@ export class RepairsComponent implements OnInit {
     return this.institutions.find(i => i.id === id)?.name || id;
   }
 }
+/*
+
+  private loadMyEquipment() {
+    if (!this.userFacade.currentUser()) return;
+    const allEq = this.stateService.equipmentSubject.value; // load direct list
+    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
+      this.equipmentList = allEq.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
+    } else {
+      this.equipmentList = allEq.filter(e => e.status === 'Assigned'); // Show all active assigned items
+    }
+  }
+public applyFilters() {
+    if (!this.userFacade.currentUser()) return;
+
+    const role = this.userFacade.currentUser()?.roles[0]?.role;
+    let list = [...this.requests];
+
+    // 1. Role boundaries
+    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'RDHS' && this.userFacade.currentUser()?.districtId) {
+      const districtInstIds = this.institutions
+        .filter(i => i.districtId === this.userFacade.currentUser()?.districtId)
+        .map(i => i.id);
+      list = list.filter(r => districtInstIds.includes(r.institutionId));
+    } else if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
+      list = list.filter(r => r.institutionId === this.userFacade.currentUser()?.institutionId);
+    }
+
+    // 2. Status match (joins request with work order status)
+    if (this.selectedStatus) {
+      list = list.filter(r => {
+        const order = this.workOrders.find(o => o.repairRequestId === r.id);
+        return order?.status === this.selectedStatus;
+      });
+    }
+
+    // 3. Priority match
+    if (this.selectedPriority) {
+      list = list.filter(r => r.priority === this.selectedPriority);
+    }
+
+    // 4. Text search
+    if (this.searchTerm.trim()) {
+      const term = this.searchTerm.toLowerCase();
+      list = list.filter(r =>
+        r.id.toLowerCase().includes(term) ||
+        r.equipmentName.toLowerCase().includes(term) ||
+        r.faultDescription.toLowerCase().includes(term) ||
+        r.equipmentSerialNumber.toLowerCase().includes(term) ||
+        r.institutionName.toLowerCase().includes(term)
+      );
+    }
+
+    this.filteredRequests = list;
+  }
+*/

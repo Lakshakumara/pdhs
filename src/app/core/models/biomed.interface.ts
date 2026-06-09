@@ -1,13 +1,4 @@
-export interface ActiveRole {
-  role: RoleType;
-  scopeType: ScopeType;
-  scopeId: string | null;
-}
-
-export interface UserSession {
-  user: UserDto;
-  activeRole: ActiveRole;
-}
+import { ScopeType } from "../auth/permission.types";
 
 export interface District {
   id: string;
@@ -35,24 +26,6 @@ export interface Institution {
   districtId?: string; // Optional (PDHS Office has no district)
   active: boolean;
 }
-
-/*export type UserRole =
-  | 'System Administrator'
-  | 'Biomedical Technician'
-  | 'Procurement Officer'
-  | 'PDHS Viewer'
-  | 'RDHS Officer'
-  | 'Institution User';
-
-export interface User {
-  id: string;
-  username: string;
-  fullName: string;
-  role: UserRole;
-  districtId?: string; // Standard for RDHS Officer
-  institutionId?: string; // Standard for Institution User
-  active: boolean;
-}*/
 
 export interface UserDto {
   id: string;
@@ -83,6 +56,16 @@ export interface UserRoleDto {
   assignedAt: string;
   assignedById: string | null;
 }
+export interface UserSession {
+  user: UserDto;
+  activeRole: ActiveRole;
+}
+export interface ActiveRole {
+  role: RoleType;
+  scopeType: ScopeType;
+  scopeId: string | null;
+}
+
 export type RoleType =
   | 'SUPER_ADMIN_PDHS'
   | 'ADMIN_PDHS'
@@ -98,7 +81,6 @@ export type RoleType =
   | 'PROCUREMENT_OFFICER'
   | 'INSTITUTION_USER';
   
-  export type ScopeType = 'PDHS' | 'RDHS' | 'INSTITUTE';
 
 export type EquipmentCategory =
   | 'Diagnostic'
@@ -123,7 +105,7 @@ export interface ServicePlan {
   sparePartsCosts?: any;
 }
 
-export interface EquipmentComponent {
+export interface EquipmentParts {
   id: string;
   name: string;
   description: string;
@@ -153,9 +135,10 @@ export interface Equipment {
   expiryDate?: string | null;
   warrantyPeriodMonths: number;
   servicePlan?: ServicePlan;
-  components: EquipmentComponent[];
+  components: EquipmentParts[];
   // Location Tracking
   assignedInstitutionId?: string;
+  assignedInstitution?: Institution;
   status: 'PDHS Store' | 'In Transit' | 'Assigned';
 }
 
@@ -287,4 +270,18 @@ export interface AuditLog {
   entityName: string;
   recordId: string;
   description: string;
+}
+
+
+export interface PagedResult<T> {
+
+  items: T[];
+
+  page: number;
+
+  size: number;
+
+  total: number;
+
+  totalPages: number;
 }

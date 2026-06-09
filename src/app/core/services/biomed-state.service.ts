@@ -6,7 +6,7 @@ import {
   District,
   Institution,
   Equipment,
-  EquipmentComponent,
+  EquipmentParts,
   EquipmentAssignment,
   RepairRequest,
   WorkOrder,
@@ -27,8 +27,8 @@ import {
 export class BiomedStateService {
   private baseUrl = 'http://localhost:3000/biomedical-state'; // Adjust if needed, or use environment variable
 
-  private currentUserDtoSubject = new BehaviorSubject<UserDto | null>(null);
-  public currentUserDto$ = this.currentUserDtoSubject.asObservable();
+  //private currentUserDtoSubject = new BehaviorSubject<UserDto | null>(null);
+  //public currentUserDto$ = this.currentUserDtoSubject.asObservable();
 
   private usersSubject = new BehaviorSubject<UserDto[]>([]);
   public usersDto$ = this.usersSubject.asObservable();
@@ -74,11 +74,11 @@ export class BiomedStateService {
   }
 
   private initData(): void {
-    this.fetchDistricts();
-    this.fetchInstitutions();
+    //this.fetchDistricts();
+    //this.fetchInstitutions();
     this.fetchUsers();
-    this.fetchEquipment();
-    this.fetchAssignments();
+    //this.fetchEquipment();
+    /*this.fetchAssignments();
     this.fetchRepairRequests();
     this.fetchWorkOrders();
     this.fetchSuppliers();
@@ -86,13 +86,7 @@ export class BiomedStateService {
     this.fetchProcurementPlans();
     this.fetchPurchaseOrders();
     this.fetchGrns();
-    this.fetchAuditLogs();
-    // Set default active user from fetched users or null
-    this.usersSubject.subscribe(users => {
-      if (users.length > 0) {
-        this.currentUserDtoSubject.next(users[0]);
-      }
-    });
+    this.fetchAuditLogs();*/
   }
 
   private handleError(error: any) {
@@ -120,13 +114,13 @@ export class BiomedStateService {
       .pipe(catchError(this.handleError))
       .subscribe(users => this.usersSubject.next(users));
   }
-
+/*
   // Equipment
   private fetchEquipment(): void {
     this.http.get<Equipment[]>(`${this.baseUrl}/equipment`)
       .pipe(catchError(this.handleError))
       .subscribe(equipment => this.equipmentSubject.next(equipment));
-  }
+  }*/
 
   // Assignments
   private fetchAssignments(): void {
@@ -200,53 +194,15 @@ export class BiomedStateService {
     // setTimeout(() => this.fetchAuditLogs(), 1000);
   }
 
-  // Equipment Master Actions
-  public addEquipment(eq: Omit<Equipment, 'id'>): Observable<Equipment> {
-    return this.http.post<Equipment>(`${this.baseUrl}/equipment`, eq).pipe(
-      tap(newEquipment => {
-        // Optimistically update the list? We'll refetch for simplicity.
-        this.fetchEquipment();
-        this.logAudit('CREATE', 'Equipment', newEquipment.id, `Registered new equipment: ${newEquipment.name} (${newEquipment.serialNumber})`);
-      }),
-      catchError(this.handleError)
-    );
-  }
 
-  public updateEquipment(eq: Equipment): Observable<Equipment> {
-    return this.http.put<Equipment>(`${this.baseUrl}/equipment/${eq.id}`, eq).pipe(
-      tap(updatedEquipment => {
-        this.fetchEquipment();
-        this.logAudit('UPDATE', 'Equipment', updatedEquipment.id, `Updated equipment specs/status for: ${updatedEquipment.name}`);
-      }),
-      catchError(this.handleError)
-    );
-  }
-
-  // Equipment Assign Workflow
-  public assignEquipment(eqId: string, toInstitutionId: string, toEntity: 'RDHS' | 'Institution', quantity: number): Observable<EquipmentAssignment> {
-    const body = { toInstitutionId, toEntity, quantity };
-    return this.http.post<EquipmentAssignment>(`${this.baseUrl}/equipment/${eqId}/assign`, body).pipe(
-      tap(assignment => {
-        this.fetchEquipment();
-        this.fetchAssignments();
-        // Get institution name for log
-        const institutions = this.institutionsSubject.value;
-        const dest = institutions.find(i => i.id === toInstitutionId);
-        const destName = dest ? dest.name : 'Unknown';
-        this.logAudit('CREATE', 'EquipmentAssignment', assignment.id, `Assigned equipment to ${destName}`);
-      }),
-      catchError(this.handleError)
-    );
-  }
-
-  // Repair Request Operations
+// Repair Request Operations
   public submitRepairRequest(eqId: string, componentId: string | undefined, faultDescription: string, priority: RepairPriority): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
     const body = { equipmentId: eqId, componentId, faultDescription, priority };
     return this.http.post<{ repairRequest: RepairRequest; workOrder: WorkOrder }>(`${this.baseUrl}/repair-requests`, body).pipe(
       tap(result => {
         this.fetchRepairRequests();
         this.fetchWorkOrders();
-        this.fetchEquipment(); // in case status changed
+        //this.fetchEquipment(); // in case status changed
         this.logAudit('CREATE', 'RepairRequest', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
       }),
       catchError(this.handleError)
@@ -325,7 +281,7 @@ export class BiomedStateService {
         if (status === 'Approved') {
           // When PO is approved, backend creates GRN and updates inventory/equipment
           this.fetchInventoryItems();
-          this.fetchEquipment();
+          //this.fetchEquipment();
         }
         this.logAudit('UPDATE', 'PurchaseOrder', poId, `Purchase order ${updatedPo.poNumber} was ${status.toLowerCase()}.`);
       }),
@@ -339,7 +295,7 @@ export class BiomedStateService {
       tap(grn => {
         this.fetchGrns();
         this.fetchInventoryItems();
-        this.fetchEquipment();
+        //this.fetchEquipment();
         this.logAudit('CREATE', 'GoodsReceivedNote', grn.id, `Goods Received Note confirmed for PO: ${grn.poNumber}. Stock automatically updated.`);
       }),
       catchError(this.handleError)
@@ -377,4 +333,25 @@ export class BiomedStateService {
       catchError(this.handleError)
     );
   }
+
+  
+/*
+  // Equipment Assign Workflow
+  public assignEquipment(eqId: string, toInstitutionId: string, toEntity: 'RDHS' | 'Institution', quantity: number): Observable<EquipmentAssignment> {
+    const body = { toInstitutionId, toEntity, quantity };
+    return this.http.post<EquipmentAssignment>(`${this.baseUrl}/equipment/${eqId}/assign`, body).pipe(
+      tap(assignment => {
+        //this.fetchEquipment();
+        this.fetchAssignments();
+        // Get institution name for log
+        const institutions = this.institutionsSubject.value;
+        const dest = institutions.find(i => i.id === toInstitutionId);
+        const destName = dest ? dest.name : 'Unknown';
+        this.logAudit('CREATE', 'EquipmentAssignment', assignment.id, `Assigned equipment to ${destName}`);
+      }),
+      catchError(this.handleError)
+    );
+  }
+*/
+  
 }

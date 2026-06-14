@@ -1,0 +1,79 @@
+<div class="admin-panel p-4">
+  <h2>Admin Panel</h2>
+  
+  <p-tabs value="users">
+    <p-tablist>
+      <p-tab value="users">Users</p-tab>
+      <p-tab value="institutions">Institutions</p-tab>
+      <p-tab value="districts">Districts</p-tab>
+      <p-tab value="audit">Audit Logs</p-tab>
+      <p-tab value="suppliers">Suppliers</p-tab>
+    </p-tablist>
+
+    <p-tabpanels>
+      <p-tabpanel value="users">
+        <!-- Render the existing users component -->
+        <app-users></app-users>
+      </p-tabpanel>
+      
+      <p-tabpanel value="institutions">
+        <p-table [value]="institutions">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>District ID</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-inst>
+            <tr>
+              <td>{{ inst.id }}</td>
+              <td>{{ inst.name }}</td>
+              <td>{{ inst.type }}</td>
+              <td>{{ inst.districtId }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-tabpanel>
+      
+      <p-tabpanel value="districts">
+        <p-table [value]="districts">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-dist>
+            <tr>
+              <td>{{ dist.id }}</td>
+              <td>{{ dist.name }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-tabpanel>
+      
+      <p-tabpanel value="audit">
+        <app-audit></app-audit>
+      </p-tabpanel>
+      
+      <p-tabpanel value="suppliers">
+        <p-table [value]="suppliers">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-sup>
+            <tr>
+              <td>{{ sup.id }}</td>
+              <td>{{ sup.name }}</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-tabpanel>
+    </p-tabpanels>
+  </p-tabs>
+</div>

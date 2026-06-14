@@ -7,15 +7,17 @@ import { QueryService } from '../../core/services/query.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UpsertService } from '../../core/services/upsert.service';
+import { HasPermissionDirective } from '../../core/auth/permission-directive';
+import { Permission } from '../../core/auth/permission.types';
 
 @Component({
   selector: 'app-equipment',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HasPermissionDirective],
   templateUrl: './equipment.component.html',
   styleUrl: './equipment.component.css',
 })
 export class EquipmentComponent implements OnInit {
-
+  readonly Permission = Permission;
   readonly institutions = signal<Institution[]>([]);
   // Filter properties
   public searchTerm = signal('');
@@ -107,8 +109,7 @@ export class EquipmentComponent implements OnInit {
       console.log('return institute sessionis null')
       return
     }
-    this.queryService.getInstitute(
-      1, 100
+    this.queryService.getInstitute(1, 100
     ).subscribe(result => {
       this.institutions.set(result.items);
     });
@@ -181,7 +182,6 @@ export class EquipmentComponent implements OnInit {
       });
 
   }
-
 
   // Register New Asset Modal
   public openAddModal() {

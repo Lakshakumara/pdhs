@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Equipment, Institution, PagedResult } from '../models/biomed.interface';
+import { Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder } from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
 
 
@@ -8,11 +8,23 @@ import { UserFacadeService } from './user-facade.service';
   providedIn: 'root',
 })
 export class QueryService {
+  
+
   private baseUrl = 'http://localhost:3000/api';
 
   constructor(
     public userApi: UserFacadeService,
     private http: HttpClient) { }
+
+  getUrgentRepairs() {
+    return this.http.get<any>(`${this.baseUrl}/dashboard/urgent-repairs`);
+  }
+  getCategoryDistribution() {
+    return this.http.get<any>(`${this.baseUrl}/dashboard/category-distribution`);
+  }
+  getSummary() {
+    return this.http.get<any>(`${this.baseUrl}/dashboard/summary`);
+  }
 
   getInstitute(
     page: number,
@@ -57,7 +69,7 @@ export class QueryService {
       params =
         params.set('search', search);
     }
-    
+
     if (status) {
       params =
         params.set('status', status);
@@ -79,4 +91,92 @@ export class QueryService {
       { params });
   }
 
+  getRepairRequest(
+    page: number,
+    size: number,
+    search?: string,
+    priority?: string,
+    status?: string,) {
+
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (search) {
+      params =
+        params.set('search', search);
+    }
+
+    if (status) {
+      params =
+        params.set('status', status);
+    }
+    if (priority) {
+      params =
+        params.set('priority', priority);
+    }
+
+
+    console.log('params sent', page, size, search, status, priority)
+    return this.http.get<PagedResult<RepairRequest>>(`${this.baseUrl}/repair-requests`,
+      { params });
+  }
+
+  getWorkOrder(
+    page: number,
+    size: number,
+    search?: string,
+    repairRequestId?: string,
+    status?: string,) {
+
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (search) {
+      params =
+        params.set('search', search);
+    }
+
+    if (status) {
+      params =
+        params.set('status', status);
+    }
+    if (repairRequestId) {
+      params =
+        params.set('repairRequestId', repairRequestId);
+    }
+
+
+    console.log('get word order params sent', page, size, search, status, repairRequestId)
+    return this.http.get<PagedResult<WorkOrder>>(`${this.baseUrl}/work-orders`,
+      { params });
+  }
+
+  getInventorytem(page: number,
+    size: number,
+    search?: string,
+    name?: string,
+    category?: string,) {
+
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (search) {
+      params =
+        params.set('search', search);
+    }
+
+    if (name) {
+      params =
+        params.set('name', name);
+    }
+    if (category) {
+      params =
+        params.set('category', category);
+    }
+    return this.http.get<PagedResult<InventoryItem>>(`${this.baseUrl}/inventory-items`,
+      { params });
+  }
 }

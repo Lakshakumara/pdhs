@@ -1,4 +1,4 @@
-import { ScopeType } from "../auth/permission.types";
+import { ScopeType, Permission } from "../auth/permission.types";
 
 export interface District {
   id: string;
@@ -53,12 +53,14 @@ export interface UserRoleDto {
   role: RoleType;
   scopeType: ScopeType;
   scopeId: string | null;
+  permission: Permission[] | null;
   assignedAt: string;
   assignedById: string | null;
 }
 export interface UserSession {
   user: UserDto;
   activeRole: ActiveRole;
+  permission: Permission[] | null;
 }
 export interface ActiveRole {
   role: RoleType;

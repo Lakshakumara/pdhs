@@ -1,41 +1,47 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
-import {
-  RepairRequest,
-  WorkOrder,
-  Equipment,
-  Institution,
-  InventoryItem,
-  RepairPriority,
-  WorkOrderStatus,
-  UserDto,
-} from '../../core/models/biomed.interface';
+
 import { UserFacadeService } from '../../core/services/user-facade.service';
-import { PermissionService } from '../../core/auth/permission.service';
 import { QueryService } from '../../core/services/query.service';
+import { UpsertService } from '../../core/services/upsert.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { RepairRequest, WorkOrder, Institution, Equipment, InventoryItem, RepairPriority, WorkOrderStatus } from '../../core/models/biomed.interface';
+import { HasPermissionDirective } from '../../core/auth/permission-directive';
+import { Permission } from '../../core/auth/permission.types';
+import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
 @Component({
   selector: 'app-repairs',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HasPermissionDirective, AutoCompleteModule],
   templateUrl: './repairs.component.html',
   styleUrl: './repairs.component.css'
 })
 export class RepairsComponent implements OnInit {
-  //public currentUser: UserDto | null = null;
-  public requests: RepairRequest[] = [];
-  public workOrders: WorkOrder[] = [];
-  public filteredRequests: RepairRequest[] = [];
+
+  readonly permission = Permission
+  //public requests: RepairRequest[] = [];
+  readonly workOrders = signal<WorkOrder[]>([]);
+  readonly repairRequests = signal<RepairRequest[]>([]);
 
   public institutions: Institution[] = [];
-  public equipmentList: Equipment[] = []; // Sub-list of equipment for submitting request
-  public inventoryItems: InventoryItem[] = []; // Store inventory list for technicians to pick spare parts
+  readonly equipments = signal<Equipment[]>([]);
+  readonly inventoryItems = signal<InventoryItem[]>([]); // Store inventory list for technicians to pick spare parts
+filteredItems: any[] | undefined;
+  // Pagination properties
+  readonly totalPages = signal(1);
+  readonly total = signal(0);
+  readonly currentPage = signal(1);
+  readonly pageSize = signal(10);
 
   // Filter properties
-  public searchTerm = '';
-  public selectedStatus = '';
   public selectedPriority = '';
+  // Filter properties
+  public searchTerm = signal('');
+  public selectedCategory = signal('');
+  public selectedStatus = signal('');
+  public selectedInstitutionId = signal('');
 
   // Modals
   public showDetailModal = false;
@@ -45,6 +51,8 @@ export class RepairsComponent implements OnInit {
   // Selected state
   public selectedReq: RepairRequest | null = null;
   public selectedWO: WorkOrder | null = null;
+  //readonly selectedWO = signal<WorkOrder>(null);
+
 
   // Submit Request Form State
   public reqEqId = '';
@@ -58,45 +66,86 @@ export class RepairsComponent implements OnInit {
   public techInspectedComponents: { componentId: string; componentName: string; inspected: boolean; conditionNotes: string }[] = [];
   // Buffer for parts used
   public techPartsUsed: { inventoryItemId: string; partName: string; quantityUsed: number; unitCost: number }[] = [];
-  public tempPartId = '';
+  public tempItem!:InventoryItem | null;
   public tempPartQty = 1;
 
   constructor(
-      public permission: PermissionService,
-          private queryService: QueryService,
-      public userApi: UserFacadeService, private stateService: BiomedStateService) { }
+    private queryService: QueryService,
+    private upsertService: UpsertService,
+    private notify: NotificationService,
+    private userFacade: UserFacadeService,
+    private stateService: BiomedStateService) { }
 
   ngOnInit() {
 
     this.getEquipment();
-    this.applyFilters();
-    /*this.stateService.institutions$.subscribe(list => {
+    this.getRepairRequest();
+    this.getWorkOrders();
+    this.getInventoryItem();
+    /*this.applyFilters();
+    this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
-    });
-
-    this.stateService.equipment$.subscribe(list => {
-      this.loadMyEquipment();
-    });*/
-
-    this.stateService.repairRequests$.subscribe(list => {
-      this.requests = list;
-      this.applyFilters();
-    });
-
-    this.stateService.workOrders$.subscribe(list => {
-      this.workOrders = list;
-      this.syncSelectedWO();
     });
 
     this.stateService.inventoryItems$.subscribe(list => {
       this.inventoryItems = list;
-    });
+    });*/
   }
 
   // Pre-load equipment options for submitting request based on active user context
-  
+
+  filterItems(event: AutoCompleteCompleteEvent) {
+    console.log('event', event.query)
+    //in a real application, make a request to a remote url with the query and return filtered results, for demo we filter at client side
+    this.queryService.getInventorytem(
+      this.currentPage(),
+      this.pageSize(),
+      event.query,
+      this.selectedCategory(),
+      this.selectedStatus(),
+    ).subscribe(result => {
+      this.inventoryItems.set(result.items);
+      this.total.set(result.total);
+    });
+  }
+
+  getInventoryItem() {
+    console.log('get equipment session ', this.userFacade.currentSession())
+    if (this.userFacade.currentSession() == null) {
+      console.log('return equipment sessionis null')
+      return
+    }
+    this.queryService.getInventorytem(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchTerm(),
+      this.selectedCategory(),
+      this.selectedStatus(),
+    ).subscribe(result => {
+      this.inventoryItems.set(result.items);
+      this.total.set(result.total);
+    });
+  }
+
+  getRepairRequest() {
+    if (this.userFacade.currentSession() == null) {
+      console.log('return equipment sessionis null')
+      return
+    }
+    this.queryService.getRepairRequest(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchTerm(),
+      this.selectedCategory(),
+      this.selectedStatus(),
+    ).subscribe(result => {
+      this.repairRequests.set(result.items);
+      this.total.set(result.total);
+    });
+  }
   getEquipment() {
-    if (this.userApi.currentSession() == null) {
+    console.log('get equipment session ', this.userFacade.currentSession())
+    if (this.userFacade.currentSession() == null) {
       console.log('return equipment sessionis null')
       return
     }
@@ -112,24 +161,41 @@ export class RepairsComponent implements OnInit {
       this.total.set(result.total);
     });
   }
-  public onEqChange() {
-    this.reqCompId = '';
-    const eq = this.equipmentList.find(e => e.id === this.reqEqId);
-    this.selectedEqComponentsList = eq ? eq.components : [];
+
+  getWorkOrders() {
+    this.queryService.getWorkOrder(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchTerm(),
+      this.selectedCategory(),
+      this.selectedStatus(),
+    ).subscribe(result => {
+      this.workOrders.set(result.items);
+      console.log('Wo received', result.items);
+      this.total.set(result.total);
+    });
+  }
+  public getWO(repairRequestId: string): any {
+    //console.log('getWO requeatedId ', repairRequestId)
+    return this.workOrders().find(o => o.repairRequestId === repairRequestId);
+  }
+  public applyFilters() {
   }
 
-  
-
-  // Get matching work order
-  public getWO(reqId: string): WorkOrder | undefined {
-    return this.workOrders.find(o => o.repairRequestId === reqId);
+  //trigger on ticket submit
+  public onEqChange() {
+    this.reqCompId = '';
+    const eq = this.equipments().find(e => e.id === this.reqEqId);
+    this.selectedEqComponentsList = eq ? eq.components : [];
   }
 
   // Details Dialog
   public openDetails(req: RepairRequest) {
     this.selectedReq = req;
-    this.selectedWO = this.getWO(req.id) || null;
+    this.selectedWO = this.getWO(req.id)
     this.showDetailModal = true;
+
+    //console.log('Detail Doalog data', this.selectedReq, this.selectedWO)
   }
 
   public closeDetails() {
@@ -160,39 +226,60 @@ export class RepairsComponent implements OnInit {
 
   public submitRequest() {
     if (!this.reqEqId || !this.reqFaultDesc.trim()) {
-      alert('Please select an equipment and describe the fault.');
+      this.notify.error('Please select an equipment and describe the fault.', '');
       return;
     }
 
-    this.stateService.submitRepairRequest(this.reqEqId, this.reqCompId || undefined, this.reqFaultDesc, this.reqPriority);
-    this.showRequestModal = false;
+    const submittedByUserId = this.userFacade.currentUser()?.id;
+    if (!submittedByUserId) {
+      this.notify.error('User Session Expired', 'Try Logging again')
+      return
+    }
+
+    this.upsertService.submitRepairRequest(this.reqEqId, this.reqCompId || undefined,
+      this.reqFaultDesc, this.reqPriority, submittedByUserId)
+      .subscribe({
+        next: result => {
+          console.log('result', result)
+          this.getEquipment();
+          this.showRequestModal = false;
+          this.notify.success('Repair request submitted successfully!', `Your repair request for ${result.repairRequest.equipmentName} has been submitted.`);
+        },
+        error: err => {
+          this.notify.error('Failed to submit repair request', err.message || 'An error occurred while submitting your request. Please try again.');
+        }
+      });
+
   }
 
   // Technician Actions Dialog (Diagnosis & Repairs updates)
-  public openTechnicianModal(req: RepairRequest) {
+  public openTechnicianModal(req: any) {
+    console.log('technical view', req)
     this.selectedReq = req;
-    const wo = this.getWO(req.id);
+    this.syncSelectedWO()
+
+    //setTimeout(() => {
+    const wo: any = this.selectedWO;
     if (!wo) return;
 
-    this.selectedWO = wo;
     this.diagnosisNotes = wo.diagnosisNotes || '';
 
     // Load components of this equipment for inspection checklist
-    const eqList = this.stateService.equipmentSubject.value;
-    const eqObj = eqList.find(e => e.id === req.equipmentId);
-
+    //const eqList = this.stateService.equipmentSubject.value;
+    //const eqObj:any = req.equipment;
+    //console.log('req.equipment technical view', eqObj)
     if (wo.inspectedComponents && wo.inspectedComponents.length > 0) {
       this.techInspectedComponents = [...wo.inspectedComponents];
     } else {
-      this.techInspectedComponents = eqObj
-        ? eqObj.components.map(c => ({ componentId: c.id, componentName: c.name, inspected: false, conditionNotes: '' }))
-        : [];
+      this.techInspectedComponents = req.equipment.components.map((c: any) =>
+        ({ componentId: c.id, componentName: c.name, inspected: false, conditionNotes: '' }))
     }
 
-    this.techPartsUsed = [...wo.partsUsed];
-    this.tempPartId = '';
+    this.techPartsUsed = [...(wo.partsUsed || [])];
+    this.tempItem = null;;
     this.tempPartQty = 1;
     this.showTechnicianModal = true;
+    // }, 500);
   }
 
   public closeTechnicianModal() {
@@ -203,29 +290,32 @@ export class RepairsComponent implements OnInit {
 
   // Technician Parts Add buffer
   public addPartToBuffer() {
-    if (!this.tempPartId) return;
-    const item = this.inventoryItems.find(i => i.id === this.tempPartId);
-    if (!item) return;
+    //console.log('temp ID', this.tempPartId)
+    //if (!this.tempPartId) return;
+    //const item = this.inventoryItems().find(i => i.id === this.tempPartId);
+    //console.log('tem', item)
+    if (this.tempItem === null) return;
 
-    if (item.currentStock < this.tempPartQty) {
-      alert(`Insufficient stock! Available in PDHS store: ${item.currentStock} units.`);
+    if (this.tempItem.currentStock < this.tempPartQty) {
+      this.notify.error(`Insufficient stock!`,` Available in PDHS store: ${this.tempItem.currentStock} units`);
       return;
     }
 
     // Check if item already added
-    const existing = this.techPartsUsed.find(p => p.inventoryItemId === this.tempPartId);
+    const existing = this.techPartsUsed.find(p => p.inventoryItemId === this.tempItem?.id);
+    //console.log('found', existing)
     if (existing) {
       existing.quantityUsed += this.tempPartQty;
     } else {
       this.techPartsUsed.push({
-        inventoryItemId: item.id,
-        partName: item.name,
+        inventoryItemId: this.tempItem.id,
+        partName: this.tempItem.name,
         quantityUsed: this.tempPartQty,
-        unitCost: item.costPerUnit
+        unitCost: this.tempItem.costPerUnit
       });
     }
 
-    this.tempPartId = '';
+    this.tempItem  = null;
     this.tempPartQty = 1;
   }
 
@@ -246,7 +336,7 @@ export class RepairsComponent implements OnInit {
         break;
       case 'Diagnose':
         if (!this.diagnosisNotes.trim()) {
-          alert('Please input your diagnostic findings first.');
+          this.notify.error('Please input your diagnostic findings first.','');
           return;
         }
         nextStatus = 'Diagnosed';
@@ -263,9 +353,14 @@ export class RepairsComponent implements OnInit {
         payload.partsUsed = this.techPartsUsed;
         break;
     }
-
-    this.stateService.updateWorkOrderStatus(this.selectedWO.id, nextStatus, payload);
-    this.closeTechnicianModal();
+console.log('work order', this.selectedWO.id, nextStatus, payload)
+    this.upsertService.updateWorkOrderStatus(this.selectedWO.id, nextStatus, payload)
+    .subscribe(result => {
+      console.log('result', result)
+      this.notify.success('Status Updated', '')
+      this.closeTechnicianModal();
+    });
+    
   }
 
   // Supervisor Verify and Close
@@ -278,8 +373,9 @@ export class RepairsComponent implements OnInit {
 
   // Role permissions helpers
   public canSubmit(): boolean {
-    if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' || this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS', 'ADMIN_RDHS', 'SUPER_ADMIN_RDHS', 'ADMIN_INSTITUTE', 'SUPER_ADMIN_INSTITUTE']);
+    return true;
+    // if (!this.userFacade.currentUser()) return false;
+    // return this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' || this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS', 'ADMIN_RDHS', 'SUPER_ADMIN_RDHS', 'ADMIN_INSTITUTE', 'SUPER_ADMIN_INSTITUTE']);
   }
 
   public isTechnician(): boolean {
@@ -308,7 +404,7 @@ export class RepairsComponent implements OnInit {
     switch (p) {
       case 'Emergency': return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 font-extrabold';
       case 'Urgent': return 'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 font-bold';
-      case 'Routine': return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-350';
+      case 'Routine': return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400';
       default: return 'bg-zinc-100 text-zinc-500';
     }
   }

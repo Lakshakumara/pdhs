@@ -23,7 +23,7 @@
   <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Registered Assets</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ totalAssets }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ totalAssets() }}</h3>
       <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 inline-block">
         <i class="pi pi-check-circle mr-1"></i>In Registry
       </span>
@@ -37,7 +37,7 @@
   <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Repair Work</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ activeRepairs }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ activeRepairs() }}</h3>
       <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold mt-1 inline-block">
         <i class="pi pi-cog mr-1"></i>In Technical Queue
       </span>
@@ -51,7 +51,7 @@
   <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Unassigned Requests</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ pendingRequests }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ pendingRequests() }}</h3>
       <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-1 inline-block">
         <i class="pi pi-exclamation-triangle mr-1"></i>Awaiting Acknowledge
       </span>
@@ -67,14 +67,14 @@
     class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Spare Parts Warning</p>
-      <h3 class="text-3xl font-bold mt-1" [class.text-red-500]="lowStockAlerts > 0" [class.text-zinc-950]="lowStockAlerts === 0" [class.dark:text-zinc-50]="lowStockAlerts === 0">
-        {{ lowStockAlerts }}
+      <h3 class="text-3xl font-bold mt-1" [class.text-red-500]="lowStockAlerts() > 0" [class.text-zinc-950]="lowStockAlerts() === 0" [class.dark:text-zinc-50]="lowStockAlerts() === 0">
+        {{ lowStockAlerts() }}
       </h3>
-      <span class="text-[10px] font-semibold mt-1 inline-block" [class.text-red-500]="lowStockAlerts > 0" [class.text-zinc-500]="lowStockAlerts === 0">
-        <i class="pi pi-bell mr-1"></i>{{ lowStockAlerts > 0 ? 'Critical low stock!' : 'Stock levels normal' }}
+      <span class="text-[10px] font-semibold mt-1 inline-block" [class.text-red-500]="lowStockAlerts() > 0" [class.text-zinc-500]="lowStockAlerts() === 0">
+        <i class="pi pi-bell mr-1"></i>{{ lowStockAlerts() > 0 ? 'Critical low stock!' : 'Stock levels normal' }}
       </span>
     </div>
-    <div class="w-12 h-12 rounded-xl flex items-center justify-center" [class.bg-red-50]="lowStockAlerts > 0" [class.dark:bg-red-950/40]="lowStockAlerts > 0" [class.text-red-500]="lowStockAlerts > 0" [class.bg-zinc-100]="lowStockAlerts === 0" [class.dark:bg-zinc-800]="lowStockAlerts === 0" [class.text-zinc-500]="lowStockAlerts === 0">
+    <div class="w-12 h-12 rounded-xl flex items-center justify-center" [class.bg-red-50]="lowStockAlerts() > 0" [class.dark:bg-red-950/40]="lowStockAlerts() > 0" [class.text-red-500]="lowStockAlerts() > 0" [class.bg-zinc-100]="lowStockAlerts() === 0" [class.dark:bg-zinc-800]="lowStockAlerts() === 0" [class.text-zinc-500]="lowStockAlerts() === 0">
       <i class="pi pi-bell text-xl"></i>
     </div>
   </div>
@@ -84,7 +84,7 @@
     class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Procurement Spend</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">LKR {{ totalProcurementSpend | number }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">LKR {{ totalProcurementSpend() | number }}</h3>
       <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1 inline-block">
         <i class="pi pi-credit-card mr-1"></i>Approved tenders
       </span>

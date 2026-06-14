@@ -1,23 +1,24 @@
-import { Component, effect, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from './core/services/biomed-state.service';
 import { UserDto, } from './core/models/biomed.interface';
 import { UserFacadeService } from './core/services/user-facade.service';
-import { QueryService } from './core/services/query.service';
 import { ToastModule } from 'primeng/toast';
-import { BrowserModule } from '@angular/platform-browser';
-
+import { AuthService } from './core/auth/auth.service';
+import { HasPermissionDirective } from './core/auth/permission-directive';
+import { Permission } from './core/auth/permission.types';
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FormsModule, ToastModule],
+  imports: [HasPermissionDirective, CommonModule, RouterOutlet, RouterLink, RouterLinkActive, FormsModule, ToastModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class App implements OnInit {
   protected readonly title = signal('pdhs');
 
+  public permission = Permission
   public users: UserDto[] = [];
   public selectedUserId?: string;
   public isDarkMode = false;
@@ -25,17 +26,17 @@ export class App implements OnInit {
 
   constructor(public userFacade: UserFacadeService,
     private stateService: BiomedStateService,
-    public apiService: QueryService) {
+    private authService: AuthService) {
 
-    this.userFacade.setSessionById('usr_admin');
-
+    // Removed the mock userFacade.setSessionById('usr_admin');
   }
+
   ngOnInit() {
     this.stateService.usersDto$.subscribe(list => {
       this.users = list;
+      this.switchRole('usr_admin')
     });
 
-    // Check system preference for dark mode
     if (localStorage.getItem('theme') === 'dark' ||
       (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
       this.isDarkMode = true;
@@ -47,7 +48,11 @@ export class App implements OnInit {
   }
 
   public switchRole(userId: string) {
-    this.userFacade.setSessionById(userId)
+    this.userFacade.setSessionById(userId);
+  }
+
+  public logout() {
+    this.authService.logout();
   }
 
   public toggleDarkMode() {
@@ -65,26 +70,23 @@ export class App implements OnInit {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
   }
 
-  // Permission checks for UI modules
   public hasAccess(module: string): boolean {
     if (!this.userFacade.currentUser()) return false;
 
     switch (module) {
       case 'dashboard':
       case 'inventory':
-        return true; // Everyone can view dashboard and inventory list
+        return true;
 
       case 'repairs':
-        // Everyone except Procurement Officers can view/manage repairs
         return !this.userFacade.hasAnyRole(['PROCUREMENT_OFFICER']);
 
       case 'procurement':
-        // Only Admin, Procurement Officers, and PDHS Viewers can access procurement
-        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'PROCUREMENT_OFFICER', 'VIEWER_PDHS']);//
+        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'PROCUREMENT_OFFICER', 'VIEWER_PDHS']);
 
       case 'audit':
-        // Only Admin can view full audit logs
-        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS']);
+      case 'admin':
+        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']);
 
       default:
         return false;

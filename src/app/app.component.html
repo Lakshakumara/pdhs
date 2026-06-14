@@ -51,21 +51,14 @@
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Dashboard</span>
         </a>
 
-        <a routerLink="/equipment" routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
+        <a *appHasPermission="permission.EQUIPMENT_VIEW" routerLink="/equipment" routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
           class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
           [title]="'Equipment Registry'" [class.justify-center]="isSidebarCollapsed">
           <i class="pi pi-box text-lg group-hover:scale-110 transition-transform"></i>
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Equipment Registry</span>
         </a>
 
-        <a routerLink="/inventory" routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
-          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
-          [title]="'Asset Registry'" [class.justify-center]="isSidebarCollapsed">
-          <i class="pi pi-box text-lg group-hover:scale-110 transition-transform"></i>
-          <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Asset Registry</span>
-        </a>
-
-        <a *ngIf="hasAccess('repairs')" routerLink="/repairs"
+        <a *appHasPermission="permission.REPAIR_REQUEST_VIEW" routerLink="/repairs"
           routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
           class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
           [title]="'Repairs & Work Orders'" [class.justify-center]="isSidebarCollapsed">
@@ -73,7 +66,7 @@
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Repairs & Orders</span>
         </a>
 
-        <a *ngIf="hasAccess('procurement')" routerLink="/procurement"
+        <a *appHasPermission="permission.PROCUREMENT_VIEW" routerLink="/procurement"
           routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
           class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
           [title]="'Procurement & Store'" [class.justify-center]="isSidebarCollapsed">
@@ -81,7 +74,7 @@
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Procurement & Store</span>
         </a>
 
-        <a *ngIf="hasAccess('audit')" routerLink="/audit"
+        <a *appHasPermission="permission.AUDIT_VIEW" routerLink="/audit"
           routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
           class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
           [title]="'Audit Log'" [class.justify-center]="isSidebarCollapsed">
@@ -89,13 +82,20 @@
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Audit System</span>
         </a>
 
-        <a routerLink="/usermanagement"
+        <a *ngIf="hasAccess('admin')" routerLink="/admin"
           routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
           [routerLinkActiveOptions]="{exact: true}"
           class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
-          [title]="'User Management'" [class.justify-center]="isSidebarCollapsed">
-          <i class="pi pi-users text-lg group-hover:scale-110 transition-transform"></i>
-          <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">User Management</span>
+          [title]="'Admin Panel'" [class.justify-center]="isSidebarCollapsed">
+          <i class="pi pi-cog text-lg group-hover:scale-110 transition-transform"></i>
+          <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Admin Panel</span>
+        </a>
+
+        <a href="javascript:void(0)" (click)="logout()"
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-red-50 text-red-600 dark:hover:bg-red-900/20 dark:text-red-400 group mt-4"
+          [title]="'Logout'" [class.justify-center]="isSidebarCollapsed">
+          <i class="pi pi-sign-out text-lg group-hover:scale-110 transition-transform"></i>
+          <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Logout</span>
         </a>
       </nav>
     </div>
@@ -158,14 +158,16 @@
       </div>
     </header>
 
-    <!-- SCROLLABLE CONTENT AREA: this is the ONLY thing that scrolls -->
-    <main class="flex-1 overflow-y-auto min-h-0">
-      <div class="p-6 max-w-7xl w-full mx-auto animate-fade-in">
+    <!-- MAIN CONTENT & FOOTER WRAPPER -->
+    <main class="flex-1 flex flex-col min-h-0">
+      
+      <!-- SCROLLABLE CONTENT AREA -->
+      <div class="flex-1 overflow-y-auto p-6 max-w-7xl w-full mx-auto animate-fade-in flex flex-col">
         <router-outlet></router-outlet>
       </div>
 
-      <!-- FOOTER: inside scroll area so it sits below content naturally -->
-      <footer class="py-4 px-6 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400 bg-white dark:bg-zinc-900 flex justify-between items-center">
+      <!-- FOOTER: Fixed at bottom of the pane -->
+      <footer class="shrink-0 py-4 px-6 border-t border-zinc-200 dark:border-zinc-800 text-center text-xs text-zinc-400 bg-white dark:bg-zinc-900 flex justify-between items-center z-10 relative">
         <p>&copy; 2026 YML Kumara, Public Health Inspector, RDHS Rathnapura.</p>
         <p class="font-medium text-emerald-600 dark:text-emerald-400">BIOMED-MS Pilot v1.0</p>
       </footer>

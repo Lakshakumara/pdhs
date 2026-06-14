@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, tap, catchError } from 'rxjs';
-import { Equipment, EquipmentAssignment } from '../models/biomed.interface';
+import { Equipment, EquipmentAssignment, RepairPriority, RepairRequest, WorkOrder, WorkOrderStatus } from '../models/biomed.interface';
 import { NotificationService } from './notification.service';
 
 @Injectable({
@@ -40,11 +40,35 @@ export class UpsertService {
     const body = { toInstitutionId, toEntity, quantity };
     return this.http.post<EquipmentAssignment>(`${this.baseUrl}/equipment/${eqId}/assign`, body).pipe(
       tap(assignment => {
-        
+
         this.logAudit('CREATE', 'EquipmentAssignment', assignment.id, `Assigned equipment to ${destName}`);
       }),
     );
   }
+
+  // Repair Request Operations
+  public submitRepairRequest(eqId: string, componentId: string | undefined,
+    faultDescription: string, priority: RepairPriority, submittedByUserId: string
+  ): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
+    const body = { equipmentId: eqId, componentId, faultDescription, priority, submittedByUserId };
+
+    return this.http.post<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
+      (`${this.baseUrl}/repair-requests`, body).pipe(
+        tap(result => {
+          this.logAudit('CREATE', 'RepairRequest', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
+        })
+      );
+  }
+
+  public updateWorkOrderStatus(woId: string, nextStatus: WorkOrderStatus, payload?: Partial<WorkOrder>): Observable<WorkOrder> {
+    const body = { status: nextStatus, payload };
+    return this.http.put<WorkOrder>(`${this.baseUrl}/work-orders/${woId}/status`, body).pipe(
+      tap(updatedWorkOrder => {
+        this.logAudit('UPDATE', 'WorkOrder', woId, `Changed work order status to ${nextStatus}.`);
+      })
+    );
+  }
+
   public logAudit(action: 'CREATE' | 'UPDATE' | 'DELETE', entityName: string, recordId: string, description: string): void {
     // In a real app, you might send this to the backend via an endpoint.
     // For now, we'll just log to console and not update the auditLogsSubject directly.

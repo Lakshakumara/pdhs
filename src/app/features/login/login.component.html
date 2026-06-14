@@ -1,0 +1,16 @@
+<div class="login-wrapper p-d-flex p-jc-center p-ai-center" style="height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #f4f6f9;">
+  <p-card header="Login" [style]="{width: '360px', 'box-shadow': '0 4px 8px 0 rgba(0,0,0,0.2)'}">
+    <div *ngIf="error" class="p-error" style="color: red; margin-bottom: 10px; text-align: center;">{{ error }}</div>
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="p-field p-fluid" style="margin-bottom: 20px;">
+        <label for="username" style="display: block; margin-bottom: 5px;">Username</label>
+        <input id="username" type="text" pInputText formControlName="username" />
+      </div>
+      <div class="p-field p-fluid" style="margin-bottom: 20px;">
+        <label for="password" style="display: block; margin-bottom: 5px;">Password</label>
+        <input id="password" type="password" pInputText formControlName="password" />
+      </div>
+      <button pButton type="submit" label="Login" [loading]="loading" [disabled]="!loginForm.valid" class="p-button-primary" style="width: 100%"></button>
+    </form>
+  </p-card>
+</div>

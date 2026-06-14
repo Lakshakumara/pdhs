@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, effect, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
@@ -10,6 +10,7 @@ import {
   Institution,
 } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
+import { QueryService } from '../../core/services/query.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -21,42 +22,49 @@ export class DashboardComponent implements OnInit {
   public institutions: Institution[] = [];
 
   // Master lists
-  public allEquipment: Equipment[] = [];
+  /*public allEquipment: Equipment[] = [];
   public allRequests: RepairRequest[] = [];
   public allOrders: WorkOrder[] = [];
-  public allInventory: InventoryItem[] = [];
+  public allInventory: InventoryItem[] = [];*/
 
   // Filtered/Computed Metrics
-  public totalAssets = 0;
-  public activeRepairs = 0;
-  public pendingRequests = 0;
-  public lowStockAlerts = 0;
-  public totalProcurementSpend = 0;
+  readonly totalAssets = signal(0)
+  readonly activeRepairs = signal(0)
+  readonly pendingRequests = signal(0)
+  readonly lowStockAlerts = signal(0)
+  readonly totalProcurementSpend = signal(0)
 
   // Visual widgets lists
   public urgentRepairs: RepairRequest[] = [];
   public lowStockItems: InventoryItem[] = [];
   public categoryDistribution: { category: string; count: number; percent: number }[] = [];
 
-  constructor(public userFacade: UserFacadeService, private stateService: BiomedStateService) { }
+  constructor(public userFacade: UserFacadeService,
+    private service: QueryService) { 
+      effect((onCleanup:any)=>{
+        console.log("user", this.userFacade.currentUser()?.fullName);
+        this.loadDashboard();
+      })
+    }
 
   ngOnInit() {
+    //this.loadDashboard();
     //this.currentUser = this.userFacade.currentUser;
-      this.calculateMetrics();
+    //this.calculateMetrics();
 
     /* this.stateService.currentUserDto$.subscribe(u => {
        this.currentUser = u;
        this.calculateMetrics();
      });*/
-    this.stateService.institutions$.subscribe(list => {
+    /*this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
-    });
+    });*/
 
     /*this.stateService.equipment$.subscribe(list => {
       this.allEquipment = list;
       this.calculateMetrics();
     });
-*/
+
     this.stateService.repairRequests$.subscribe(list => {
       this.allRequests = list;
       this.calculateMetrics();
@@ -76,10 +84,52 @@ export class DashboardComponent implements OnInit {
       // Calculate procurement spend
       const approvedPOs = list.filter(po => po.approvalStatus === 'Approved');
       this.totalProcurementSpend = approvedPOs.reduce((sum, po) => sum + po.totalCost, 0);
-    });
+    });*/
   }
+  /**
+   * DashboardController
+  
+  GET /dashboard/summary
+  GET /dashboard/category-distribution
+  GET /dashboard/urgent-repairs
+  GET /dashboard/recent-work-orders
+   */
+  private loadDashboard() {
 
-  private calculateMetrics() {
+    this.service.getSummary()
+      .subscribe(summary => {
+        console.log('summary', summary)
+
+        this.totalAssets.set(summary.totalAssets);
+
+        this.activeRepairs.set(summary.activeRepairs);
+
+        this.pendingRequests.set(summary.pendingRequests);
+
+        this.lowStockAlerts.set(summary.lowStockAlerts);
+
+      });
+    this.service.getCategoryDistribution()
+      .subscribe(summary => {
+        this.categoryDistribution =
+          summary;
+      });
+
+    this.service.getUrgentRepairs()
+      .subscribe(summary => {
+        this.urgentRepairs = summary.urgentRepairs;
+      });
+  }
+  
+
+  // Get name of institution from ID
+  public getInstitutionName(id?: string): string {
+    if (!id) return 'Unassigned';
+    return this.institutions.find(i => i.id === id)?.name || id;
+  }
+}
+/*
+private calculateMetrics() {
     if (!this.userFacade.currentUser()) return;
 
     const role = this.userFacade.currentUser()?.roles;
@@ -139,10 +189,4 @@ export class DashboardComponent implements OnInit {
       percent: Math.round((cats[catName] / total) * 100)
     })).sort((a, b) => b.count - a.count);
   }
-
-  // Get name of institution from ID
-  public getInstitutionName(id?: string): string {
-    if (!id) return 'Unassigned';
-    return this.institutions.find(i => i.id === id)?.name || id;
-  }
-}
+*/

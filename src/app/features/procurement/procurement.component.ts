@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
@@ -12,6 +12,7 @@ import {
   PurchaseOrderItem
 } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
+import { QueryService } from '../../core/services/query.service';
 
 @Component({
   selector: 'app-procurement',
@@ -21,11 +22,22 @@ import { UserFacadeService } from '../../core/services/user-facade.service';
 })
 export class ProcurementComponent implements OnInit {
   
+  // Pagination properties
+  readonly totalPages = signal(1);
+  readonly total = signal(0);
+  readonly currentPage = signal(1);
+  readonly pageSize = signal(10);
+
+
+    // Filter properties
+  public searchTerm = signal('');
+  public selectedCategory = signal('');
+
   // Lists
   public plans: ProcurementPlan[] = [];
   public purchaseOrders: PurchaseOrder[] = [];
   public grns: GoodsReceivedNote[] = [];
-  public inventoryItems: InventoryItem[] = [];
+  public inventoryItems = signal<InventoryItem[]>([]);
   public suppliers: Supplier[] = [];
   public activeWorkOrders: WorkOrder[] = []; // Used for linking a PO to a repair order
 
@@ -52,9 +64,22 @@ export class ProcurementComponent implements OnInit {
   public tempItemCost = 0;
   public tempItemCat: 'new equipment' | 'spare part' | 'consumable' | 'service' = 'spare part';
 
-  constructor(private userFacade: UserFacadeService, private stateService: BiomedStateService) {}
+  constructor(private userFacade: UserFacadeService, 
+    private queryService: QueryService,
+    private stateService: BiomedStateService) {}
 
   ngOnInit() {
+
+    this.queryService.getInventorytem(
+      this.currentPage(),
+      this.pageSize(),
+      this.searchTerm(),
+      this.selectedCategory(),
+    ).subscribe(result => {
+      console.log('inventory items',result.items)
+      this.inventoryItems.set(result.items);
+      this.total.set(result.total);
+    });
 
     this.stateService.procurementPlans$.subscribe(list => {
       this.plans = list;
@@ -68,9 +93,9 @@ export class ProcurementComponent implements OnInit {
       this.grns = list;
     });
 
-    this.stateService.inventoryItems$.subscribe(list => {
+    /*this.stateService.inventoryItems$.subscribe(list => {
       this.inventoryItems = list;
-    });
+    });*/
 
     this.stateService.suppliers$.subscribe(list => {
       this.suppliers = list;

@@ -7,8 +7,6 @@ import {
   Router
 } from '@angular/router';
 import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
-import { BiomedStateService } from '../services/biomed-state.service';
 import { UserFacadeService } from '../services/user-facade.service';
 
 @Injectable({
@@ -16,7 +14,6 @@ import { UserFacadeService } from '../services/user-facade.service';
 })
 export class AdminGuard implements CanActivate {
   constructor(private userFacade: UserFacadeService,
-    private biomedStateService: BiomedStateService,
     private router: Router
   ) {}
 

@@ -5,23 +5,24 @@ import { UserFacadeService } from "../services/user-facade.service";
 export const userSessionInterceptor: HttpInterceptorFn = (req, next) => {
 
   const authFacade = inject(UserFacadeService);
+  const token = localStorage.getItem('auth_token');
 
   const session = authFacade.currentSession();
-  if (!session) {
-    return next(req);
+  
+  const headers: any = {};
+  
+  if (session?.activeRole) {
+    headers['x-role'] = session.activeRole.role;
+    headers['x-scope-type'] = session.activeRole.scopeType;
+    headers['x-scope-id'] = session.activeRole.scopeId ?? '';
   }
-  //console.log('SESSION INTERCEPTOR', session);
- /* const activeRole = {
-    'x-role': session.activeRole.role,
-    'x-scope-type': session.activeRole.scopeType,
-    'x-scope-id': session.activeRole.scopeId ?? ''
-  }*/
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
   const modifiedReq = req.clone({
-    setHeaders: {
-      'x-role': session.activeRole.role,
-      'x-scope-type': session.activeRole.scopeType,
-      'x-scope-id': session.activeRole.scopeId ?? ''
-    }
+    setHeaders: headers
   });
 
   return next(modifiedReq);

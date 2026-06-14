@@ -195,19 +195,7 @@ export class BiomedStateService {
   }
 
 
-// Repair Request Operations
-  public submitRepairRequest(eqId: string, componentId: string | undefined, faultDescription: string, priority: RepairPriority): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
-    const body = { equipmentId: eqId, componentId, faultDescription, priority };
-    return this.http.post<{ repairRequest: RepairRequest; workOrder: WorkOrder }>(`${this.baseUrl}/repair-requests`, body).pipe(
-      tap(result => {
-        this.fetchRepairRequests();
-        this.fetchWorkOrders();
-        //this.fetchEquipment(); // in case status changed
-        this.logAudit('CREATE', 'RepairRequest', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
-      }),
-      catchError(this.handleError)
-    );
-  }
+
 
   // Work Order Workflow
   public updateWorkOrderStatus(woId: string, nextStatus: WorkOrderStatus, payload?: Partial<WorkOrder>): Observable<WorkOrder> {
@@ -348,6 +336,18 @@ export class BiomedStateService {
         const dest = institutions.find(i => i.id === toInstitutionId);
         const destName = dest ? dest.name : 'Unknown';
         this.logAudit('CREATE', 'EquipmentAssignment', assignment.id, `Assigned equipment to ${destName}`);
+      }),
+      catchError(this.handleError)
+    );
+  }
+    public submitRepairRequest(eqId: string, componentId: string | undefined, faultDescription: string, priority: RepairPriority): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
+    const body = { equipmentId: eqId, componentId, faultDescription, priority };
+    return this.http.post<{ : RepairRequest; workOrder: WorkOrder }>(`${this.baseUrl}/repair-requests`, body).pipe(
+      tap(result => {
+        this.fetchRepairRequests();
+        this.fetchWorkOrders();
+        //this.fetchEquipment(); // in case status changed
+        this.logAudit('CREATE', 'RepairRequest', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
       }),
       catchError(this.handleError)
     );

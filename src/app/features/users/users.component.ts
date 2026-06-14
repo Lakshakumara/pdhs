@@ -26,6 +26,7 @@ import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
+import { District, Institution, UserDto } from '../../core/models/biomed.interface';
 
 // ──────────────────────────────────────────────
 // Types mirroring Prisma schema
@@ -61,32 +62,6 @@ export interface UserRole {
   assignedAt: string;
 }
 
-export interface User {
-  id: string;
-  username: string;
-  fullName: string;
-  email: string | null;
-  active: boolean;
-  mustChangePassword: boolean;
-  institutionId: string | null;
-  institutionName?: string;
-  districtId?: string | null;
-  districtName?: string;
-  createdAt: string;
-  roles: UserRole[];
-}
-
-export interface District {
-  id: string;
-  name: string;
-}
-
-export interface Institution {
-  id: string;
-  name: string;
-  districtId: string | null;
-  type: string;
-}
 
 export interface CreateUserDto {
   username: string;
@@ -186,7 +161,7 @@ export class UsersComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   // ── State ──────────────────────────────────
-  users = signal<User[]>([]);
+  users = signal<UserDto[]>([]);
   districts = signal<District[]>([]);
   institutions = signal<Institution[]>([]);
   loading = signal(false);
@@ -194,7 +169,7 @@ export class UsersComponent implements OnInit {
 
   dialogVisible = signal(false);
   dialogMode = signal<'create' | 'edit'>('create');
-  selectedUser = signal<User | null>(null);
+  selectedUser = signal<UserDto | null>(null);
   submitting = signal(false);
 
   // Role assignment panel
@@ -249,9 +224,9 @@ export class UsersComponent implements OnInit {
     this.loading.set(true);
     // Parallel load
     Promise.all([
-      this.http.get<User[]>('/api/users').toPromise(),
-      this.http.get<District[]>('/api/districts').toPromise(),
-      this.http.get<Institution[]>('/api/institutions').toPromise(),
+      this.http.get<UserDto[]>('/biomedical-state/users').toPromise(),
+      this.http.get<District[]>('/biomedical-state/districts').toPromise(),
+      this.http.get<Institution[]>('/biomedical-state/institutions').toPromise(),
     ])
       .then(([users, districts, institutions]) => {
         this.users.set(users ?? []);
@@ -279,7 +254,7 @@ export class UsersComponent implements OnInit {
     this.dialogVisible.set(true);
   }
 
-  openEdit(user: User) {
+  openEdit(user: UserDto) {
     this.dialogMode.set('edit');
     this.selectedUser.set(user);
     this.form.patchValue({
@@ -293,7 +268,7 @@ export class UsersComponent implements OnInit {
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
     this.roleRows.set(
-      user.roles.map(r => ({ role: r.role, scopeType: r.scopeType, scopeId: r.scopeId }))
+      user.roles.map(r => ({ role: r.role as RoleType, scopeType: r.scopeType as ScopeType, scopeId: r.scopeId as string }))
     );
     this.dialogVisible.set(true);
   }
@@ -325,7 +300,7 @@ export class UsersComponent implements OnInit {
           scopeId: r.scopeId || undefined,
         })),
       };
-      this.http.post<User>('/api/users', dto).subscribe({
+      this.http.post<UserDto>('/api/users', dto).subscribe({
         next: user => {
           this.users.update(list => [user, ...list]);
           this.dialogVisible.set(false);
@@ -347,7 +322,7 @@ export class UsersComponent implements OnInit {
       };
       if (v.password) (dto as any).password = v.password;
       const id = this.selectedUser()!.id;
-      this.http.patch<User>(`/api/users/${id}`, dto).subscribe({
+      this.http.patch<UserDto>(`/api/users/${id}`, dto).subscribe({
         next: updated => {
           this.users.update(list => list.map(u => (u.id === id ? updated : u)));
           this.dialogVisible.set(false);
@@ -359,9 +334,9 @@ export class UsersComponent implements OnInit {
     }
   }
 
-  toggleActive(user: User) {
+  toggleActive(user: UserDto) {
     const newStatus = !user.active;
-    this.http.patch<User>(`/api/users/${user.id}`, { active: newStatus }).subscribe({
+    this.http.patch<UserDto>(`/api/users/${user.id}`, { active: newStatus }).subscribe({
       next: updated => {
         this.users.update(list => list.map(u => (u.id === user.id ? updated : u)));
         this.showSuccess(`User ${newStatus ? 'activated' : 'deactivated'}`);
@@ -370,7 +345,7 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  confirmDelete(user: User) {
+  confirmDelete(user: UserDto) {
     this.confirmationService.confirm({
       message: `Delete user <strong>${user.fullName}</strong>? This cannot be undone.`,
       header: 'Delete User',
@@ -387,7 +362,7 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  resetPassword(user: User) {
+  resetPassword(user: UserDto) {
     this.confirmationService.confirm({
       message: `Send password reset to <strong>${user.fullName}</strong>?`,
       header: 'Reset Password',

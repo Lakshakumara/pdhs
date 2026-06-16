@@ -1,6 +1,6 @@
 <!-- Welcome Header -->
 <div class="mb-8">
-  <div class="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-950 dark:to-zinc-900 rounded-2xl p-6 text-white border border-emerald-500/10 shadow-lg relative overflow-hidden">
+  <div class="bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-900 dark:to-zinc-900 rounded-2xl p-6 text-white border border-emerald-500/10 shadow-lg relative overflow-hidden">
     <div class="absolute -right-16 -top-16 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
     <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-emerald-500/10 rounded-full blur-xl"></div>
     
@@ -23,12 +23,12 @@
   <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Registered Assets</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ totalAssets() }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-900 dark:text-zinc-50">{{ totalAssets() }}</h3>
       <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 inline-block">
         <i class="pi pi-check-circle mr-1"></i>In Registry
       </span>
     </div>
-    <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+    <div class="w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/60 border border-emerald-100 dark:border-emerald-900 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
       <i class="pi pi-box text-xl"></i>
     </div>
   </div>
@@ -37,12 +37,12 @@
   <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Active Repair Work</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ activeRepairs() }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-900 dark:text-zinc-50">{{ activeRepairs() }}</h3>
       <span class="text-[10px] text-teal-600 dark:text-teal-400 font-semibold mt-1 inline-block">
         <i class="pi pi-cog mr-1"></i>In Technical Queue
       </span>
     </div>
-    <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-100 dark:border-teal-900 flex items-center justify-center text-teal-600 dark:text-teal-400">
+    <div class="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-900/60 border border-teal-100 dark:border-teal-900 flex items-center justify-center text-teal-600 dark:text-teal-400">
       <i class="pi pi-wrench text-xl"></i>
     </div>
   </div>
@@ -51,12 +51,12 @@
   <div class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Unassigned Requests</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">{{ pendingRequests() }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-900 dark:text-zinc-50">{{ pendingRequests() }}</h3>
       <span class="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-1 inline-block">
         <i class="pi pi-exclamation-triangle mr-1"></i>Awaiting Acknowledge
       </span>
     </div>
-    <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400">
+    <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/60 border border-amber-100 dark:border-amber-900 flex items-center justify-center text-amber-600 dark:text-amber-400">
       <i class="pi pi-hourglass text-xl"></i>
     </div>
   </div>
@@ -67,14 +67,14 @@
     class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Spare Parts Warning</p>
-      <h3 class="text-3xl font-bold mt-1" [class.text-red-500]="lowStockAlerts() > 0" [class.text-zinc-950]="lowStockAlerts() === 0" [class.dark:text-zinc-50]="lowStockAlerts() === 0">
+      <h3 class="text-3xl font-bold mt-1" [class.text-red-500]="lowStockAlerts() > 0" [class.text-zinc-900]="lowStockAlerts() === 0" [class.dark:text-zinc-50]="lowStockAlerts() === 0">
         {{ lowStockAlerts() }}
       </h3>
       <span class="text-[10px] font-semibold mt-1 inline-block" [class.text-red-500]="lowStockAlerts() > 0" [class.text-zinc-500]="lowStockAlerts() === 0">
         <i class="pi pi-bell mr-1"></i>{{ lowStockAlerts() > 0 ? 'Critical low stock!' : 'Stock levels normal' }}
       </span>
     </div>
-    <div class="w-12 h-12 rounded-xl flex items-center justify-center" [class.bg-red-50]="lowStockAlerts() > 0" [class.dark:bg-red-950/40]="lowStockAlerts() > 0" [class.text-red-500]="lowStockAlerts() > 0" [class.bg-zinc-100]="lowStockAlerts() === 0" [class.dark:bg-zinc-800]="lowStockAlerts() === 0" [class.text-zinc-500]="lowStockAlerts() === 0">
+    <div class="w-12 h-12 rounded-xl flex items-center justify-center" [class.bg-red-50]="lowStockAlerts() > 0" [class.dark:bg-red-900/40]="lowStockAlerts() > 0" [class.text-red-500]="lowStockAlerts() > 0" [class.bg-zinc-100]="lowStockAlerts() === 0" [class.dark:bg-zinc-800]="lowStockAlerts() === 0" [class.text-zinc-500]="lowStockAlerts() === 0">
       <i class="pi pi-bell text-xl"></i>
     </div>
   </div>
@@ -84,12 +84,12 @@
     class="bg-white dark:bg-zinc-900 rounded-2xl p-5 border border-zinc-200 dark:border-zinc-800 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
     <div>
       <p class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">Procurement Spend</p>
-      <h3 class="text-3xl font-bold mt-1 text-zinc-950 dark:text-zinc-50">LKR {{ totalProcurementSpend() | number }}</h3>
+      <h3 class="text-3xl font-bold mt-1 text-zinc-900 dark:text-zinc-50">LKR {{ totalProcurementSpend() | number }}</h3>
       <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold mt-1 inline-block">
         <i class="pi pi-credit-card mr-1"></i>Approved tenders
       </span>
     </div>
-    <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+    <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-900/60 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
       <i class="pi pi-credit-card text-xl"></i>
     </div>
   </div>
@@ -123,11 +123,11 @@
         <div *ngFor="let req of urgentRepairs" class="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-zinc-50/40 dark:hover:bg-zinc-800/20 transition-colors">
           <div>
             <div class="flex items-center gap-2.5">
-              <span class="text-xs font-mono font-bold text-zinc-500 bg-zinc-100 dark:bg-zinc-850 px-2 py-0.5 rounded">
+              <span class="text-xs font-mono font-bold text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
                 {{ req.id }}
               </span>
               <span 
-                [class.bg-rose-550]="req.priority === 'Emergency'"
+                [class.bg-rose-500]="req.priority === 'Emergency'"
                 [class.text-rose-100]="req.priority === 'Emergency'"
                 [class.bg-amber-500]="req.priority === 'Urgent'"
                 [class.text-amber-50]="req.priority === 'Urgent'"
@@ -153,7 +153,7 @@
             </span>
             <a 
               [routerLink]="['/repairs']"
-              class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-lg transition-colors border border-emerald-100/50 dark:border-emerald-900/50">
+              class="px-3.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/80 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-lg transition-colors border border-emerald-100/50 dark:border-emerald-900/50">
               Manage Job
             </a>
           </div>
@@ -202,13 +202,13 @@
       </div>
 
       <div class="space-y-4" *ngIf="lowStockItems.length > 0">
-        <div *ngFor="let item of lowStockItems" class="p-3 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-100/50 dark:border-red-900/20">
+        <div *ngFor="let item of lowStockItems" class="p-3 bg-red-50/50 dark:bg-red-900/20 rounded-xl border border-red-100/50 dark:border-red-900/20">
           <div class="flex justify-between items-start">
             <div>
               <p class="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate max-w-[150px]">{{ item.name }}</p>
               <p class="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase mt-0.5">{{ item.category }}</p>
             </div>
-            <span class="px-2 py-0.5 bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400 text-[10px] font-bold rounded-md">
+            <span class="px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-400 text-[10px] font-bold rounded-md">
               Low Stock
             </span>
           </div>

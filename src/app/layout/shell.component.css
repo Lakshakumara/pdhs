@@ -1,0 +1,8 @@
+/*
+ * Move any layout-specific styles that were previously in
+ * src/app/app.component.css into this file — they belong to the
+ * shell (sidebar/header) now, not the bare root component.
+ *
+ * If app.component.css was empty or only contained global resets,
+ * leave those in app.component.css / styles.css instead.
+ */

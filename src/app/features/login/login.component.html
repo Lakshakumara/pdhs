@@ -1,16 +1,248 @@
-<div class="login-wrapper p-d-flex p-jc-center p-ai-center" style="height: 100vh; display: flex; justify-content: center; align-items: center; background-color: #f4f6f9;">
-  <p-card header="Login" [style]="{width: '360px', 'box-shadow': '0 4px 8px 0 rgba(0,0,0,0.2)'}">
-    <div *ngIf="error" class="p-error" style="color: red; margin-bottom: 10px; text-align: center;">{{ error }}</div>
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="p-field p-fluid" style="margin-bottom: 20px;">
-        <label for="username" style="display: block; margin-bottom: 5px;">Username</label>
-        <input id="username" type="text" pInputText formControlName="username" />
+<div class="min-h-screen flex bg-zinc-50 dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 font-sans transition-colors duration-200">
+
+  <!-- ════════════════════════════════════════════════════════════
+       LEFT — Branding panel (hidden on small screens)
+  ════════════════════════════════════════════════════════════ -->
+  <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800">
+
+    <!-- Decorative blurred shapes -->
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-0 -left-12 w-72 h-72 bg-emerald-400/20 rounded-full blur-3xl"></div>
+    <div class="absolute top-1/2 right-1/4 w-48 h-48 bg-teal-300/10 rounded-full blur-2xl"></div>
+
+    <div class="relative z-10 flex flex-col justify-between p-12 text-white w-full">
+
+      <!-- Brand mark -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+        </div>
+        <span class="font-bold text-lg tracking-widest">BIOMED-MS</span>
       </div>
-      <div class="p-field p-fluid" style="margin-bottom: 20px;">
-        <label for="password" style="display: block; margin-bottom: 5px;">Password</label>
-        <input id="password" type="password" pInputText formControlName="password" />
+
+      <!-- Hero content -->
+      <div class="space-y-6 max-w-md">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Emblem_of_Sri_Lanka.svg"
+          alt="Sri Lanka Crest" class="h-16 w-auto opacity-90" />
+
+        <h1 class="text-3xl font-bold leading-tight">
+          Biomedical Equipment Management System
+        </h1>
+
+        <p class="text-emerald-50/80 text-sm leading-relaxed">
+          Provincial Directorate of Health Services. Centralized registry, maintenance
+          tracking and procurement workflows for biomedical equipment across district
+          healthcare institutions.
+        </p>
+
+        <!-- Feature highlights -->
+        <div class="space-y-3 pt-4">
+          <div class="flex items-center gap-3 text-sm">
+            <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+              <i class="pi pi-box"></i>
+            </div>
+            <span>Asset registry &amp; lifecycle tracking</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+              <i class="pi pi-wrench"></i>
+            </div>
+            <span>Repair requests &amp; technician work orders</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+              <i class="pi pi-shopping-cart"></i>
+            </div>
+            <span>Procurement, suppliers &amp; store management</span>
+          </div>
+          <div class="flex items-center gap-3 text-sm">
+            <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+              <i class="pi pi-shield"></i>
+            </div>
+            <span>Role &amp; scope-based access control</span>
+          </div>
+        </div>
       </div>
-      <button pButton type="submit" label="Login" [loading]="loading" [disabled]="!loginForm.valid" class="p-button-primary" style="width: 100%"></button>
-    </form>
-  </p-card>
+
+      <p class="text-[10px] text-emerald-100/60 tracking-widest uppercase">
+        &copy; 2026 BIOMED-MS Pilot v1.0
+      </p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       RIGHT — Login form
+  ════════════════════════════════════════════════════════════ -->
+  <div class="flex-1 flex items-center justify-center p-6 sm:p-10">
+    <div class="w-full max-w-md">
+
+      <!-- Mobile-only brand header -->
+      <div class="lg:hidden flex items-center justify-center gap-3 mb-8">
+        <div class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+        </div>
+        <span class="font-bold text-lg tracking-widest text-emerald-600 dark:text-emerald-400">BIOMED-MS</span>
+      </div>
+
+      <!-- Login card -->
+      <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm p-8">
+
+        <div class="mb-6">
+          <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Welcome back</h2>
+          <p class="text-sm text-zinc-400 mt-1">Sign in to access the biomedical management portal</p>
+        </div>
+
+        <!-- Error message -->
+        <div *ngIf="error()"
+          class="flex items-start gap-2.5 mb-5 p-3 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-xl">
+          <i class="pi pi-exclamation-circle text-red-500 mt-0.5 flex-shrink-0"></i>
+          <p class="text-xs font-medium text-red-700 dark:text-red-400">{{ error() }}</p>
+        </div>
+
+        <!-- Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-4">
+
+          <!-- Username -->
+          <div>
+            <label for="username" class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
+              Username
+            </label>
+            <input
+              pInputText
+              id="username"
+              type="text"
+              formControlName="username"
+              placeholder="e.g. jane.perera"
+              autocomplete="username"
+              class="w-full !rounded-xl"
+              [ngClass]="{'ng-invalid ng-dirty': loginForm.get('username')?.invalid && loginForm.get('username')?.touched}"
+            />
+            <small
+              *ngIf="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
+              class="text-red-500 text-xs mt-1 block">
+              Username is required
+            </small>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="password" class="block text-xs font-bold uppercase tracking-wider text-zinc-500">
+                Password
+              </label>
+              <a href="javascript:void(0)" class="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Forgot password?
+              </a>
+            </div>
+            <p-password
+              formControlName="password"
+              inputId="password"
+              [toggleMask]="true"
+              [feedback]="false"
+              placeholder="••••••••"
+              styleClass="w-full"
+              inputStyleClass="w-full !rounded-xl"
+              autocomplete="current-password"
+              [ngClass]="{'ng-invalid ng-dirty': loginForm.get('password')?.invalid && loginForm.get('password')?.touched}"
+            />
+            <small
+              *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+              class="text-red-500 text-xs mt-1 block">
+              Password is required
+            </small>
+          </div>
+
+          <!-- Remember me -->
+          <div class="flex items-center gap-2 pt-1">
+            <p-checkbox [(ngModel)]="rememberMe" [ngModelOptions]="{standalone: true}"
+              [binary]="true" inputId="rememberMe" />
+            <label for="rememberMe" class="text-xs text-zinc-500 dark:text-zinc-400 cursor-pointer">
+              Keep me signed in on this device
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <button
+            pButton
+            type="submit"
+            label="Sign In"
+            severity="success"
+            class="w-full !rounded-xl !py-2.5 !font-bold mt-2"
+            [loading]="loading()"
+            [disabled]="loginForm.invalid || loading()">
+          </button>
+        </form>
+
+        <!-- ══════════════════════════════════════════════════════
+             DEV QUICK LOGIN — strip this block (or set
+             environment.production = true) before deploying.
+        ═══════════════════════════════════════════════════════ -->
+        <ng-container *ngIf="enableDevLogin">
+          <p-divider align="center" styleClass="my-6">
+            <span class="text-[10px] font-bold uppercase tracking-widest text-amber-500 px-2">
+              Dev Quick Login
+            </span>
+          </p-divider>
+
+          <div class="p-3.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl">
+            <div class="flex items-center gap-2 mb-2.5">
+              <i class="pi pi-bolt text-amber-500 text-xs"></i>
+              <p class="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                Sign in as any seeded test account
+              </p>
+            </div>
+
+            <p-select
+              [options]="devUserOptions()"
+              [(ngModel)]="selectedDevUserId"
+              (ngModelChange)="onDevUserSelect($event)"
+              [ngModelOptions]="{standalone: true}"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select a test account…"
+              [filter]="true"
+              filterPlaceholder="Search by name or role…"
+              styleClass="w-full !rounded-xl text-xs"
+              appendTo="body">
+
+              <ng-template let-opt #item>
+                <div class="flex items-center gap-2.5 py-0.5 w-full min-w-0">
+                  <div
+                    class="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+                    [style.background]="getAvatarBg(opt.user.fullName)">
+                    {{ getInitials(opt.user.fullName) }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate">
+                      {{ opt.user.fullName }}
+                    </p>
+                    <p class="text-[10px] text-zinc-400 truncate">
+                      {{ opt.user.roles[0]?.role?.replace('_',' ') }}
+                      <span *ngIf="opt.user.roles.length > 1" class="ml-1">+{{ opt.user.roles.length - 1 }} more</span>
+                    </p>
+                  </div>
+                  <span class="text-[9px] font-mono text-zinc-400 flex-shrink-0">&#64;{{ opt.user.username }}</span>
+                </div>
+              </ng-template>
+            </p-select>
+
+            <p class="text-[10px] text-amber-700/70 dark:text-amber-400/60 mt-2.5 leading-relaxed">
+              <i class="pi pi-info-circle mr-1"></i>
+              Auto-fills credentials (shared dev password
+              <code class="font-mono bg-amber-100 dark:bg-amber-900/40 px-1 rounded">pdhs&#64;123</code>)
+              and signs in immediately.
+              <strong class="block mt-0.5">This panel is removed automatically in production builds.</strong>
+            </p>
+          </div>
+        </ng-container>
+
+      </div>
+
+      <p class="text-center text-[10px] text-zinc-400 mt-6">
+        Having trouble signing in? Contact your PDHS system administrator.
+      </p>
+    </div>
+  </div>
 </div>

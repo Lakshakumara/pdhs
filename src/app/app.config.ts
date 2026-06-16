@@ -6,7 +6,7 @@ import Aura from '@primeuix/themes/aura';
 
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { userSessionInterceptor } from './core/auth/userSessionInterceptor';
+import { userSessionInterceptor } from './core/auth/user.session.interceptor';
 import { MessageService } from 'primeng/api';
 import { errorInterceptor } from './utils/errorInterceptor';
 

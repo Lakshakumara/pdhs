@@ -1,0 +1,65 @@
+<p-organizationChart
+  [value]="nodes()"
+  selectionMode="single"
+  (onNodeSelect)="nodeSelected($event)">
+
+  <ng-template let-node pTemplate="default">
+
+    <!-- PDHS -->
+    <div *ngIf="node.type === 'PDHS'"
+      class="bg-emerald-600 text-white rounded-xl p-4 min-w-[250px]">
+
+      <div class="font-bold text-base">
+        {{ node.label }}
+      </div>
+
+      <div class="text-xs mt-2">
+        Institutions: {{ node.data.institutionCount }}
+      </div>
+
+      <div class="text-xs">
+        Assets: {{ node.data.assetCount }}
+      </div>
+
+      <div class="text-xs">
+        Repairs: {{ node.data.repairCount }}
+      </div>
+
+    </div>
+
+    <!-- RDHS -->
+    <div *ngIf="node.type === 'RDHS'"
+      class="bg-blue-600 text-white rounded-xl p-3 min-w-[220px]">
+
+      <div class="font-semibold">
+        {{ node.label }}
+      </div>
+
+      <div class="text-xs mt-1">
+        Institutions: {{ node.data.institutionCount }}
+      </div>
+
+      <div class="text-xs">
+        Assets: {{ node.data.assetCount }}
+      </div>
+
+    </div>
+
+    <!-- CATEGORY -->
+    <div *ngIf="node.type === 'CATEGORY'"
+      class="bg-zinc-100 dark:bg-zinc-800 rounded-xl p-3 min-w-[180px]">
+
+      <div class="font-medium text-sm">
+        {{ node.label }}
+      </div>
+
+      <div class="text-xs text-zinc-500 mt-1">
+        {{ node.data.institutionCount }}
+        Institutions
+      </div>
+
+    </div>
+
+  </ng-template>
+
+</p-organizationChart>

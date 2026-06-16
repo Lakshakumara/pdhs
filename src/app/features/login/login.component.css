@@ -1,0 +1,15 @@
+/*
+ * Most styling is handled via Tailwind utility classes in the template.
+ * This file only contains overrides for PrimeNG internals that can't
+ * be reached with Tailwind's !important escape hatch.
+ */
+
+/* Ensure p-password's wrapper stretches to full width inside the form */
+:host ::ng-deep .p-password {
+  width: 100%;
+  display: block;
+}
+
+:host ::ng-deep .p-password input {
+  width: 100%;
+}

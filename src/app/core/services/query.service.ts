@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder } from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
+import { OrganizationTreeNode } from '../../layout/organization.chart/organiization.tree.node';
 
 
 @Injectable({
@@ -179,4 +180,11 @@ export class QueryService {
     return this.http.get<PagedResult<InventoryItem>>(`${this.baseUrl}/inventory-items`,
       { params });
   }
+
+  getOrganizationTree() {
+
+  return this.http.get<OrganizationTreeNode>(
+    `${this.baseUrl}/dashboard/organization-tree`
+  );
+}
 }

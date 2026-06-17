@@ -32,20 +32,20 @@ export const userSessionInterceptor: HttpInterceptorFn = (req, next) => {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-    console.log('token added', token)
   }
 
-  if (session?.activeRole) {
+  /*if (session?.activeRole) {
     headers['x-role'] = session.activeRole.role;
     headers['x-scope-type'] = session.activeRole.scopeType;
     headers['x-scope-id'] = session.activeRole.scopeId ?? '';
-  }
+  }*/
 
   // Nothing to add (e.g. unauthenticated request to /auth/login) —
   // pass through untouched.
   if (Object.keys(headers).length === 0) {
     return next(req);
   }
-
+  console.log('Request headers', req);
+  console.log('Headers', headers);
   return next(req.clone({ setHeaders: headers }));
 };

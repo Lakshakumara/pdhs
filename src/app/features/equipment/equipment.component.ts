@@ -57,12 +57,12 @@ export class EquipmentComponent implements OnInit {
   public newEqMfgDate = null;
   public newEqReceiptDate = null;
   public newEqWarranty = 12;
-  // Sub-components adding buffer
+  // Spare parts adding buffer
   public partsBuffer: Omit<EquipmentParts, 'id'>[] = [];
-  public tempCompName = '';
-  public tempCompPart = '';
-  public tempCompSerial = '';
-  public tempCompType: 'Serialized' | 'Consumable' | 'Minor/Non-tracked' = 'Serialized';
+  public tempPartName = '';
+  public tempPartNumber = '';
+  public tempPartSerialNumber = '';
+  public tempPartType: 'Serialized' | 'Consumable' | 'Minor/Non-tracked' = 'Serialized';
 
   // Service Plan State
   public includeServicePlan = false;
@@ -203,19 +203,19 @@ export class EquipmentComponent implements OnInit {
   }
 
   public addPartsToBuffer() {
-    if (!this.tempCompName.trim() || !this.tempCompPart.trim()) return;
+    if (!this.tempPartName.trim() || !this.tempPartNumber.trim()) return;
     this.partsBuffer.push({
-      name: this.tempCompName,
+      name: this.tempPartName,
       description: 'Part of parent assembly',
-      partNumber: this.tempCompPart,
-      serialNumber: this.tempCompSerial || undefined,
+      partNumber: this.tempPartNumber,
+      serialNumber: this.tempPartSerialNumber || undefined,
       quantity: 1,
-      componentType: this.tempCompType
+      componentType: this.tempPartType
     });
-    this.tempCompName = '';
-    this.tempCompPart = '';
-    this.tempCompSerial = '';
-    this.tempCompType = 'Serialized';
+    this.tempPartName = '';
+    this.tempPartNumber = '';
+    this.tempPartSerialNumber = '';
+    this.tempPartType = 'Serialized';
   }
 
   public removeComponentFromBuffer(idx: number) {
@@ -246,7 +246,7 @@ export class EquipmentComponent implements OnInit {
       return;
     }
 
-    // Save sub-components
+    // Save spare parts 
     const parts: EquipmentParts[] = this.partsBuffer.map((c, i) => ({
       ...c,
       id: `eqc_${Date.now()}_${i}`
@@ -339,10 +339,10 @@ export class EquipmentComponent implements OnInit {
     this.newEqMfgDate = null;
     this.newEqReceiptDate = null;
     this.newEqWarranty = 12;
-    this.tempCompName = '';
-    this.tempCompPart = '';
-    this.tempCompSerial = '';
-
+    this.tempPartName = '';
+    this.tempPartNumber = '';
+    this.tempPartSerialNumber = '';
+    this.tempPartType = 'Serialized';
     this.includeServicePlan = false;
     this.spRef = '';
     this.spExpiry = null;

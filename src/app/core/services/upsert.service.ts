@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { Observable, tap, catchError } from 'rxjs';
 import { Equipment, EquipmentAssignment, RepairPriority, RepairRequest, WorkOrder, WorkOrderStatus } from '../models/biomed.interface';
 import { NotificationService } from './notification.service';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class UpsertService {
-  private baseUrl = 'http://localhost:3000/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
@@ -51,7 +52,7 @@ export class UpsertService {
     faultDescription: string, priority: RepairPriority, submittedByUserId: string
   ): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
     const body = { equipmentId: eqId, componentId, faultDescription, priority, submittedByUserId };
-
+console.log('sent body', body)
     return this.http.post<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
       (`${this.baseUrl}/repair-requests`, body).pipe(
         tap(result => {

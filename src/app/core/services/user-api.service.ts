@@ -3,13 +3,14 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { RoleType, UserDto, UserRoleDto } from '../models/biomed.interface';
 import { ScopeType } from '../auth/permission.types';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserApiService {
 
-  private baseUrl = 'http://localhost:3000/api/users';
+  private baseUrl = environment.apiUrl + '/users';
 
   constructor(private http: HttpClient) {}
 

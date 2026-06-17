@@ -4,6 +4,7 @@ import { Observable, of, tap, map, catchError, throwError, shareReplay } from 'r
 import { Router } from '@angular/router';
 import { UserFacadeService } from '../services/user-facade.service';
 import { UserDto } from '../models/biomed.interface';
+import { environment } from '../../../environments/environment';
 
 export interface LoginResponse {
   token: string;
@@ -21,8 +22,8 @@ interface JwtPayload {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly baseUrl = 'http://localhost:3000/api/auth';
-  private readonly ME_URL = 'http://localhost:3000/api/users/me';
+  private readonly baseUrl = environment.apiUrl +'/auth';
+  private readonly ME_URL = environment.apiUrl+'/users/me';
   private readonly TOKEN_KEY = 'auth_token';
 
   /** Reactive flag — true once a token exists AND has not expired. */

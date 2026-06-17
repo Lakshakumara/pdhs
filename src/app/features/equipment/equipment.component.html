@@ -252,14 +252,14 @@
 
         <!-- Child Components & Parts -->
         <div>
-          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Tracked Components / Sub-assemblies
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Spare parts / Sub-assemblies
           </h4>
           <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
             <table class="w-full text-left text-xs border-collapse">
               <thead
                 class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-750">
                 <tr>
-                  <th class="p-3">Component Name</th>
+                  <th class="p-3">Part Name</th>
                   <th class="p-3">Part Number</th>
                   <th class="p-3">Serial Number</th>
                   <th class="p-3">Type</th>
@@ -267,14 +267,14 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                <tr *ngFor="let comp of selectedEq.components" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
+                <tr *ngFor="let comp of selectedEq.components" class="hover:bg-zinc-300/50 dark:hover:bg-zinc-700/10">
                   <td class="p-3 font-semibold">{{ comp.name }}</td>
                   <td class="p-3 font-mono text-[10px] text-zinc-500">{{ comp.partNumber }}</td>
                   <td class="p-3 font-mono">{{ comp.serialNumber || 'N/A' }}</td>
                   <td class="p-3">
                     <span [class.bg-emerald-50]="comp.componentType === 'Serialized'"
                       [class.text-emerald-700]="comp.componentType === 'Serialized'"
-                      [class.bg-orange-50]="comp.componentType === 'Consumable'"
+                      [class.bg-orange-200]="comp.componentType === 'Consumable'"
                       [class.text-orange-700]="comp.componentType === 'Consumable'"
                       class="px-2 py-0.5 rounded text-[9px] font-bold">
                       {{ comp.componentType }}
@@ -640,12 +640,12 @@
                 <div class="md:col-span-3">
                   <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Spare Part Name</label>
                   <input type="text" [(ngModel)]="tempSparePartName" placeholder="Part Name"
-                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
+                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
                 </div>
                 <div *ngFor="let y of [1,2,3,4,5]">
                   <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Year {{y}} (LKR)</label>
                   <input type="number" [(ngModel)]="tempSparePartCosts[y-1]"
-                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
+                    class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-300 focus:outline-none" />
                 </div>
                 <div class="flex justify-end">
                   <button (click)="addSparePartCostToBuffer()"
@@ -692,30 +692,30 @@
 
         <!-- Add sub-components sub-form -->
         <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-900">
-          <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Add
-            Sub-components / Tracked Parts</h4>
+          <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Add Spare
+            Parts</h4>
 
           <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end mb-4">
             <div>
               <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part Name</label>
-              <input type="text" [(ngModel)]="tempCompName" placeholder="e.g. ECG Leads Cord"
-                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
+              <input type="text" [(ngModel)]="tempPartName" placeholder="e.g. ECG Leads Cord"
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
             </div>
             <div>
               <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part / Model Number</label>
-              <input type="text" [(ngModel)]="tempCompPart" placeholder="e.g. PL-CORD-02"
-                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none" />
+              <input type="text" [(ngModel)]="tempPartNumber" placeholder="e.g. PL-CORD-02"
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none" />
             </div>
             <div>
               <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Serial Number (Optional)</label>
-              <input type="text" [(ngModel)]="tempCompSerial" placeholder="e.g. B-998821"
-                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none font-mono" />
+              <input type="text" [(ngModel)]="tempPartSerialNumber" placeholder="e.g. B-998821"
+                class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none font-mono" />
             </div>
             <div class="flex gap-2">
               <div class="flex-1">
-                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Component Type</label>
-                <select [(ngModel)]="tempCompType"
-                  class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-250 focus:outline-none">
+                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part Type</label>
+                <select [(ngModel)]="tempPartType"
+                  class="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-xs text-zinc-800 dark:text-zinc-200 focus:outline-none">
                   <option value="Serialized">Serialized</option>
                   <option value="Consumable">Consumable</option>
                   <option value="Minor/Non-tracked">Minor/Non-tracked</option>

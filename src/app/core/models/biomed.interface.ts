@@ -42,10 +42,21 @@ export interface UserDto {
   districtId?: string | null;
   districtName?: string | null;
 
+  permissions: UserPermissionRecord[];
   roles: UserRoleDto[];
 
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UserPermissionRecord {
+  id: string;
+  permission: Permission;
+  grantedAt: string;
+  expiresAt: string | null;
+  note: string | null;
+  active: boolean;
+  grantedBy: { id: string; fullName: string } | null;
 }
 
 export interface UserRoleDto {

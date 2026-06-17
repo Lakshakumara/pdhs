@@ -25,13 +25,13 @@ import {
   providedIn: 'root'
 })
 export class BiomedStateService {
-  private baseUrl = 'http://localhost:3000/biomedical-state'; // Adjust if needed, or use environment variable
+  private baseUrl = 'http://10.20.16.5:3000/biomedical-state'; // Adjust if needed, or use environment variable
 
   //private currentUserDtoSubject = new BehaviorSubject<UserDto | null>(null);
   //public currentUserDto$ = this.currentUserDtoSubject.asObservable();
 
-  private usersSubject = new BehaviorSubject<UserDto[]>([]);
-  public usersDto$ = this.usersSubject.asObservable();
+ // private usersSubject = new BehaviorSubject<UserDto[]>([]);
+ // public usersDto$ = this.usersSubject.asObservable();
 
   private districtsSubject = new BehaviorSubject<District[]>([]);
   public districts$ = this.districtsSubject.asObservable();
@@ -76,7 +76,7 @@ export class BiomedStateService {
   private initData(): void {
     //this.fetchDistricts();
     //this.fetchInstitutions();
-    this.fetchUsers();
+    //this.fetchUsers();
     //this.fetchEquipment();
     /*this.fetchAssignments();
     this.fetchRepairRequests();
@@ -109,12 +109,12 @@ export class BiomedStateService {
   }
 
   // Users
-  private fetchUsers(): void {
+ /* private fetchUsers(): void {
     this.http.get<UserDto[]>(`${this.baseUrl}/users`)
       .pipe(catchError(this.handleError))
       .subscribe(users => this.usersSubject.next(users));
   }
-/*
+
   // Equipment
   private fetchEquipment(): void {
     this.http.get<Equipment[]>(`${this.baseUrl}/equipment`)

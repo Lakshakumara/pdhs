@@ -128,10 +128,6 @@ filteredItems: any[] | undefined;
   }
 
   getRepairRequest() {
-    if (this.userFacade.currentSession() == null) {
-      console.log('return equipment sessionis null')
-      return
-    }
     this.queryService.getRepairRequest(
       this.currentPage(),
       this.pageSize(),
@@ -230,6 +226,11 @@ filteredItems: any[] | undefined;
       return;
     }
 
+    const eq = this.equipments().find(e => e.id === this.reqEqId);
+    if(eq?.assignedInstitutionId == null){
+      this.notify.error('Equipment not assigned to any institution', 'Please select an equipment that is assigned to an institution.')
+      return;
+    }
     const submittedByUserId = this.userFacade.currentUser()?.id;
     if (!submittedByUserId) {
       this.notify.error('User Session Expired', 'Try Logging again')
@@ -242,6 +243,7 @@ filteredItems: any[] | undefined;
         next: result => {
           console.log('result', result)
           this.getEquipment();
+          this.getRepairRequest();
           this.showRequestModal = false;
           this.notify.success('Repair request submitted successfully!', `Your repair request for ${result.repairRequest.equipmentName} has been submitted.`);
         },
@@ -264,10 +266,6 @@ filteredItems: any[] | undefined;
 
     this.diagnosisNotes = wo.diagnosisNotes || '';
 
-    // Load components of this equipment for inspection checklist
-    //const eqList = this.stateService.equipmentSubject.value;
-    //const eqObj:any = req.equipment;
-    //console.log('req.equipment technical view', eqObj)
     if (wo.inspectedComponents && wo.inspectedComponents.length > 0) {
       this.techInspectedComponents = [...wo.inspectedComponents];
     } else {
@@ -330,6 +328,10 @@ filteredItems: any[] | undefined;
     let nextStatus: WorkOrderStatus = this.selectedWO.status;
     const payload: Partial<WorkOrder> = {};
 
+    payload.assignedTechnicianId = this.userFacade.currentUser()?.id;
+    payload.assignedTechnicianName = this.userFacade.currentUser()?.fullName;
+
+
     switch (step) {
       case 'Acknowledge':
         nextStatus = 'Acknowledged';
@@ -356,8 +358,9 @@ filteredItems: any[] | undefined;
 console.log('work order', this.selectedWO.id, nextStatus, payload)
     this.upsertService.updateWorkOrderStatus(this.selectedWO.id, nextStatus, payload)
     .subscribe(result => {
-      console.log('result', result)
-      this.notify.success('Status Updated', '')
+      this.getRepairRequest();
+      console.log('updateWorkOrderStatus result', result)
+      this.notify.success('Status Updated ', result.status)
       this.closeTechnicianModal();
     });
     

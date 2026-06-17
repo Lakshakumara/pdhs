@@ -1,17 +1,19 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder } from '../models/biomed.interface';
+import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder } from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
 import { OrganizationTreeNode } from '../../layout/organization.chart/organiization.tree.node';
+import { environment } from '../../../environments/environment';
 
 
 @Injectable({
   providedIn: 'root',
 })
 export class QueryService {
-  
 
-  private baseUrl = 'http://localhost:3000/api';
+
+
+  private baseUrl = environment.apiUrl
 
   constructor(
     public userApi: UserFacadeService,
@@ -27,6 +29,10 @@ export class QueryService {
     return this.http.get<any>(`${this.baseUrl}/dashboard/summary`);
   }
 
+  getDistrtcs() {
+    return this.http.get<District[]>(`${this.baseUrl}/districts`,
+    );
+  }
   getInstitute(
     page: number,
     size: number,
@@ -183,8 +189,8 @@ export class QueryService {
 
   getOrganizationTree() {
 
-  return this.http.get<OrganizationTreeNode>(
-    `${this.baseUrl}/dashboard/organization-tree`
-  );
-}
+    return this.http.get<OrganizationTreeNode>(
+      `${this.baseUrl}/dashboard/organization-tree`
+    );
+  }
 }

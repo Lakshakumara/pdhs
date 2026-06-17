@@ -60,18 +60,4 @@ export class UserFacadeService {
   hasAnyRole(roles: RoleType[]): boolean {
     return this.currentUser()?.roles.some(r => roles.includes(r.role)) ?? false;
   }
-  /* switchRole(activeRole: ActiveRole): void {
- 
-     const session = this.currentSession();
- 
-     if (!session) {
-       return;
-     }
- 
-     this.currentSession.set({
-       ...session,
-       activeRole
-     });
-   }*/
-
 }

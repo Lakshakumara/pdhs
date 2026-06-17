@@ -16,6 +16,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
 import { UserDto } from '../../core/models/biomed.interface';
 import { environment } from '../../../environments/environment';
+import { UserApiService } from '../../core/services/user-api.service';
 
 interface DevUserOption {
   label: string;
@@ -39,7 +40,7 @@ export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private stateService = inject(BiomedStateService);
+  private stateService = inject(UserApiService);
 
   loginForm: FormGroup;
   error = signal<string | null>(null);
@@ -77,7 +78,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     if (this.enableDevLogin) {
-      this.stateService.usersDto$.subscribe(list => this.devUsers.set(list));
+      this.stateService.getAllUsers().subscribe(list => this.devUsers.set(list));
     }
   }
 

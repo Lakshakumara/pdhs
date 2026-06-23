@@ -1,4 +1,4 @@
-import { ScopeType, Permission, RoleType } from "../auth/permission.types";
+import { ScopeType, Permission, RoleType } from "./permission.types";
 
 export interface District {
   id: string;

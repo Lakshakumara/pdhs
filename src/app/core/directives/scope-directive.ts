@@ -6,7 +6,7 @@ import {
   effect,
 } from '@angular/core';
 import { UserFacadeService } from '../services/user-facade.service';
-import { ScopeType } from '../auth/permission.types';
+import { ScopeType } from '../models/permission.types';
 
 @Directive({
   selector: '[appHasScope]',

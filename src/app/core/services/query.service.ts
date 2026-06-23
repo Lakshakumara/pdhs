@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, RepairHistoryEntry, WorkOrder, AuditLog } from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
-import { OrganizationTreeNode } from '../../layout/organization.chart/organiization.tree.node';
+import { OrganizationTreeNode } from '../../layout/organization-chart/organization-tree-node';
 import { environment } from '../../../environments/environment';
 
 

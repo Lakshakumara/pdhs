@@ -11,7 +11,7 @@ import {
   WorkOrder,
   PurchaseOrderItem
 } from '../../core/models/biomed.interface';
-import { RoleType } from "../../core/auth/permission.types";
+import { RoleType } from "../../core/models/permission.types";
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
 

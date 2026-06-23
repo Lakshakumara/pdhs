@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResult, UserDto, UserRoleDto } from '../models/biomed.interface';
-import { Permission, RoleType } from "../auth/permission.types";
-import { ScopeType } from '../auth/permission.types';
+import { Permission, RoleType } from "../models/permission.types";
+import { ScopeType } from '../models/permission.types';
 import { environment } from '../../../environments/environment';
 
 @Injectable({

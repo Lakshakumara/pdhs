@@ -8,7 +8,7 @@ import {
 } from '@angular/router';
 import { Observable } from 'rxjs';
 import { UserFacadeService } from '../services/user-facade.service';
-import { RoleType } from "../auth/permission.types";
+import { RoleType } from "../models/permission.types";
 
 @Injectable({
   providedIn: 'root'

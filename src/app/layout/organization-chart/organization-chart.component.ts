@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { TreeNode } from 'primeng/api';
-import { OrganizationTreeNode } from './organiization.tree.node';
+import { OrganizationTreeNode } from './organization-tree-node';
 import { QueryService } from '../../core/services/query.service';
 import { OrganizationChartModule } from 'primeng/organizationchart';
 import { CommonModule } from '@angular/common';
@@ -8,8 +8,8 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-organization.chart',
   imports: [CommonModule, OrganizationChartModule],
-  templateUrl: './organization.chart.component.html',
-  styleUrl: './organization.chart.component.css',
+  templateUrl: './organization-chart.component.html',
+  styleUrl: './organization-chart.component.css',
 })
 export class OrganizationChart implements OnInit{
   nodes = signal<TreeNode[]>([]);

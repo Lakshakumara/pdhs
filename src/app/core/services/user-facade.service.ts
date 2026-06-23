@@ -1,8 +1,8 @@
 import { computed, Injectable, signal } from "@angular/core";
 import { UserDto, ActiveRole, UserSession } from "../models/biomed.interface";
-import { RoleType } from "../auth/permission.types";
+import { RoleType } from "../models/permission.types";
 import { UserApiService } from "./user-api.service";
-import { Permission } from "../auth/permission.types";
+import { Permission } from "../models/permission.types";
 
 @Injectable({ providedIn: 'root' })
 export class UserFacadeService {

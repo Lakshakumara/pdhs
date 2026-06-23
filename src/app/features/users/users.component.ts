@@ -31,11 +31,11 @@ import { TextareaModule } from 'primeng/textarea';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { UserApiService } from '../../core/services/user-api.service';
 import { District, Institution, UserDto, UserPermissionRecord, UserRoleDto } from '../../core/models/biomed.interface';
-import { RoleType, SCOPE_ROLES } from "../../core/auth/permission.types";
+import { RoleType, SCOPE_ROLES } from "../../core/models/permission.types";
 import { QueryService } from '../../core/services/query.service';
 import { PaginatorState } from 'primeng/paginator';
 import { forkJoin, finalize } from 'rxjs';
-import { Permission, ScopeType } from '../../core/auth/permission.types';
+import { Permission, ScopeType } from '../../core/models/permission.types';
 
 
 export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Permission[] }[] = [

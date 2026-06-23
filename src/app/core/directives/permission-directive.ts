@@ -1,6 +1,6 @@
 import { Directive, Input, TemplateRef, ViewContainerRef, effect, signal } from '@angular/core';
 import { UserFacadeService } from '../services/user-facade.service';
-import { Permission } from '../auth/permission.types';
+import { Permission } from '../models/permission.types';
 
 export type AuthStrategy = 'ANY' | 'ALL';
 

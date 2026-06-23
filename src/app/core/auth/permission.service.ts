@@ -1,6 +1,6 @@
 import { computed, Injectable } from '@angular/core';
 import { UserFacadeService } from '../services/user-facade.service';
-import { Permission } from './permission.types';
+import { Permission } from '../models/permission.types';
 
 @Injectable({
   providedIn: 'root'

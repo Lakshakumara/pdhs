@@ -12,7 +12,7 @@ export const routes: Routes = [
   // ─────────────────────────────────────────────────────────────────────
   {
     path: 'login',
-    loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent),
+    loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent),
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ export const routes: Routes = [
       },
       {
         path: 'org',
-        loadComponent: () => import('./layout/organization.chart/organization.chart.component').then(m => m.OrganizationChart),
+        loadComponent: () => import('./layout/organization-chart/organization-chart.component').then(m => m.OrganizationChart),
       },
       {
         path: 'inventory',

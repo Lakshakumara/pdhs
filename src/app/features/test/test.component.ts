@@ -8,9 +8,9 @@ import { QueryService } from '../../core/services/query.service';
 import { UpsertService } from '../../core/services/upsert.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { RepairRequest, WorkOrder, Institution, Equipment, InventoryItem, RepairPriority, WorkOrderStatus, PartUsedDetail } from '../../core/models/biomed.interface';
-import { RoleType } from "../../core/auth/permission.types";
-import { HasPermissionDirective } from '../../core/directive/permission-directive';
-import { Permission } from '../../core/auth/permission.types';
+import { RoleType } from "../../core/models/permission.types";
+import { HasPermissionDirective } from '../../core/directives/permission-directive';
+import { Permission } from '../../core/models/permission.types';
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
 @Component({

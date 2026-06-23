@@ -5,7 +5,7 @@ import { BiomedStateService } from '../../core/services/biomed-state.service';
 import { Equipment, EquipmentCategory, Institution, EquipmentSpareParts } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { UpsertService } from '../../core/services/upsert.service';
-import { RoleType } from "../../core/auth/permission.types";
+import { RoleType } from "../../core/models/permission.types";
 
 @Component({
   selector: 'app-inventory',

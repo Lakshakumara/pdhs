@@ -8,9 +8,9 @@ import {
 } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
-import { Permission, RoleType, ScopeType } from '../../core/auth/permission.types';
-import { HasScopeDirective } from '../../core/directive/scope-directive';
-import { HasPermissionDirective } from "../../core/directive/permission-directive";
+import { Permission, RoleType, ScopeType } from '../../core/models/permission.types';
+import { HasScopeDirective } from '../../core/directives/scope-directive';
+import { HasPermissionDirective } from "../../core/directives/permission-directive";
 
 @Component({
   selector: 'app-dashboard',

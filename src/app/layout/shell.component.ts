@@ -3,9 +3,9 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { UserFacadeService } from '../core/services/user-facade.service';
 import { AuthService } from '../core/auth/auth.service';
-import { HasPermissionDirective } from '../core/directive/permission-directive';
-import { Permission } from '../core/auth/permission.types';
-import { RoleType } from "../core/auth/permission.types";
+import { HasPermissionDirective } from '../core/directives/permission-directive';
+import { Permission } from '../core/models/permission.types';
+import { RoleType } from "../core/models/permission.types";
 
 /**
  * ShellComponent — the authenticated application layout.

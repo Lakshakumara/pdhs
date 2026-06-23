@@ -7,8 +7,8 @@ import { QueryService } from '../../core/services/query.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UpsertService } from '../../core/services/upsert.service';
-import { HasPermissionDirective } from '../../core/directive/permission-directive';
-import { Permission } from '../../core/auth/permission.types';
+import { HasPermissionDirective } from '../../core/directives/permission-directive';
+import { Permission } from '../../core/models/permission.types';
 import { RepairHistoryComponent } from './repair-history/repair-history.component';
 
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';

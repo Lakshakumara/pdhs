@@ -7,67 +7,103 @@ import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
 import { UpsertService } from '../../core/services/upsert.service';
 import { NotificationService } from '../../core/services/notification.service';
-import { RepairRequest, WorkOrder, Institution, Equipment, InventoryItem, RepairPriority, WorkOrderStatus } from '../../core/models/biomed.interface';
-import { HasPermissionDirective } from '../../core/auth/permission-directive';
+import { RepairRequest, WorkOrder, Institution, Equipment, InventoryItem, RepairPriority, WorkOrderStatus, PartUsedDetail, InspectedSparePart } from '../../core/models/biomed.interface';
+import { RoleType } from "../../core/auth/permission.types";
+import { HasPermissionDirective } from '../../core/directive/permission-directive';
 import { Permission } from '../../core/auth/permission.types';
+
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { TextareaModule } from 'primeng/textarea';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ToolbarModule } from 'primeng/toolbar';
+import { SkeletonModule } from 'primeng/skeleton';
 
 @Component({
   selector: 'app-repairs',
-  imports: [CommonModule, FormsModule, HasPermissionDirective, AutoCompleteModule],
+  imports: [
+    CommonModule, FormsModule, HasPermissionDirective, AutoCompleteModule,
+    TableModule, DialogModule, TagModule, ButtonModule, InputTextModule,
+    SelectModule, IconFieldModule, InputIconModule, TextareaModule,
+    InputNumberModule, CheckboxModule, ToolbarModule, SkeletonModule
+  ],
   templateUrl: './repairs.component.html',
   styleUrl: './repairs.component.css'
 })
 export class RepairsComponent implements OnInit {
 
-  readonly permission = Permission
-  //public requests: RepairRequest[] = [];
+  readonly permission = Permission;
+
   readonly workOrders = signal<WorkOrder[]>([]);
   readonly repairRequests = signal<RepairRequest[]>([]);
+  readonly loading = signal(true);
 
   public institutions: Institution[] = [];
   readonly equipments = signal<Equipment[]>([]);
-  readonly inventoryItems = signal<InventoryItem[]>([]); // Store inventory list for technicians to pick spare parts
-filteredItems: any[] | undefined;
-  // Pagination properties
-  readonly totalPages = signal(1);
+  readonly inventoryItems = signal<InventoryItem[]>([]);
+
+  // Pagination / lazy-load state (driven entirely by p-table now)
   readonly total = signal(0);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
+  public sortField = '';
+  public sortOrder = 1;
 
-  // Filter properties
+  // Filter properties bound to the table's header filter row
+  public searchTerm = '';
   public selectedPriority = '';
-  // Filter properties
-  public searchTerm = signal('');
-  public selectedCategory = signal('');
-  public selectedStatus = signal('');
-  public selectedInstitutionId = signal('');
+  public selectedStatus = '';
+  public selectedCategory = '';
+  public selectedInstitutionId = '';
+
+  public readonly priorityOptions = [
+    { label: 'Emergency', value: 'Emergency' },
+    { label: 'Urgent', value: 'Urgent' },
+    { label: 'Routine', value: 'Routine' }
+  ];
+
+  public readonly statusOptions = [
+    { label: 'Submitted (Pending)', value: 'Submitted' },
+    { label: 'Acknowledged', value: 'Acknowledged' },
+    { label: 'Diagnosed', value: 'Diagnosed' },
+    { label: 'In Repair', value: 'In Repair' },
+    { label: 'Completed (Ready)', value: 'Completed' },
+    { label: 'Verified & Closed', value: 'Verified & Closed' }
+  ];
 
   // Modals
   public showDetailModal = false;
   public showRequestModal = false;
-  public showTechnicianModal = false; // Panel for technicians to perform edits
+  public showTechnicianModal = false;
 
   // Selected state
-  public selectedReq: RepairRequest | null = null;
-  public selectedWO: WorkOrder | null = null;
-  //readonly selectedWO = signal<WorkOrder>(null);
-
+  readonly selectedReq = signal<RepairRequest | null>(null);
+  readonly selectedWO = signal<WorkOrder | null>(null);
 
   // Submit Request Form State
   public reqEqId = '';
   public reqCompId = '';
   public reqFaultDesc = '';
   public reqPriority: RepairPriority = 'Routine';
-  public selectedEqComponentsList: any[] = [];
+  public selectedEqSparePartList: any[] = [];
 
   // Technician Form Action State
   public diagnosisNotes = '';
-  public techInspectedComponents: { componentId: string; componentName: string; inspected: boolean; conditionNotes: string }[] = [];
-  // Buffer for parts used
-  public techPartsUsed: { inventoryItemId: string; partName: string; quantityUsed: number; unitCost: number }[] = [];
-  public tempItem!:InventoryItem | null;
+  public techInspectedSpareParts: InspectedSparePart[] = [];
+  public techPartsUsed: PartUsedDetail[] = [];
+  public tempItem!: InventoryItem | null;
   public tempPartQty = 1;
+
+  public readonly lifecycleSteps: WorkOrderStatus[] =
+    ['Submitted', 'Acknowledged', 'Diagnosed', 'In Repair', 'Completed', 'Verified & Closed'];
 
   constructor(
     private queryService: QueryService,
@@ -77,32 +113,52 @@ filteredItems: any[] | undefined;
     private stateService: BiomedStateService) { }
 
   ngOnInit() {
-
     this.getEquipment();
-    this.getRepairRequest();
-    this.getWorkOrders();
     this.getInventoryItem();
-    /*this.applyFilters();
-    this.stateService.institutions$.subscribe(list => {
-      this.institutions = list;
-    });
-
-    this.stateService.inventoryItems$.subscribe(list => {
-      this.inventoryItems = list;
-    });*/
+    // Initial repair-request load happens via the table's first onLazyLoad emission.
   }
 
-  // Pre-load equipment options for submitting request based on active user context
+  // ---------------------------------------------------------------------
+  // p-table lazy load: ONE handler drives pagination + sorting + filtering
+  // ---------------------------------------------------------------------
+  public onLazyLoad(event: TableLazyLoadEvent) {
+    this.loading.set(true);
 
-  filterItems(event: AutoCompleteCompleteEvent) {
-    console.log('event', event.query)
-    //in a real application, make a request to a remote url with the query and return filtered results, for demo we filter at client side
+    const rows = event.rows ?? this.pageSize();
+    const first = event.first ?? 0;
+    const page = Math.floor(first / rows) + 1;
+
+    this.currentPage.set(page);
+    this.pageSize.set(rows);
+    this.sortField = (event.sortField as string) || '';
+    this.sortOrder = event.sortOrder ?? 1;
+
+    this.queryService.getRepairRequest(
+      page,
+      rows,
+      this.searchTerm,
+      this.selectedCategory,
+      this.selectedStatus,
+    ).subscribe({
+      next: result => {
+        this.repairRequests.set(result.items);
+        this.total.set(result.total);
+        this.getWorkOrders(); // keep work-order join in sync with current page
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  // Called from the header filter inputs (search box, priority/status dropdowns)
+  public onFilterChange() {
+    this.currentPage.set(1);
+    this.onLazyLoad({ first: 0, rows: this.pageSize(), sortField: this.sortField, sortOrder: this.sortOrder });
+  }
+
+  public filterItems(event: AutoCompleteCompleteEvent) {
     this.queryService.getInventorytem(
-      this.currentPage(),
-      this.pageSize(),
-      event.query,
-      this.selectedCategory(),
-      this.selectedStatus(),
+      this.currentPage(), this.pageSize(), event.query, this.selectedCategory, this.selectedStatus,
     ).subscribe(result => {
       this.inventoryItems.set(result.items);
       this.total.set(result.total);
@@ -110,100 +166,58 @@ filteredItems: any[] | undefined;
   }
 
   getInventoryItem() {
-    console.log('get equipment session ', this.userFacade.currentSession())
-    if (this.userFacade.currentSession() == null) {
-      console.log('return equipment sessionis null')
-      return
-    }
+    if (this.userFacade.currentSession() == null) return;
     this.queryService.getInventorytem(
-      this.currentPage(),
-      this.pageSize(),
-      this.searchTerm(),
-      this.selectedCategory(),
-      this.selectedStatus(),
-    ).subscribe(result => {
-      this.inventoryItems.set(result.items);
-      this.total.set(result.total);
-    });
+      this.currentPage(), this.pageSize(), this.searchTerm, this.selectedCategory, this.selectedStatus,
+    ).subscribe(result => this.inventoryItems.set(result.items));
   }
 
-  getRepairRequest() {
-    this.queryService.getRepairRequest(
-      this.currentPage(),
-      this.pageSize(),
-      this.searchTerm(),
-      this.selectedCategory(),
-      this.selectedStatus(),
-    ).subscribe(result => {
-      this.repairRequests.set(result.items);
-      this.total.set(result.total);
-    });
-  }
   getEquipment() {
-    console.log('get equipment session ', this.userFacade.currentSession())
-    if (this.userFacade.currentSession() == null) {
-      console.log('return equipment sessionis null')
-      return
-    }
+    if (this.userFacade.currentSession() == null) return;
     this.queryService.getEquipment(
-      this.currentPage(),
-      this.pageSize(),
-      this.searchTerm(),
-      this.selectedCategory(),
-      this.selectedStatus(),
-      this.selectedInstitutionId()
-    ).subscribe(result => {
-      this.equipments.set(result.items);
-      this.total.set(result.total);
-    });
+      this.currentPage(), this.pageSize(), this.searchTerm, this.selectedCategory,
+      this.selectedStatus, this.selectedInstitutionId
+    ).subscribe(result => this.equipments.set(result.items));
   }
 
   getWorkOrders() {
     this.queryService.getWorkOrder(
-      this.currentPage(),
-      this.pageSize(),
-      this.searchTerm(),
-      this.selectedCategory(),
-      this.selectedStatus(),
-    ).subscribe(result => {
-      this.workOrders.set(result.items);
-      console.log('Wo received', result.items);
-      this.total.set(result.total);
-    });
-  }
-  public getWO(repairRequestId: string): any {
-    //console.log('getWO requeatedId ', repairRequestId)
-    return this.workOrders().find(o => o.repairRequestId === repairRequestId);
-  }
-  public applyFilters() {
+      this.currentPage(), this.pageSize(), this.searchTerm, this.selectedCategory, this.selectedStatus,
+    ).subscribe(result => this.workOrders.set(result.items));
   }
 
-  //trigger on ticket submit
+  public getWO(repairRequestId: string): WorkOrder | undefined {
+    return this.workOrders().find(o => o.repairRequestId === repairRequestId);
+  }
+
+  // Lifecycle helper for the p-dialog timeline — replaces the long chained
+  // *ngClass boolean expressions with one lookup
+  public isStepComplete(step: WorkOrderStatus, current: WorkOrderStatus): boolean {
+    return this.lifecycleSteps.indexOf(step) <= this.lifecycleSteps.indexOf(current);
+  }
+
   public onEqChange() {
     this.reqCompId = '';
     const eq = this.equipments().find(e => e.id === this.reqEqId);
-    this.selectedEqComponentsList = eq ? eq.components : [];
+    this.selectedEqSparePartList = eq ? eq.spareParts : [];
   }
 
   // Details Dialog
   public openDetails(req: RepairRequest) {
-    this.selectedReq = req;
-    this.selectedWO = this.getWO(req.id)
+    this.selectedReq.set(req);
+    this.selectedWO.set(this.getWO(req.id) ?? null);
     this.showDetailModal = true;
-
-    //console.log('Detail Doalog data', this.selectedReq, this.selectedWO)
   }
 
   public closeDetails() {
     this.showDetailModal = false;
-    this.selectedReq = null;
-    this.selectedWO = null;
+    this.selectedReq.set(null);
+    this.selectedWO.set(null);
   }
 
   private syncSelectedWO() {
-    if (this.selectedReq) {
-      this.selectedWO = this.getWO(this.selectedReq.id) || null;
-    }
+    const req = this.selectedReq();
+    if (req) this.selectedWO.set(this.getWO(req.id) ?? null);
   }
 
   // New Request Submission
@@ -213,7 +227,7 @@ filteredItems: any[] | undefined;
     this.reqCompId = '';
     this.reqFaultDesc = '';
     this.reqPriority = 'Routine';
-    this.selectedEqComponentsList = [];
+    this.selectedEqSparePartList = [];
   }
 
   public closeRequestModal() {
@@ -227,23 +241,22 @@ filteredItems: any[] | undefined;
     }
 
     const eq = this.equipments().find(e => e.id === this.reqEqId);
-    if(eq?.assignedInstitutionId == null){
-      this.notify.error('Equipment not assigned to any institution', 'Please select an equipment that is assigned to an institution.')
+    if (eq?.assignedInstitutionId == null) {
+      this.notify.error('Equipment not assigned to any institution', 'Please select an equipment that is assigned to an institution.');
       return;
     }
     const submittedByUserId = this.userFacade.currentUser()?.id;
     if (!submittedByUserId) {
-      this.notify.error('User Session Expired', 'Try Logging again')
-      return
+      this.notify.error('User Session Expired', 'Try Logging again');
+      return;
     }
 
     this.upsertService.submitRepairRequest(this.reqEqId, this.reqCompId || undefined,
       this.reqFaultDesc, this.reqPriority, submittedByUserId)
       .subscribe({
         next: result => {
-          console.log('result', result)
           this.getEquipment();
-          this.getRepairRequest();
+          this.onFilterChange(); // refresh table from page 1
           this.showRequestModal = false;
           this.notify.success('Repair request submitted successfully!', `Your repair request for ${result.repairRequest.equipmentName} has been submitted.`);
         },
@@ -251,69 +264,58 @@ filteredItems: any[] | undefined;
           this.notify.error('Failed to submit repair request', err.message || 'An error occurred while submitting your request. Please try again.');
         }
       });
-
   }
 
-  // Technician Actions Dialog (Diagnosis & Repairs updates)
+  // Technician Actions Dialog
   public openTechnicianModal(req: any) {
-    console.log('technical view', req)
-    this.selectedReq = req;
-    this.syncSelectedWO()
+    this.selectedReq.set(req);
+    this.syncSelectedWO();
 
-    //setTimeout(() => {
-    const wo: any = this.selectedWO;
+    const wo = this.selectedWO();
     if (!wo) return;
 
     this.diagnosisNotes = wo.diagnosisNotes || '';
 
-    if (wo.inspectedComponents && wo.inspectedComponents.length > 0) {
-      this.techInspectedComponents = [...wo.inspectedComponents];
+    if (wo.inspectedSpareParts && wo.inspectedSpareParts.length > 0) {
+      this.techInspectedSpareParts = [...wo.inspectedSpareParts];
     } else {
-      this.techInspectedComponents = req.equipment.components.map((c: any) =>
-        ({ componentId: c.id, componentName: c.name, inspected: false, conditionNotes: '' }))
+      this.techInspectedSpareParts = (req.equipment?.spareParts ?? []).map((c: any) =>
+        ({ sparePartId: c.id, sparePartName: c.name, inspected: false, conditionNotes: '' }));
     }
 
     this.techPartsUsed = [...(wo.partsUsed || [])];
-    this.tempItem = null;;
+    this.tempItem = null;
     this.tempPartQty = 1;
     this.showTechnicianModal = true;
-    // }, 500);
   }
 
   public closeTechnicianModal() {
     this.showTechnicianModal = false;
-    this.selectedReq = null;
-    this.selectedWO = null;
+    this.selectedReq.set(null);
+    this.selectedWO.set(null);
   }
 
-  // Technician Parts Add buffer
   public addPartToBuffer() {
-    //console.log('temp ID', this.tempPartId)
-    //if (!this.tempPartId) return;
-    //const item = this.inventoryItems().find(i => i.id === this.tempPartId);
-    //console.log('tem', item)
     if (this.tempItem === null) return;
 
     if (this.tempItem.currentStock < this.tempPartQty) {
-      this.notify.error(`Insufficient stock!`,` Available in PDHS store: ${this.tempItem.currentStock} units`);
+      this.notify.error(`Insufficient stock!`, `Available in PDHS store: ${this.tempItem.currentStock} units`);
       return;
     }
 
-    // Check if item already added
     const existing = this.techPartsUsed.find(p => p.inventoryItemId === this.tempItem?.id);
-    //console.log('found', existing)
     if (existing) {
       existing.quantityUsed += this.tempPartQty;
     } else {
       this.techPartsUsed.push({
         inventoryItemId: this.tempItem.id,
-        partName: this.tempItem.name,
+        inventoryItemName: this.tempItem.name,
         quantityUsed: this.tempPartQty,
         unitCost: this.tempItem.costPerUnit
       });
     }
 
-    this.tempItem  = null;
+    this.tempItem = null;
     this.tempPartQty = 1;
   }
 
@@ -323,14 +325,14 @@ filteredItems: any[] | undefined;
 
   // Technician Workflow transitions
   public runWorkOrderStep(step: 'Acknowledge' | 'Diagnose' | 'StartRepair' | 'Complete') {
-    if (!this.selectedWO) return;
+    const wo = this.selectedWO();
+    if (!wo) return;
 
-    let nextStatus: WorkOrderStatus = this.selectedWO.status;
+    let nextStatus: WorkOrderStatus = wo.status;
     const payload: Partial<WorkOrder> = {};
 
     payload.assignedTechnicianId = this.userFacade.currentUser()?.id;
     payload.assignedTechnicianName = this.userFacade.currentUser()?.fullName;
-
 
     switch (step) {
       case 'Acknowledge':
@@ -338,12 +340,12 @@ filteredItems: any[] | undefined;
         break;
       case 'Diagnose':
         if (!this.diagnosisNotes.trim()) {
-          this.notify.error('Please input your diagnostic findings first.','');
+          this.notify.error('Please input your diagnostic findings first.', '');
           return;
         }
         nextStatus = 'Diagnosed';
         payload.diagnosisNotes = this.diagnosisNotes;
-        payload.inspectedComponents = this.techInspectedComponents;
+        payload.inspectedSpareParts = this.techInspectedSpareParts;
         break;
       case 'StartRepair':
         nextStatus = 'In Repair';
@@ -351,64 +353,60 @@ filteredItems: any[] | undefined;
       case 'Complete':
         nextStatus = 'Completed';
         payload.diagnosisNotes = this.diagnosisNotes;
-        payload.inspectedComponents = this.techInspectedComponents;
+        payload.inspectedSpareParts = this.techInspectedSpareParts;
         payload.partsUsed = this.techPartsUsed;
         break;
     }
-console.log('work order', this.selectedWO.id, nextStatus, payload)
-    this.upsertService.updateWorkOrderStatus(this.selectedWO.id, nextStatus, payload)
-    .subscribe(result => {
-      this.getRepairRequest();
-      console.log('updateWorkOrderStatus result', result)
-      this.notify.success('Status Updated ', result.status)
-      this.closeTechnicianModal();
-    });
-    
+
+    this.upsertService.updateWorkOrderStatus(wo.id, nextStatus, payload)
+      .subscribe(result => {
+        this.onFilterChange();
+        this.notify.success('Status Updated', result.status);
+        this.closeTechnicianModal();
+      });
   }
 
   // Supervisor Verify and Close
   public verifyAndCloseWorkOrder(woId: string) {
     if (confirm('Are you sure you have verified this repair work and want to close the work order? This will permanently archive the ticket.')) {
-      this.stateService.updateWorkOrderStatus(woId, 'Verified & Closed');
-      this.closeDetails();
+      this.upsertService.updateWorkOrderStatus(woId, 'Verified & Closed', {})
+        .subscribe(() => {
+          this.onFilterChange();
+          this.closeDetails();
+        });
     }
   }
 
-  // Role permissions helpers
-  public canSubmit(): boolean {
-    return true;
-    // if (!this.userFacade.currentUser()) return false;
-    // return this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' || this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS', 'ADMIN_RDHS', 'SUPER_ADMIN_RDHS', 'ADMIN_INSTITUTE', 'SUPER_ADMIN_INSTITUTE']);
-  }
-
+  // Role permission helpers
   public isTechnician(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['BIOMEDICAL_TECHNICIAN', 'SUPER_ADMIN_PDHS']);
+    return this.userFacade.hasAnyRole([RoleType.BIOMEDICAL_TECHNICIAN, RoleType.SUPER_ADMIN_PDHS]);
   }
 
   public isSupervisor(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS']);
+    return this.userFacade.hasAnyRole([RoleType.ADMIN_PDHS, RoleType.SUPER_ADMIN_PDHS]);
   }
-  // Helper status color classes
-  public getStatusClass(status: WorkOrderStatus): string {
+
+  // PrimeNG p-tag severity mapping — replaces hand-written class strings
+  public getStatusSeverity(status: WorkOrderStatus): 'warn' | 'info' | 'secondary' | 'contrast' | 'success' {
     switch (status) {
-      case 'Submitted': return 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-450';
-      case 'Acknowledged': return 'bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400';
-      case 'Diagnosed': return 'bg-purple-50 text-purple-700 dark:bg-purple-950/20 dark:text-purple-400';
-      case 'In Repair': return 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400';
-      case 'Completed': return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400';
-      case 'Verified & Closed': return 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400';
-      default: return 'bg-zinc-100 text-zinc-500';
+      case 'Submitted': return 'warn';
+      case 'Acknowledged': return 'info';
+      case 'Diagnosed': return 'contrast';
+      case 'In Repair': return 'info';
+      case 'Completed': return 'success';
+      case 'Verified & Closed': return 'secondary';
+      default: return 'secondary';
     }
   }
 
-  public getPriorityClass(p: RepairPriority): string {
+  public getPrioritySeverity(p: RepairPriority): 'danger' | 'warn' | 'secondary' {
     switch (p) {
-      case 'Emergency': return 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 font-extrabold';
-      case 'Urgent': return 'bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400 font-bold';
-      case 'Routine': return 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400';
-      default: return 'bg-zinc-100 text-zinc-500';
+      case 'Emergency': return 'danger';
+      case 'Urgent': return 'warn';
+      case 'Routine': return 'secondary';
+      default: return 'secondary';
     }
   }
 
@@ -416,58 +414,3 @@ console.log('work order', this.selectedWO.id, nextStatus, payload)
     return this.institutions.find(i => i.id === id)?.name || id;
   }
 }
-/*
-
-  private loadMyEquipment() {
-    if (!this.userFacade.currentUser()) return;
-    const allEq = this.stateService.equipmentSubject.value; // load direct list
-    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
-      this.equipmentList = allEq.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
-    } else {
-      this.equipmentList = allEq.filter(e => e.status === 'Assigned'); // Show all active assigned items
-    }
-  }
-public applyFilters() {
-    if (!this.userFacade.currentUser()) return;
-
-    const role = this.userFacade.currentUser()?.roles[0]?.role;
-    let list = [...this.requests];
-
-    // 1. Role boundaries
-    if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'RDHS' && this.userFacade.currentUser()?.districtId) {
-      const districtInstIds = this.institutions
-        .filter(i => i.districtId === this.userFacade.currentUser()?.districtId)
-        .map(i => i.id);
-      list = list.filter(r => districtInstIds.includes(r.institutionId));
-    } else if (this.userFacade.currentUser()?.roles[0]?.scopeType === 'INSTITUTE' && this.userFacade.currentUser()?.institutionId) {
-      list = list.filter(r => r.institutionId === this.userFacade.currentUser()?.institutionId);
-    }
-
-    // 2. Status match (joins request with work order status)
-    if (this.selectedStatus) {
-      list = list.filter(r => {
-        const order = this.workOrders.find(o => o.repairRequestId === r.id);
-        return order?.status === this.selectedStatus;
-      });
-    }
-
-    // 3. Priority match
-    if (this.selectedPriority) {
-      list = list.filter(r => r.priority === this.selectedPriority);
-    }
-
-    // 4. Text search
-    if (this.searchTerm.trim()) {
-      const term = this.searchTerm.toLowerCase();
-      list = list.filter(r =>
-        r.id.toLowerCase().includes(term) ||
-        r.equipmentName.toLowerCase().includes(term) ||
-        r.faultDescription.toLowerCase().includes(term) ||
-        r.equipmentSerialNumber.toLowerCase().includes(term) ||
-        r.institutionName.toLowerCase().includes(term)
-      );
-    }
-
-    this.filteredRequests = list;
-  }
-*/

@@ -1,5 +1,6 @@
 import { computed, Injectable, signal } from "@angular/core";
-import { UserDto, RoleType, ActiveRole, UserSession } from "../models/biomed.interface";
+import { UserDto, ActiveRole, UserSession } from "../models/biomed.interface";
+import { RoleType } from "../auth/permission.types";
 import { UserApiService } from "./user-api.service";
 import { Permission } from "../auth/permission.types";
 
@@ -18,11 +19,11 @@ export class UserFacadeService {
 
   readonly activeRole = computed(() => this.currentSession()?.activeRole ?? null);
 
-  private _permissions = signal<Permission[] | null>([]) ;
+  private _permissions = signal<Permission[] | null>([]);
 
   permissions = this._permissions.asReadonly();
 
-  setPermissions(perms: Permission[]| null) {
+  setPermissions(perms: Permission[] | null) {
     this._permissions.set(perms);
   }
 
@@ -37,9 +38,9 @@ export class UserFacadeService {
       permission: permission
     });
     this.setPermissions(permission)
-    console.log('permission updated',permission)
+    console.log('permission updated', permission)
   }
-
+/*
   setSessionById(userId: string) {
     this.userApi.getUserById(userId).subscribe(user => {
       const firstRole = user.roles[0];
@@ -53,6 +54,7 @@ export class UserFacadeService {
     });
 
   }
+  */
   clearSession(): void {
     this.currentSession.set(null);
   }

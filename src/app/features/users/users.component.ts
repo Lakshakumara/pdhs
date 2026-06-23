@@ -31,67 +31,21 @@ import { TextareaModule } from 'primeng/textarea';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { UserApiService } from '../../core/services/user-api.service';
 import { District, Institution, UserDto, UserPermissionRecord, UserRoleDto } from '../../core/models/biomed.interface';
+import { RoleType, SCOPE_ROLES } from "../../core/auth/permission.types";
 import { QueryService } from '../../core/services/query.service';
+import { PaginatorState } from 'primeng/paginator';
+import { forkJoin, finalize } from 'rxjs';
+import { Permission, ScopeType } from '../../core/auth/permission.types';
 
-// ─────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────
 
-export enum RoleType {
-  SUPER_ADMIN_PDHS = 'SUPER_ADMIN_PDHS',
-  ADMIN_PDHS = 'ADMIN_PDHS',
-  VIEWER_PDHS = 'VIEWER_PDHS',
-  SUPER_ADMIN_RDHS = 'SUPER_ADMIN_RDHS',
-  ADMIN_RDHS = 'ADMIN_RDHS',
-  VIEWER_RDHS = 'VIEWER_RDHS',
-  SUPER_ADMIN_INSTITUTE = 'SUPER_ADMIN_INSTITUTE',
-  ADMIN_INSTITUTE = 'ADMIN_INSTITUTE',
-  VIEWER_INSTITUTE = 'VIEWER_INSTITUTE',
-  STORE_KEEPER = 'STORE_KEEPER',
-  BIOMEDICAL_TECHNICIAN = 'BIOMEDICAL_TECHNICIAN',
-  PROCUREMENT_OFFICER = 'PROCUREMENT_OFFICER',
-  INSTITUTION_USER = 'INSTITUTION_USER',
-}
-
-export enum ScopeType {
-  PDHS = 'PDHS', RDHS = 'RDHS', INSTITUTE = 'INSTITUTE',
-}
-
-// All permission values (mirrors permission.enum.ts)
-export enum Permission {
-  INSTITUTE_VIEW = 'INSTITUTE_VIEW',
-  INSTITUTE_CREATE = 'INSTITUTE_CREATE',
-  INSTITUTE_UPDATE = 'INSTITUTE_UPDATE',
-  INSTITUTE_DELETE = 'INSTITUTE_DELETE',
-  INVENTORY_VIEW = 'INVENTORY_VIEW',
-  INVENTORY_CREATE = 'INVENTORY_CREATE',
-  INVENTORY_UPDATE = 'INVENTORY_UPDATE',
-  INVENTORY_DELETE = 'INVENTORY_DELETE',
-  EQUIPMENT_VIEW = 'EQUIPMENT_VIEW',
-  EQUIPMENT_CREATE = 'EQUIPMENT_CREATE',
-  EQUIPMENT_UPDATE = 'EQUIPMENT_UPDATE',
-  EQUIPMENT_DELETE = 'EQUIPMENT_DELETE',
-  REPAIR_REQUEST_VIEW = 'REPAIR_REQUEST_VIEW',
-  REPAIR_REQUEST_CREATE = 'REPAIR_REQUEST_CREATE',
-  REPAIR_REQUEST_UPDATE = 'REPAIR_REQUEST_UPDATE',
-  WORK_ORDER_VIEW = 'WORK_ORDER_VIEW',
-  WORK_ORDER_ASSIGN = 'WORK_ORDER_ASSIGN',
-  WORK_ORDER_COMPLETE = 'WORK_ORDER_COMPLETE',
-  PROCUREMENT_VIEW = 'PROCUREMENT_VIEW',
-  PROCUREMENT_CREATE = 'PROCUREMENT_CREATE',
-  PROCUREMENT_APPROVE = 'PROCUREMENT_APPROVE',
-  USER_VIEW = 'USER_VIEW',
-  USER_CREATE = 'USER_CREATE',
-  USER_UPDATE = 'USER_UPDATE',
-  USER_DELETE = 'USER_DELETE',
-  AUDIT_VIEW = 'AUDIT_VIEW',
-}
-
-// Grouped for the permission matrix UI
 export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Permission[] }[] = [
   {
     group: 'Institutions', icon: 'pi-building',
-    permissions: [Permission.INSTITUTE_VIEW, Permission.INSTITUTE_CREATE, Permission.INSTITUTE_UPDATE, Permission.INSTITUTE_DELETE],
+    permissions: [
+      Permission.INSTITUTE_VIEW,
+      Permission.INSTITUTE_CREATE,
+      Permission.INSTITUTE_UPDATE,
+      Permission.INSTITUTE_DELETE],
   },
   {
     group: 'Inventory', icon: 'pi-warehouse',
@@ -99,7 +53,7 @@ export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Perm
   },
   {
     group: 'Equipment', icon: 'pi-box',
-    permissions: [Permission.EQUIPMENT_VIEW, Permission.EQUIPMENT_CREATE, Permission.EQUIPMENT_UPDATE, Permission.EQUIPMENT_DELETE],
+    permissions: [Permission.EQUIPMENT_VIEW, Permission.EQUIPMENT_CREATE, Permission.EQUIPMENT_UPDATE, Permission.EQUIPMENT_ASSIGN, Permission.EQUIPMENT_DISPOSE, Permission.EQUIPMENT_DELETE],
   },
   {
     group: 'Repairs', icon: 'pi-wrench',
@@ -123,22 +77,6 @@ export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Perm
   },
 ];
 
-// Roles by scope (mirrors SCOPE_ROLES on backend)
-export const SCOPE_ROLES: Record<ScopeType, RoleType[]> = {
-  [ScopeType.PDHS]: [
-    RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS, RoleType.VIEWER_PDHS,
-    RoleType.BIOMEDICAL_TECHNICIAN, RoleType.PROCUREMENT_OFFICER,
-  ],
-  [ScopeType.RDHS]: [
-    RoleType.SUPER_ADMIN_RDHS, RoleType.ADMIN_RDHS, RoleType.VIEWER_RDHS,
-    RoleType.STORE_KEEPER, RoleType.BIOMEDICAL_TECHNICIAN,
-  ],
-  [ScopeType.INSTITUTE]: [
-    RoleType.SUPER_ADMIN_INSTITUTE, RoleType.ADMIN_INSTITUTE,
-    RoleType.VIEWER_INSTITUTE, RoleType.INSTITUTION_USER,
-    RoleType.STORE_KEEPER, RoleType.BIOMEDICAL_TECHNICIAN,
-  ],
-};
 
 // Role colors for badges
 export const ROLE_COLOR: Record<string, string> = {
@@ -209,9 +147,14 @@ export class UsersComponent implements OnInit {
   permMatrixDirty = signal(false);
   permSyncing = signal(false);
 
-  constructor(private useService:UserApiService,
-    private service:QueryService,
-  ){}
+  //Paginator
+  first: number = 0;
+  rows: number = 10;
+  totalRecords: number = 0;
+
+  constructor(private useService: UserApiService,
+    private service: QueryService,
+  ) { }
   // ── Computed ─────────────────────────────────────────────────────
   filteredUsers = computed(() => {
     let list = this.users();
@@ -227,6 +170,12 @@ export class UsersComponent implements OnInit {
     if (a !== null) list = list.filter(u => u.active === a);
     return list;
   });
+
+  onPageChange(event: PaginatorState) {
+    this.first = event.first ?? 0;
+    this.rows = event.rows ?? 10;
+    this.loadData();
+  }
 
   get activeCount() { return this.users().filter(u => u.active).length; }
   get inactiveCount() { return this.users().filter(u => !u.active).length; }
@@ -307,63 +256,56 @@ export class UsersComponent implements OnInit {
   }
 
   private loadData() {
-   // this.loading.set(true);
-    this.useService.getAllUsers()
-    .subscribe({
-      next: (usersRes) => {
-        this.users.set(usersRes ?? []);
-      }
-    })
-this.service.getDistrtcs()
-    .subscribe({
-      next: (result) => {
-        this.districts.set(result);
-      }
-    })
-    this.service.getInstitute(1,100)
-    .subscribe({
-      next: (result) => {
-        this.institutions.set(result.items);
-      }
-    })
-  /*  Promise.all([
-      this.useService.getAllUsers().toPromise,
-      this.service.getDistrtc().toPromise,
-      this.service.getInstitute(1,100).toPromise,
-    ]).then(([usersRes, districts, institutions]) => {
-       this.users.set(usersRes?? []),
-       this.districts.set(districts),
-       this.institutions.set(institutions.items),
+    // 1. Turn on the loading indicator
+    this.loading.set(true);
 
-    }).catch(() => this.toast('error', 'Failed to load data'))
-      .finally(() => this.loading.set(false));
-*/
+    const pageNumber = Math.floor(this.first / this.rows) + 1;
 
-   /* Promise.all([
-      
-      //this.http.get<any>('/api/users').toPromise(),
-      this.http.get<District[]>('/api/districts').toPromise(),
-      this.http.get<Institution[]>('/api/institutions').toPromise(),
-    ]).then(([usersRes, districts, institutions]) => {
-      //this.users.set(usersRes?.items ?? usersRes ?? []);
-      this.districts.set(districts ?? []);
-     // this.institutions.set(institutions ?? []);
-    }).catch(() => this.toast('error', 'Failed to load data'))
-      .finally(() => this.loading.set(false));
-      */
-      
+    // 2. Combine all parallel HTTP streams into a forkJoin
+    forkJoin({
+      usersRes: this.useService.getAllUsers(pageNumber, this.rows),
+      districtsRes: this.service.getDistrtcs(),
+      institutionsRes: this.service.getInstitute(1, 100)
+    })
+      .pipe(
+        // 3. The finalize block runs no matter what (on success OR on error)
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe({
+        next: ({ usersRes, districtsRes, institutionsRes }) => {
+          console.log('Received users', usersRes);
+          console.log('Received districts', districtsRes);
+
+          // 4. Update all signals with the resolved payloads
+          this.users.set(usersRes.items);
+          this.totalRecords = usersRes.total;
+
+          this.districts.set(districtsRes ?? []);
+          this.institutions.set(institutionsRes.items ?? []);
+        },
+        error: (err) => {
+          console.error(err);
+          // Fallback notification or toast message
+          this.toast('error', 'Failed to load metadata or user list');
+        }
+      });
   }
 
   reloadUser(userId: string) {
-    this.http.get<UserDto>(`/api/users/${userId}`).subscribe({
-      next: u => {
-        this.users.update(list => list.map(x => x.id === userId ? u : x));
-        if (this.drawerUser()?.id === userId) this.drawerUser.set(u);
-      },
-    });
+    //this.http.get<UserDto>(`/api/users/${userId}`)
+    this.useService.getUserById(userId)
+      .subscribe({
+        next: u => {
+          this.users.update(list => list.map(x => x.id === userId ? u : x));
+          if (this.drawerUser()?.id === userId) this.drawerUser.set(u);
+        },
+      });
   }
 
+
   // ── Create dialog ─────────────────────────────────────────────────
+
+
   openCreate() {
     this.dialogMode.set('create');
     this.createForm.reset({ mustChangePassword: true });
@@ -372,28 +314,38 @@ this.service.getDistrtcs()
   }
 
   saveCreate() {
+    //this.http.post<UserDto>('/api/users', this.createForm.value)
     if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
     this.submitting.set(true);
-    this.http.post<UserDto>('/api/users', this.createForm.value).subscribe({
-      next: u => {
-        this.users.update(list => [u, ...list]);
-        this.dialogVisible.set(false);
-        this.toast('success', `UserDto ${u.fullName} created`);
-      },
-      error: e => this.toast('error', e?.error?.message ?? 'Failed to create user'),
-      complete: () => this.submitting.set(false),
-    });
+    this.useService.createUser(this.createForm.value)
+      .subscribe({
+        next: u => {
+          this.users.update(list => [u, ...list]);
+          this.dialogVisible.set(false);
+          this.toast('success', `UserDto ${u.fullName} created`);
+        },
+        error: e => this.toast('error', e?.error?.message ?? 'Failed to create user'),
+        complete: () => this.submitting.set(false),
+      });
   }
 
   // ── Drawer (user detail) ──────────────────────────────────────────
   openDrawer(user: UserDto) {
     this.drawerUser.set(user);
     this.drawerTab.set(0);
+    console.log('selected permissions', user.permissions)
     // Init permission matrix from user's active permissions
+    /*const active = new Set<Permission>(
+      user.permissions.filter(p => p.active).map(p => p.permission) ?? [],);*/
+    const now = new Date();
     const active = new Set<Permission>(
-      user.permissions.filter(p => p.active).map(p => p.permission) ?? [],
-    );
+      user.permissions.filter(p => {
+        return !p.expiresAt || new Date(p.expiresAt) > now
+      }).map(p => p.permission) ?? [],);
+    console.log('active permission', active)
     this.permMatrix.set(active);
+
+    console.log('matrix', this.permMatrix())
     this.permMatrixDirty.set(false);
     this.drawerVisible.set(true);
   }
@@ -413,6 +365,7 @@ this.service.getDistrtcs()
       header: 'Reset Password',
       icon: 'pi pi-key',
       accept: () => {
+
         this.http.post(`/api/users/${user.id}/reset-password`, {}).subscribe({
           next: () => {
             this.toast('success', 'Password reset to default');
@@ -450,15 +403,17 @@ this.service.getDistrtcs()
     if (this.roleForm.invalid) { this.roleForm.markAllAsTouched(); return; }
     const userId = this.drawerUser()!.id;
     this.roleSubmitting.set(true);
-    this.http.post(`/api/users/${userId}/roles`, this.roleForm.value).subscribe({
-      next: () => {
-        this.roleDialogVisible.set(false);
-        this.reloadUser(userId);
-        this.toast('success', 'Role assigned');
-      },
-      error: e => this.toast('error', e?.error?.message ?? 'Failed to assign role'),
-      complete: () => this.roleSubmitting.set(false),
-    });
+    this.useService.assignRole(userId, this.roleForm.value)
+      //this.http.post(`/api/users/${userId}/roles`, this.roleForm.value)
+      .subscribe({
+        next: () => {
+          this.roleDialogVisible.set(false);
+          this.reloadUser(userId);
+          this.toast('success', 'Role assigned');
+        },
+        error: e => this.toast('error', e?.error?.message ?? 'Failed to assign role'),
+        complete: () => this.roleSubmitting.set(false),
+      });
   }
 
   removeRole(roleId: string) {
@@ -468,10 +423,12 @@ this.service.getDistrtcs()
       header: 'Remove Role',
       icon: 'pi pi-minus-circle',
       accept: () => {
-        this.http.delete(`/api/users/${userId}/roles/${roleId}`).subscribe({
-          next: () => { this.reloadUser(userId); this.toast('success', 'Role removed'); },
-          error: e => this.toast('error', e?.error?.message ?? 'Failed to remove role'),
-        });
+        this.useService.removeRole(userId, roleId)
+          //this.http.delete(`/api/users/${userId}/roles/${roleId}`)
+          .subscribe({
+            next: () => { this.reloadUser(userId); this.toast('success', 'Role removed'); },
+            error: e => this.toast('error', e?.error?.message ?? 'Failed to remove role'),
+          });
       },
     });
   }
@@ -489,13 +446,16 @@ this.service.getDistrtcs()
   syncPermissions() {
     const userId = this.drawerUser()!.id;
     this.permSyncing.set(true);
-    this.http.put(`/api/users/${userId}/permissions`, {
-      permissions: Array.from(this.permMatrix()),
-    }).subscribe({
-      next: () => { this.reloadUser(userId); this.permMatrixDirty.set(false); this.toast('success', 'Permissions saved'); },
-      error: e => this.toast('error', e?.error?.message ?? 'Failed to save permissions'),
-      complete: () => this.permSyncing.set(false),
-    });
+    this.useService.addPermission(userId, Array.from(this.permMatrix()),
+    )
+      /* this.http.put(`/api/users/${userId}/permissions`, {
+         permissions: Array.from(this.permMatrix()),
+       })*/
+      .subscribe({
+        next: () => { this.reloadUser(userId); this.permMatrixDirty.set(false); this.toast('success', 'Permissions saved'); },
+        error: e => this.toast('error', e?.error?.message ?? 'Failed to save permissions'),
+        complete: () => this.permSyncing.set(false),
+      });
   }
 
   resetPermMatrix() {
@@ -509,7 +469,10 @@ this.service.getDistrtcs()
   }
 
   // ── Grant temporary permission dialog ─────────────────────────────
-  openGrantPerm() { this.permForm.reset({ temporary: false }); this.permDialogVisible.set(true); }
+  openGrantPerm() {
+    this.permForm.reset({ temporary: false });
+    this.permDialogVisible.set(true);
+  }
 
   saveGrantPerm() {
     if (this.permForm.invalid) { this.permForm.markAllAsTouched(); return; }
@@ -553,7 +516,7 @@ this.service.getDistrtcs()
   }
 
   getAvatarBg(name: string) {
-    const colors = ['#059669','#0284c7','#7c3aed','#db2777','#d97706','#16a34a'];
+    const colors = ['#059669', '#0284c7', '#7c3aed', '#db2777', '#d97706', '#16a34a'];
     return colors[name.charCodeAt(0) % colors.length];
   }
 

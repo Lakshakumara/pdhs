@@ -2,9 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BiomedStateService } from '../../core/services/biomed-state.service';
-import { Equipment, EquipmentCategory, Institution, EquipmentParts } from '../../core/models/biomed.interface';
+import { Equipment, EquipmentCategory, Institution, EquipmentSpareParts } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { UpsertService } from '../../core/services/upsert.service';
+import { RoleType } from "../../core/auth/permission.types";
 
 @Component({
   selector: 'app-inventory',
@@ -55,7 +56,7 @@ export class InventoryComponent implements OnInit {
   public newEqReceiptDate = null;
   public newEqWarranty = 12;
   // Sub-components adding buffer
-  public componentBuffer: Omit<EquipmentParts, 'id'>[] = [];
+  public componentBuffer: Omit<EquipmentSpareParts, 'id'>[] = [];
   public tempCompName = '';
   public tempCompPart = '';
   public tempCompSerial = '';
@@ -104,7 +105,7 @@ export class InventoryComponent implements OnInit {
     let list = [...this.equipment];
 
     // 1. Role-based view segregation
-    const hasAccess = this.userFacade.hasAnyRole(['ADMIN_RDHS', 'SUPER_ADMIN_PDHS']);
+    const hasAccess = this.userFacade.hasAnyRole([RoleType.ADMIN_RDHS, RoleType.SUPER_ADMIN_PDHS]);
     if (hasAccess) {
       // Show only equipment in their district institutions)
       const currentInstitution = this.institutions.find(
@@ -112,7 +113,7 @@ export class InventoryComponent implements OnInit {
       );
 
       list = list.filter(e => e.assignedInstitutionId && this.userFacade.currentUser()?.districtId?.includes(e.assignedInstitutionId));
-    } else if (this.userFacade.hasAnyRole(['INSTITUTION_USER', 'ADMIN_INSTITUTE', 'VIEWER_INSTITUTE']) && this.userFacade.currentUser()?.institutionId) {
+    } else if (this.userFacade.hasAnyRole([RoleType.INSTITUTION_USER, RoleType.ADMIN_INSTITUTE, RoleType.VIEWER_INSTITUTE]) && this.userFacade.currentUser()?.institutionId) {
       // Show only equipment assigned to their institution
       list = list.filter(e => e.assignedInstitutionId === this.userFacade.currentUser()?.institutionId);
     }
@@ -211,7 +212,7 @@ export class InventoryComponent implements OnInit {
       partNumber: this.tempCompPart,
       serialNumber: this.tempCompSerial || undefined,
       quantity: 1,
-      componentType: this.tempCompType
+      sparePartType: this.tempCompType
     });
     this.tempCompName = '';
     this.tempCompPart = '';
@@ -248,12 +249,13 @@ export class InventoryComponent implements OnInit {
     }
 
     // Save sub-components
-    const parts: EquipmentParts[] = this.componentBuffer.map((c, i) => ({
+    const parts: EquipmentSpareParts[] = this.componentBuffer.map((c, i) => ({
       ...c,
       id: `eqc_${Date.now()}_${i}`
     }));
 
     const eqData: Omit<Equipment, 'id'> = {
+      invoiceNumber: '',
       name: this.newEqName,
       description: this.newEqDesc,
       category: this.newEqCat,
@@ -269,7 +271,7 @@ export class InventoryComponent implements OnInit {
       dateOfManufacture: this.newEqMfgDate || null, //new Date().toISOString().split('T')[0],
       dateOfReceipt: this.newEqReceiptDate || null,// || new Date().toISOString().split('T')[0],
       warrantyPeriodMonths: this.newEqWarranty,
-      components: parts,
+      spareParts: parts,
       status: 'PDHS Store'
     };
 
@@ -373,19 +375,19 @@ export class InventoryComponent implements OnInit {
   // Permission helper to check who can register assets (Admin and Procurement)
   public canRegister(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS', 'PROCUREMENT_OFFICER', 'BIOMEDICAL_TECHNICIAN']);
+    return this.userFacade.hasAnyRole([RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS, RoleType.PROCUREMENT_OFFICER, RoleType.BIOMEDICAL_TECHNICIAN]);
   }
 
   // Permission helper to check who can assign assets (Admin and Technician)
   public canAssign(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']
+    return this.userFacade.hasAnyRole([RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS]
     )
   }
 
   public isAdmin(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']);
+    return this.userFacade.hasAnyRole([RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS]);
   }
 
   public updateEquipment(eq: Equipment) {

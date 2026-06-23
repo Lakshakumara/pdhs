@@ -6,7 +6,7 @@ import {
   District,
   Institution,
   Equipment,
-  EquipmentParts,
+  EquipmentSpareParts,
   EquipmentAssignment,
   RepairRequest,
   WorkOrder,
@@ -30,8 +30,8 @@ export class BiomedStateService {
   //private currentUserDtoSubject = new BehaviorSubject<UserDto | null>(null);
   //public currentUserDto$ = this.currentUserDtoSubject.asObservable();
 
- // private usersSubject = new BehaviorSubject<UserDto[]>([]);
- // public usersDto$ = this.usersSubject.asObservable();
+  // private usersSubject = new BehaviorSubject<UserDto[]>([]);
+  // public usersDto$ = this.usersSubject.asObservable();
 
   private districtsSubject = new BehaviorSubject<District[]>([]);
   public districts$ = this.districtsSubject.asObservable();
@@ -109,18 +109,18 @@ export class BiomedStateService {
   }
 
   // Users
- /* private fetchUsers(): void {
-    this.http.get<UserDto[]>(`${this.baseUrl}/users`)
-      .pipe(catchError(this.handleError))
-      .subscribe(users => this.usersSubject.next(users));
-  }
-
-  // Equipment
-  private fetchEquipment(): void {
-    this.http.get<Equipment[]>(`${this.baseUrl}/equipment`)
-      .pipe(catchError(this.handleError))
-      .subscribe(equipment => this.equipmentSubject.next(equipment));
-  }*/
+  /* private fetchUsers(): void {
+     this.http.get<UserDto[]>(`${this.baseUrl}/users`)
+       .pipe(catchError(this.handleError))
+       .subscribe(users => this.usersSubject.next(users));
+   }
+ 
+   // Equipment
+   private fetchEquipment(): void {
+     this.http.get<Equipment[]>(`${this.baseUrl}/equipment`)
+       .pipe(catchError(this.handleError))
+       .subscribe(equipment => this.equipmentSubject.next(equipment));
+   }*/
 
   // Assignments
   private fetchAssignments(): void {
@@ -322,36 +322,36 @@ export class BiomedStateService {
     );
   }
 
-  
-/*
-  // Equipment Assign Workflow
-  public assignEquipment(eqId: string, toInstitutionId: string, toEntity: 'RDHS' | 'Institution', quantity: number): Observable<EquipmentAssignment> {
-    const body = { toInstitutionId, toEntity, quantity };
-    return this.http.post<EquipmentAssignment>(`${this.baseUrl}/equipment/${eqId}/assign`, body).pipe(
-      tap(assignment => {
-        //this.fetchEquipment();
-        this.fetchAssignments();
-        // Get institution name for log
-        const institutions = this.institutionsSubject.value;
-        const dest = institutions.find(i => i.id === toInstitutionId);
-        const destName = dest ? dest.name : 'Unknown';
-        this.logAudit('CREATE', 'EquipmentAssignment', assignment.id, `Assigned equipment to ${destName}`);
-      }),
-      catchError(this.handleError)
-    );
-  }
-    public submitRepairRequest(eqId: string, componentId: string | undefined, faultDescription: string, priority: RepairPriority): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
-    const body = { equipmentId: eqId, componentId, faultDescription, priority };
-    return this.http.post<{ : RepairRequest; workOrder: WorkOrder }>(`${this.baseUrl}/repair-requests`, body).pipe(
-      tap(result => {
-        this.fetchRepairRequests();
-        this.fetchWorkOrders();
-        //this.fetchEquipment(); // in case status changed
-        this.logAudit('CREATE', 'RepairRequest', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
-      }),
-      catchError(this.handleError)
-    );
-  }
-*/
-  
+
+  /*
+    // Equipment Assign Workflow
+    public assignEquipment(eqId: string, toInstitutionId: string, toEntity: 'RDHS' | 'Institution', quantity: number): Observable<EquipmentAssignment> {
+      const body = { toInstitutionId, toEntity, quantity };
+      return this.http.post<EquipmentAssignment>(`${this.baseUrl}/equipment/${eqId}/assign`, body).pipe(
+        tap(assignment => {
+          //this.fetchEquipment();
+          this.fetchAssignments();
+          // Get institution name for log
+          const institutions = this.institutionsSubject.value;
+          const dest = institutions.find(i => i.id === toInstitutionId);
+          const destName = dest ? dest.name : 'Unknown';
+          this.logAudit('CREATE', 'EquipmentAssignment', assignment.id, `Assigned equipment to ${destName}`);
+        }),
+        catchError(this.handleError)
+      );
+    }
+      public submitRepairRequest(eqId: string, componentId: string | undefined, faultDescription: string, priority: RepairPriority): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
+      const body = { equipmentId: eqId, componentId, faultDescription, priority };
+      return this.http.post<{ : RepairRequest; workOrder: WorkOrder }>(`${this.baseUrl}/repair-requests`, body).pipe(
+        tap(result => {
+          this.fetchRepairRequests();
+          this.fetchWorkOrders();
+          //this.fetchEquipment(); // in case status changed
+          this.logAudit('CREATE', 'RepairRequest', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
+        }),
+        catchError(this.handleError)
+      );
+    }
+  */
+
 }

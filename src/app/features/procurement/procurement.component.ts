@@ -11,6 +11,7 @@ import {
   WorkOrder,
   PurchaseOrderItem
 } from '../../core/models/biomed.interface';
+import { RoleType } from "../../core/auth/permission.types";
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
 
@@ -21,7 +22,7 @@ import { QueryService } from '../../core/services/query.service';
   styleUrl: './procurement.component.css'
 })
 export class ProcurementComponent implements OnInit {
-  
+
   // Pagination properties
   readonly totalPages = signal(1);
   readonly total = signal(0);
@@ -29,7 +30,7 @@ export class ProcurementComponent implements OnInit {
   readonly pageSize = signal(10);
 
 
-    // Filter properties
+  // Filter properties
   public searchTerm = signal('');
   public selectedCategory = signal('');
 
@@ -64,9 +65,9 @@ export class ProcurementComponent implements OnInit {
   public tempItemCost = 0;
   public tempItemCat: 'new equipment' | 'spare part' | 'consumable' | 'service' = 'spare part';
 
-  constructor(private userFacade: UserFacadeService, 
+  constructor(private userFacade: UserFacadeService,
     private queryService: QueryService,
-    private stateService: BiomedStateService) {}
+    private stateService: BiomedStateService) { }
 
   ngOnInit() {
 
@@ -76,7 +77,7 @@ export class ProcurementComponent implements OnInit {
       this.searchTerm(),
       this.selectedCategory(),
     ).subscribe(result => {
-      console.log('inventory items',result.items)
+      console.log('inventory items', result.items)
       this.inventoryItems.set(result.items);
       this.total.set(result.total);
     });
@@ -230,11 +231,11 @@ export class ProcurementComponent implements OnInit {
   // Permissions helpers
   public isProcurementOfficer(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['PROCUREMENT_OFFICER','SUPER_ADMIN_PDHS']);
+    return this.userFacade.hasAnyRole([RoleType.PROCUREMENT_OFFICER, RoleType.SUPER_ADMIN_PDHS]);
   }
 
   public isAdmin(): boolean {
     if (!this.userFacade.currentUser()) return false;
-    return this.userFacade.hasAnyRole(['ADMIN_PDHS', 'SUPER_ADMIN_PDHS']);
+    return this.userFacade.hasAnyRole([RoleType.ADMIN_PDHS, RoleType.SUPER_ADMIN_PDHS]);
   }
 }

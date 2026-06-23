@@ -8,6 +8,7 @@ import {
 } from '@angular/router';
 import { Observable } from 'rxjs';
 import { UserFacadeService } from '../services/user-facade.service';
+import { RoleType } from "../auth/permission.types";
 
 @Injectable({
   providedIn: 'root'
@@ -15,17 +16,17 @@ import { UserFacadeService } from '../services/user-facade.service';
 export class AdminGuard implements CanActivate {
   constructor(private userFacade: UserFacadeService,
     private router: Router
-  ) {}
+  ) { }
 
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
-        if ( this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS'])) {//&& user.role === UserRole.Admin
-          return true;
-        } else {
-          // Redirect to dashboard or login if not admin
-          return this.router.createUrlTree(['/dashboard']);
-        }
-      }
+    if (this.userFacade.hasAnyRole([RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS])) {//&& user.role === UserRole.Admin
+      return true;
+    } else {
+      // Redirect to dashboard or login if not admin
+      return this.router.createUrlTree(['/dashboard']);
+    }
+  }
 }

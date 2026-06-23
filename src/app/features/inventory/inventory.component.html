@@ -267,17 +267,17 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
-                <tr *ngFor="let comp of selectedEq.components" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
+                <tr *ngFor="let comp of selectedEq.spareParts" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
                   <td class="p-3 font-semibold">{{ comp.name }}</td>
                   <td class="p-3 font-mono text-[10px] text-zinc-500">{{ comp.partNumber }}</td>
                   <td class="p-3 font-mono">{{ comp.serialNumber || 'N/A' }}</td>
                   <td class="p-3">
-                    <span [class.bg-emerald-50]="comp.componentType === 'Serialized'"
-                      [class.text-emerald-700]="comp.componentType === 'Serialized'"
-                      [class.bg-orange-50]="comp.componentType === 'Consumable'"
-                      [class.text-orange-700]="comp.componentType === 'Consumable'"
+                    <span [class.bg-emerald-50]="comp.sparePartType === 'Serialized'"
+                      [class.text-emerald-700]="comp.sparePartType === 'Serialized'"
+                      [class.bg-orange-50]="comp.sparePartType === 'Consumable'"
+                      [class.text-orange-700]="comp.sparePartType === 'Consumable'"
                       class="px-2 py-0.5 rounded text-[9px] font-bold">
-                      {{ comp.componentType }}
+                      {{ comp.sparePartType }}
                     </span>
                   </td>
                   <td class="p-3 text-zinc-500">{{ comp.expiryOrWarrantyDate ? (comp.expiryOrWarrantyDate |
@@ -719,7 +719,7 @@
                   <td class="p-2.5 font-medium">{{ item.name }}</td>
                   <td class="p-2.5 font-mono text-[10px] text-zinc-400">{{ item.partNumber }}</td>
                   <td class="p-2.5 font-mono">{{ item.serialNumber || 'N/A' }}</td>
-                  <td class="p-2.5">{{ item.componentType }}</td>
+                  <td class="p-2.5">{{ item.sparePartType }}</td>
                   <td class="p-2.5 text-right">
                     <button (click)="removeComponentFromBuffer(i)" class="p-1 hover:bg-red-50 text-red-500 rounded">
                       <i class="pi pi-trash"></i>

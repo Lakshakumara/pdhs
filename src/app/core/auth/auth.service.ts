@@ -22,8 +22,8 @@ interface JwtPayload {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly baseUrl = environment.apiUrl +'/auth';
-  private readonly ME_URL = environment.apiUrl+'/users/me';
+  private readonly baseUrl = environment.apiUrl + '/auth';
+  private readonly ME_URL = environment.apiUrl + '/users/me';
   private readonly TOKEN_KEY = 'auth_token';
 
   /** Reactive flag — true once a token exists AND has not expired. */
@@ -40,7 +40,7 @@ export class AuthService {
     private http: HttpClient,
     private router: Router,
     private userFacade: UserFacadeService,
-  ) {}
+  ) { }
 
   // ───────────────────────────────────────────────────────────────────────
   // LOGIN / LOGOUT
@@ -197,7 +197,17 @@ export class AuthService {
   // ───────────────────────────────────────────────────────────────────────
 
   private applySession(user: UserDto) {
+
+    console.log('applying session for user', user)
+
+    const permissions = user.permissions.filter(p => {
+      return !p.expiresAt || new Date(p.expiresAt) > new Date()
+    }).map(p => p.permission) ?? [];
+
+    console.log('applied permissions from Auth', permissions)
+
     const firstRole = user.roles?.[0];
+    
     this.userFacade.setSession(
       user,
       {
@@ -205,7 +215,7 @@ export class AuthService {
         scopeType: firstRole.scopeType,
         scopeId: firstRole.scopeId,
       },
-      firstRole?.permission ?? [],
+      permissions,
     );
   }
 

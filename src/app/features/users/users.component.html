@@ -1,9 +1,5 @@
-<p-toast />
 <p-confirmdialog />
 
-<!-- ═══════════════════════════════════════════════════════════════
-     PAGE HEADER
-════════════════════════════════════════════════════════════════ -->
 <div class="mb-6">
   <div class="flex items-start justify-between gap-4">
     <div>
@@ -14,7 +10,6 @@
       <p class="text-sm text-zinc-400 mt-0.5">Manage users, role assignments, and permission grants</p>
     </div>
 
-    <!-- Stats strip -->
     <div class="hidden md:flex items-center gap-4 text-center">
       <div>
         <p class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{{ users().length }}</p>
@@ -34,9 +29,7 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     TOOLBAR
-════════════════════════════════════════════════════════════════ -->
+
 <div class="flex flex-wrap items-center gap-3 mb-4">
   <p-iconfield class="flex-1 min-w-[200px] max-w-sm">
     <p-inputicon styleClass="pi pi-search" />
@@ -54,12 +47,9 @@
     class="!rounded-xl ml-auto" (click)="openCreate()"></button>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     USER TABLE
-════════════════════════════════════════════════════════════════ -->
 <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
   <p-table [value]="filteredUsers()" [loading]="loading()" [paginator]="true"
-    [rows]="15" [rowsPerPageOptions]="[10,15,25,50]"
+    [first]="first" [rows]="rows" [totalRecords]="totalRecords" [rowsPerPageOptions]="[3, 10, 15, 25, 50]"
     styleClass="p-datatable-sm" [rowHover]="true" dataKey="id">
 
     <ng-template pTemplate="header">
@@ -79,7 +69,6 @@
         (click)="openDrawer(user)">
         <td class="!pl-5 text-xs text-zinc-400">{{ i + 1 }}</td>
 
-        <!-- User info -->
         <td>
           <div class="flex items-center gap-3 py-1">
             <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
@@ -99,7 +88,6 @@
           </div>
         </td>
 
-        <!-- Roles -->
         <td (click)="$event.stopPropagation()">
           <div class="flex flex-wrap gap-1 py-1 max-w-xs">
             <span *ngFor="let r of user.roles"
@@ -113,13 +101,11 @@
           </div>
         </td>
 
-        <!-- Institution -->
         <td class="text-sm text-zinc-600 dark:text-zinc-400">
           {{ user.institutionName ?? '—' }}
           <p *ngIf="user.districtName" class="text-[10px] text-zinc-400">{{ user.districtName }}</p>
         </td>
 
-        <!-- Status -->
         <td class="text-center" (click)="$event.stopPropagation()">
           <div class="flex flex-col items-center gap-1">
             <p-toggleswitch [ngModel]="user.active" (ngModelChange)="toggleActive(user)"
@@ -131,10 +117,8 @@
           </div>
         </td>
 
-        <!-- Created -->
         <td class="text-xs text-zinc-400 whitespace-nowrap">{{ user.createdAt | date:'dd MMM yy' }}</td>
 
-        <!-- Actions -->
         <td (click)="$event.stopPropagation()">
           <div class="flex items-center justify-center gap-1">
             <button pButton icon="pi pi-eye" severity="secondary" size="small" text rounded
@@ -161,9 +145,6 @@
   </p-table>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     CREATE USER DIALOG (step-based)
-════════════════════════════════════════════════════════════════ -->
 <p-dialog [visible]="dialogVisible()" (visibleChange)="dialogVisible.set($event)"
   header="Create New User" [modal]="true" [draggable]="false"
   styleClass="!w-full !max-w-2xl">
@@ -171,7 +152,6 @@
   <form [formGroup]="createForm" class="pt-2">
     <p-stepper [(value)]="createStep">
 
-      <!-- STEP 1: Basic info -->
       <p-step-list>
         <p-step [value]="0">
           <div class="flex items-center gap-2">
@@ -188,8 +168,6 @@
       </p-step-list>
 
       <p-step-panels>
-
-        <!-- Step 0: Basic info -->
         <p-step-panel [value]="0">
           <ng-template pTemplate="content" let-activateCallback="activateCallback">
             <div class="grid grid-cols-2 gap-4 py-4">
@@ -197,7 +175,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Full Name <span class="text-red-500">*</span>
                 </label>
-                <input pInputText formControlName="fullName" placeholder="Dr. Jane Perera"
+                <input pInputText formControlName="fullName" placeholder="User Full name"
                   class="w-full !rounded-xl"
                   [ngClass]="{'ng-invalid ng-dirty': createForm.get('fullName')?.invalid && createForm.get('fullName')?.touched}" />
               </div>
@@ -246,12 +224,9 @@
           </ng-template>
         </p-step-panel>
 
-        <!-- Step 1: Role & Scope -->
         <p-step-panel [value]="1">
           <ng-template pTemplate="content" let-activateCallback="activateCallback">
             <div class="space-y-4 py-4">
-
-              <!-- Scope type -->
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Scope Level <span class="text-red-500">*</span>
@@ -264,7 +239,6 @@
                 </small>
               </div>
 
-              <!-- Scope ID (district or institution depending on scope) -->
               <div *ngIf="createForm.get('scopeType')?.value === 'RDHS'">
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   District <span class="text-red-500">*</span>
@@ -281,27 +255,23 @@
                   placeholder="Select institution…" [filter]="true" styleClass="w-full !rounded-xl" />
               </div>
 
-              <!-- Role -->
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Role <span class="text-red-500">*</span>
                 </label>
                 <p-select formControlName="role" [options]="filteredRoleOptions()"
-                  placeholder="Select role…" styleClass="w-full !rounded-xl"
-                  [disabled]="!createForm.get('scopeType')?.value" />
+                  placeholder="Select role…" styleClass="w-full !rounded-xl" />
                 <small *ngIf="!createForm.get('scopeType')?.value" class="text-[10px] text-zinc-400 mt-0.5 block">
                   Select a scope level first to see available roles.
                 </small>
               </div>
 
-              <!-- Permission preview -->
               <div *ngIf="createForm.get('role')?.value as selectedRole"
                 class="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2">
                   Default permissions seeded for this role
                 </p>
                 <div class="flex flex-wrap gap-1.5">
-                  <!-- We show a simplified preview — real list comes from backend -->
                   <span *ngFor="let pg of permGroups">
                     <span *ngFor="let p of pg.permissions"
                       class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
@@ -326,23 +296,20 @@
             </div>
           </ng-template>
         </p-step-panel>
-
       </p-step-panels>
     </p-stepper>
   </form>
 </p-dialog>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     USER DETAIL DRAWER (slide-in panel)
-════════════════════════════════════════════════════════════════ -->
+
+
+
 <p-dialog [visible]="drawerVisible()" (visibleChange)="drawerVisible.set($event)"
   [header]="drawerUser()?.fullName ?? 'User Details'"
   [modal]="true" [draggable]="false" position="right"
   styleClass="!w-full !max-w-3xl !h-screen !my-0 !rounded-none">
 
   <ng-container *ngIf="drawerUser() as user">
-
-    <!-- User summary header -->
     <div class="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 mb-4">
       <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
         [style.background]="getAvatarBg(user.fullName)">
@@ -369,7 +336,6 @@
       </div>
     </div>
 
-    <!-- Tabs -->
     <p-tabs [(value)]="drawerTab">
       <p-tablist>
         <p-tab [value]="0"><i class="pi pi-shield mr-1.5"></i>Roles</p-tab>
@@ -378,8 +344,6 @@
       </p-tablist>
 
       <p-tabpanels>
-
-        <!-- ── TAB 0: ROLES ──────────────────────────────────────── -->
         <p-tabpanel [value]="0">
           <div class="space-y-3 pt-3">
             <div class="flex items-center justify-between mb-2">
@@ -423,15 +387,13 @@
               </button>
             </div>
 
-            <div *ngIf="user.roles.length === 0"
-              class="text-center py-8 text-zinc-400">
+            <div *ngIf="user.roles.length === 0" class="text-center py-8 text-zinc-400">
               <i class="pi pi-shield text-3xl block mb-2"></i>
               <p class="text-sm">No roles assigned</p>
             </div>
           </div>
         </p-tabpanel>
 
-        <!-- ── TAB 1: PERMISSION MATRIX ──────────────────────────── -->
         <p-tabpanel [value]="1">
           <div class="pt-3">
             <div class="flex items-center justify-between mb-3">
@@ -458,7 +420,6 @@
               <p class="text-xs text-amber-700 dark:text-amber-400">Unsaved changes — click Save to apply</p>
             </div>
 
-            <!-- Permission groups -->
             <div class="space-y-3">
               <div *ngFor="let group of permGroups"
                 class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
@@ -468,19 +429,17 @@
                     {{ group.group }}
                   </p>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-0 divide-x divide-y divide-zinc-100 dark:divide-zinc-800">
+                <div class="grid grid-cols-2 sm:grid-cols-6 gap-0 divide-x divide-y divide-zinc-100 dark:divide-zinc-800">
                   <div *ngFor="let perm of group.permissions"
                     class="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                     [ngClass]="permMatrix().has(perm) ? 'bg-emerald-50/50 dark:bg-emerald-950/10' : ''"
                     (click)="togglePermission(perm)">
                     <div class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
-                      [ngClass]="permMatrix().has(perm)
-                        ? 'bg-emerald-500 border-emerald-500'
-                        : 'border-zinc-300 dark:border-zinc-600'">
+                      [ngClass]="permMatrix().has(perm) ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'">
                       <i *ngIf="permMatrix().has(perm)" class="pi pi-check text-white text-[8px]"></i>
                     </div>
                     <span class="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 leading-tight">
-                      {{ perm.split('_')[1] }}
+                      {{ perm.split('_').at(-1)}}
                     </span>
                   </div>
                 </div>
@@ -489,7 +448,6 @@
           </div>
         </p-tabpanel>
 
-        <!-- ── TAB 2: TEMPORARY GRANTS ───────────────────────────── -->
         <p-tabpanel [value]="2">
           <div class="pt-3 space-y-3">
             <div class="flex items-center justify-between mb-2">
@@ -503,7 +461,6 @@
                 severity="success" size="small" class="!rounded-xl" (click)="openGrantPerm()"></button>
             </div>
 
-            <!-- All permission records with expiry -->
             <div *ngFor="let p of user.permissions"
               class="flex items-start gap-3 p-3 border rounded-xl transition-all"
               [ngClass]="{
@@ -511,7 +468,7 @@
                 'border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-950/10': isExpired(p),
                 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900': !p.expiresAt
               }">
-              <!-- Status indicator -->
+              
               <div class="w-2 h-2 rounded-full mt-2 flex-shrink-0"
                 [ngClass]="{
                   'bg-emerald-500': p.active && !p.expiresAt,
@@ -560,11 +517,10 @@
   </ng-container>
 </p-dialog>
 
-<!-- ═══════════════════════════════════════════════════════════════
-     ADD ROLE DIALOG
-════════════════════════════════════════════════════════════════ -->
+
 <p-dialog [visible]="roleDialogVisible()" (visibleChange)="roleDialogVisible.set($event)"
   header="Add Role Assignment" [modal]="true" [draggable]="false" styleClass="!w-full !max-w-md">
+  
   <form [formGroup]="roleForm" class="pt-2 space-y-4">
     <div>
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
@@ -595,17 +551,17 @@
         Role <span class="text-red-500">*</span>
       </label>
       <p-select formControlName="role" [options]="roleDialogRoleOptions()"
-        placeholder="Select role…" styleClass="w-full !rounded-xl"
-        [disabled]="!roleForm.get('scopeType')?.value" />
+        placeholder="Select role…" styleClass="w-full !rounded-xl" />
     </div>
 
     <div class="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl">
       <p class="text-[10px] text-blue-700 dark:text-blue-400 leading-relaxed">
         <i class="pi pi-info-circle mr-1"></i>
-        Adding a role will seed any <strong>new permissions</strong> from that role's defaults into this user's permission set (existing permissions are preserved).
+        Adding a role will seed any <strong>new permissions</strong> from that role's defaults into this user's permission set.
       </p>
     </div>
   </form>
+
   <ng-template pTemplate="footer">
     <div class="flex justify-end gap-2">
       <button pButton label="Cancel" severity="secondary" class="!rounded-xl"
@@ -615,6 +571,7 @@
     </div>
   </ng-template>
 </p-dialog>
+
 
 <!-- ═══════════════════════════════════════════════════════════════
      GRANT TEMPORARY PERMISSION DIALOG

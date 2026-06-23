@@ -1,4 +1,4 @@
-import { ScopeType, Permission } from "../auth/permission.types";
+import { ScopeType, Permission, RoleType } from "../auth/permission.types";
 
 export interface District {
   id: string;
@@ -64,7 +64,6 @@ export interface UserRoleDto {
   role: RoleType;
   scopeType: ScopeType;
   scopeId: string | null;
-  permission: Permission[] | null;
   assignedAt: string;
   assignedById: string | null;
 }
@@ -78,22 +77,6 @@ export interface ActiveRole {
   scopeType: ScopeType;
   scopeId: string | null;
 }
-
-export type RoleType =
-  | 'SUPER_ADMIN_PDHS'
-  | 'ADMIN_PDHS'
-  | 'SUPER_ADMIN_RDHS'
-  | 'ADMIN_RDHS'
-  | 'SUPER_ADMIN_INSTITUTE'
-  | 'ADMIN_INSTITUTE'
-  | 'VIEWER_PDHS'
-  | 'VIEWER_RDHS'
-  | 'VIEWER_INSTITUTE'
-  | 'STORE_KEEPER'
-  | 'BIOMEDICAL_TECHNICIAN'
-  | 'PROCUREMENT_OFFICER'
-  | 'INSTITUTION_USER';
-  
 
 export type EquipmentCategory =
   | 'Diagnostic'
@@ -118,19 +101,20 @@ export interface ServicePlan {
   sparePartsCosts?: any;
 }
 
-export interface EquipmentParts {
+export interface EquipmentSpareParts {
   id: string;
   name: string;
   description: string;
   partNumber: string;
   serialNumber?: string;
   quantity: number;
-  componentType: 'Serialized' | 'Consumable' | 'Minor/Non-tracked';
+  sparePartType: 'Serialized' | 'Consumable' | 'Minor/Non-tracked';
   expiryOrWarrantyDate?: string;
 }
 
 export interface Equipment {
   id: string;
+  invoiceNumber:string;
   name: string;
   description: string;
   category: EquipmentCategory;
@@ -148,7 +132,7 @@ export interface Equipment {
   expiryDate?: string | null;
   warrantyPeriodMonths: number;
   servicePlan?: ServicePlan;
-  components: EquipmentParts[];
+  spareParts: EquipmentSpareParts[];
   // Location Tracking
   assignedInstitutionId?: string;
   assignedInstitution?: Institution;
@@ -180,8 +164,8 @@ export interface RepairRequest {
   equipmentId: string;
   equipmentName: string;
   equipmentSerialNumber: string;
-  componentId?: string; // Optional if fault is on sub-component
-  componentName?: string;
+  sparePartId?: string; // Optional if fault is on sub-sparePart
+  sparePartName?: string;
   faultDescription: string;
   priority: RepairPriority;
   photoUrl?: string;
@@ -190,6 +174,28 @@ export interface RepairRequest {
   submissionDate: string;
   institutionId: string;
   institutionName: string;
+}
+export interface EquipmentRepairHistory extends RepairRequest{
+workorder:WorkOrder;
+
+}
+export interface InspectedSparePart {
+  id?: string;
+  sparePartId: string;
+  sparePartName?: string;
+  inspected: boolean;
+  conditionNotes?: string;
+  workOrderId?: string;
+}
+
+export interface PartUsedDetail {
+  id?: string;
+  description?: string;
+  quantityUsed: number;
+  inventoryItemId: string;
+  inventoryItemName?: string;
+  unitCost?: number;
+  workOrderId?: string;
 }
 
 export interface WorkOrder {
@@ -201,19 +207,17 @@ export interface WorkOrder {
   resolutionDetails?: string;
   status: WorkOrderStatus;
   statusDate: string;
+  institutionId?: string;
+  institutionName?: string;
   completedDate?: string;
-  inspectedComponents: {
-    componentId: string;
-    componentName: string;
-    inspected: boolean;
-    conditionNotes: string;
-  }[];
-  partsUsed: {
-    inventoryItemId: string;
-    partName: string;
-    quantityUsed: number;
-    unitCost: number;
-  }[];
+  inspectedSpareParts?: InspectedSparePart[];
+  partsUsed: PartUsedDetail[];
+}
+
+/** A completed repair record pairing a RepairRequest with its WorkOrder */
+export interface RepairHistoryEntry {
+  repairRequest: RepairRequest;
+  workOrder?: WorkOrder;
 }
 
 export interface Supplier {
@@ -279,12 +283,11 @@ export interface AuditLog {
   userId: string;
   userName: string;
   userRole: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE';
+  action: 'CREATE' | 'UPDATE' | 'DELETE'| 'LOGIN'|'LOGOUT'| 'ASSIGN' | 'STATUS_CHANGE';
   entityName: string;
   recordId: string;
   description: string;
 }
-
 
 export interface PagedResult<T> {
 

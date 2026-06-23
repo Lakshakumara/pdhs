@@ -78,7 +78,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     if (this.enableDevLogin) {
-      this.stateService.getAllUsers().subscribe(list => this.devUsers.set(list));
+      this.stateService.dev_getAllUsers().subscribe(list => this.devUsers.set(list.items));
     }
   }
 

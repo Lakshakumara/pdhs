@@ -2,41 +2,87 @@ import { Component, effect, OnInit, signal } from '@angular/core';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Institution, EquipmentCategory, Equipment, EquipmentParts } from '../../core/models/biomed.interface';
+import { Institution, EquipmentCategory, Equipment, EquipmentSpareParts } from '../../core/models/biomed.interface';
 import { QueryService } from '../../core/services/query.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UpsertService } from '../../core/services/upsert.service';
-import { HasPermissionDirective } from '../../core/auth/permission-directive';
+import { HasPermissionDirective } from '../../core/directive/permission-directive';
 import { Permission } from '../../core/auth/permission.types';
+import { RepairHistoryComponent } from './repair-history/repair-history.component';
+
+import { TableModule, TableLazyLoadEvent } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
+import { TagModule } from 'primeng/tag';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { TextareaModule } from 'primeng/textarea';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ToolbarModule } from 'primeng/toolbar';
+import { Skeleton } from 'primeng/skeleton';
+import { DatePickerModule } from 'primeng/datepicker';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
+import { AutoComplete } from 'primeng/autocomplete';
 
 @Component({
   selector: 'app-equipment',
-  imports: [CommonModule, FormsModule, HasPermissionDirective],
+  imports: [
+    CommonModule, FormsModule, HasPermissionDirective, RepairHistoryComponent,
+    TableModule, DialogModule, TagModule, ButtonModule, InputTextModule,
+    SelectModule, IconFieldModule, InputIconModule, TextareaModule,
+    InputNumberModule, CheckboxModule, ToolbarModule, Skeleton,
+    DatePickerModule, ToggleSwitchModule, TooltipModule, AutoComplete
+  ],
   templateUrl: './equipment.component.html',
   styleUrl: './equipment.component.css',
 })
 export class EquipmentComponent implements OnInit {
   readonly Permission = Permission;
   readonly institutions = signal<Institution[]>([]);
-  // Filter properties
-  public searchTerm = signal('');
-  public selectedCategory = signal('');
-  public selectedStatus = signal('');
-  public selectedInstitutionId = signal('');
 
-  // Pagination properties
-  readonly totalPages = signal(1);
+  // Filter properties bound to the table's header filter row
+  public searchTerm = '';
+  public selectedCategory = '';
+  public selectedStatus = '';
+  public selectedInstitutionId = '';
+
+  // Pagination / lazy-load state (driven by p-table)
   readonly total = signal(0);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
+  readonly loading = signal(true);
 
   readonly equipments = signal<Equipment[]>([]);
+
+  public readonly categoryOptions = [
+    { label: 'Diagnostic', value: 'Diagnostic' },
+    { label: 'Therapeutic', value: 'Therapeutic' },
+    { label: 'Life Support', value: 'Life Support' },
+    { label: 'Laboratory', value: 'Laboratory' },
+    { label: 'Radiology', value: 'Radiology' },
+    { label: 'General Medical', value: 'General Medical' },
+    { label: 'Other', value: 'Other' },
+  ];
+
+  public readonly statusOptions = [
+    { label: 'PDHS Store', value: 'PDHS Store' },
+    { label: 'In Transit', value: 'In Transit' },
+    { label: 'Assigned to Unit', value: 'Assigned' },
+  ];
 
   // Modal displays
   public showDetailModal = false;
   public showAddModal = false;
   public showAssignModal = false;
+
+  // Repair History Panel
+  public showRepairHistoryPanel = false;
+  public repairHistoryEq: Equipment | null = null;
 
   // Selected Item details
   public selectedEq: Equipment | null = null;
@@ -50,6 +96,7 @@ export class EquipmentComponent implements OnInit {
   public newEqSupplier = '';
   public newEqTender = '';
   public newEqPO = '';
+  public newEqInvoice = '';
   public newEqModel = '';
   public newEqSerial = '';
   public newEqBatch = '';
@@ -58,7 +105,7 @@ export class EquipmentComponent implements OnInit {
   public newEqReceiptDate = null;
   public newEqWarranty = 12;
   // Spare parts adding buffer
-  public partsBuffer: Omit<EquipmentParts, 'id'>[] = [];
+  public partsBuffer: Omit<EquipmentSpareParts, 'id'>[] = [];
   public tempPartName = '';
   public tempPartNumber = '';
   public tempPartSerialNumber = '';
@@ -84,6 +131,8 @@ export class EquipmentComponent implements OnInit {
   // Assignment Form State
   public assignEqId = '';
   public assignDestInstId = '';
+  public assignDestInstitution: Institution | null = null;
+  readonly institutionSuggestions = signal<Institution[]>([]);
 
   // Edit mode
   public isEditMode = false;
@@ -97,7 +146,6 @@ export class EquipmentComponent implements OnInit {
     private notify: NotificationService) {
     effect(() => {
       this.getInstitute();
-      this.getEquipment();
     })
   }
 
@@ -106,37 +154,69 @@ export class EquipmentComponent implements OnInit {
 
   getInstitute() {
     if (this.userApi.currentSession() == null) {
-      console.log('return institute sessionis null')
-      return
+      return;
     }
-    this.queryService.getInstitute(1, 100
-    ).subscribe(result => {
+    this.queryService.getInstitute(1, 100).subscribe(result => {
       this.institutions.set(result.items);
     });
   }
 
-  getEquipment() {
-    if (this.userApi.currentSession() == null) {
-      console.log('return equipment sessionis null')
-      return
-    }
-    this.queryService.getEquipment(
-      this.currentPage(),
-      this.pageSize(),
-      this.searchTerm(),
-      this.selectedCategory(),
-      this.selectedStatus(),
-      this.selectedInstitutionId()
-    ).subscribe(result => {
-      this.equipments.set(result.items);
-      this.total.set(result.total);
+  // Server-side institution search for the assign dialog's p-autocomplete.
+  // Avoids ever loading the full ~2000-row institution table into the DOM.
+  // Excludes PDHS/RDHS offices since equipment is assigned to hospitals/clinics, not provincial offices.
+  public searchInstitutions(event: { query: string }) {
+    this.queryService.getInstitute(1, 20, event.query).subscribe(result => {
+      const assignable = result.items.filter(i => i.type !== 'PDHS Office' && i.type !== 'RDHS Office');
+      this.institutionSuggestions.set(assignable);
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // p-table lazy load: ONE handler drives pagination + sorting + filtering
+  // ---------------------------------------------------------------------
+  public onLazyLoad(event: TableLazyLoadEvent) {
+    if (this.userApi.currentSession() == null) return;
+
+    this.loading.set(true);
+
+    const rows = event.rows ?? this.pageSize();
+    const first = event.first ?? 0;
+    const page = Math.floor(first / rows) + 1;
+
+    this.currentPage.set(page);
+    this.pageSize.set(rows);
+
+    this.queryService.getEquipment(
+      page,
+      rows,
+      this.searchTerm,
+      this.selectedCategory,
+      this.selectedStatus,
+      this.selectedInstitutionId
+    ).subscribe({
+      next: result => {
+        this.equipments.set(result.items);
+        this.total.set(result.total);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
+  // Called from the header filter inputs (search box, category/institution/status dropdowns)
+  public onFilterChange() {
+    this.currentPage.set(1);
+    this.onLazyLoad({ first: 0, rows: this.pageSize() });
+  }
+
+  // Kept for callers that just want a hard refresh of the current page
+  public getEquipment() {
+    this.onLazyLoad({ first: (this.currentPage() - 1) * this.pageSize(), rows: this.pageSize() });
   }
 
   // Details Modal
   public openDetails(eq: Equipment) {
     this.selectedEq = eq;
-    console.log('selected eq', eq)
     this.showDetailModal = true;
   }
 
@@ -150,42 +230,42 @@ export class EquipmentComponent implements OnInit {
     this.assignEqId = eq.id;
     this.selectedEq = eq;
     this.assignDestInstId = '';
+    this.assignDestInstitution = null;
+    this.institutionSuggestions.set([]);
     this.showAssignModal = true;
   }
 
   public closeAssignModal() {
     this.showAssignModal = false;
     this.selectedEq = null;
+    this.assignDestInstitution = null;
   }
 
   public submitAssignment() {
-    if (!this.assignDestInstId) {
+    if (!this.assignDestInstitution) {
       this.notify.warn('Please select a destination institution.');
       return;
     }
 
-    const inst = this.institutions().find(i => i.id === this.assignDestInstId);
-    if (!inst) return;
+    const inst = this.assignDestInstitution;
 
-    // Direct assignment to institution
-    this.upsertService.assignEquipment(this.assignEqId, this.assignDestInstId, 'Institution', 1, inst.name)
+    this.upsertService.assignEquipment(this.assignEqId, inst.id, 'Institution', 1, inst.name)
       .subscribe({
-        next: result => {
+        next: () => {
           this.getEquipment();
           this.showAssignModal = false;
           this.selectedEq = null;
+          this.assignDestInstitution = null;
           this.notify.success('Equipment Assigned to', inst.name);
         },
         error: err => {
           this.notify.error('Failed to Assigned equipment', err.message);
         }
       });
-
   }
 
   // Register New Asset Modal
   public openAddModal() {
-
     this.isEditMode = false;
     this.editingEquipmentId = null;
 
@@ -196,10 +276,8 @@ export class EquipmentComponent implements OnInit {
 
   public closeAddModal() {
     this.showAddModal = false;
-
     this.isEditMode = false;
     this.editingEquipmentId = null;
-
   }
 
   public addPartsToBuffer() {
@@ -210,7 +288,7 @@ export class EquipmentComponent implements OnInit {
       partNumber: this.tempPartNumber,
       serialNumber: this.tempPartSerialNumber || undefined,
       quantity: 1,
-      componentType: this.tempPartType
+      sparePartType: this.tempPartType
     });
     this.tempPartName = '';
     this.tempPartNumber = '';
@@ -218,7 +296,7 @@ export class EquipmentComponent implements OnInit {
     this.tempPartType = 'Serialized';
   }
 
-  public removeComponentFromBuffer(idx: number) {
+  public removesparePartFromBuffer(idx: number) {
     this.partsBuffer.splice(idx, 1);
   }
 
@@ -246,13 +324,13 @@ export class EquipmentComponent implements OnInit {
       return;
     }
 
-    // Save spare parts 
-    const parts: EquipmentParts[] = this.partsBuffer.map((c, i) => ({
+    const parts: EquipmentSpareParts[] = this.partsBuffer.map((c, i) => ({
       ...c,
       id: `eqc_${Date.now()}_${i}`
     }));
 
     const eqData: Omit<Equipment, 'id'> = {
+      invoiceNumber: this.newEqInvoice,
       name: this.newEqName,
       description: this.newEqDesc,
       category: this.newEqCat,
@@ -265,10 +343,10 @@ export class EquipmentComponent implements OnInit {
       serialNumber: this.newEqSerial,
       batchNumber: this.newEqBatch,
       quantityReceived: this.newEqQty,
-      dateOfManufacture: this.newEqMfgDate || null, //new Date().toISOString().split('T')[0],
-      dateOfReceipt: this.newEqReceiptDate || null,// || new Date().toISOString().split('T')[0],
+      dateOfManufacture: this.newEqMfgDate || null,
+      dateOfReceipt: this.newEqReceiptDate || null,
       warrantyPeriodMonths: this.newEqWarranty,
-      components: parts,
+      spareParts: parts,
       status: 'PDHS Store'
     };
 
@@ -289,11 +367,12 @@ export class EquipmentComponent implements OnInit {
         sparePartsCosts: this.sparePartsCostsBuffer
       };
     }
+
     if (this.isEditMode) {
       const eq = {
         id: this.editingEquipmentId ?? '',
         ...eqData
-      }
+      };
 
       this.upsertService.updateEquipment(eq)
         .subscribe({
@@ -324,6 +403,7 @@ export class EquipmentComponent implements OnInit {
   }
 
   private resetAddForm() {
+    this.newEqInvoice = '';
     this.newEqName = '';
     this.newEqDesc = '';
     this.newEqCat = 'General Medical';
@@ -359,10 +439,9 @@ export class EquipmentComponent implements OnInit {
   }
 
   public updateEquipment(eq: Equipment) {
-    console.log('updateEquipment', eq)
     this.isEditMode = true;
     this.editingEquipmentId = eq.id;
-
+    this.newEqInvoice = eq.invoiceNumber ?? '';
     this.newEqName = eq.name;
     this.newEqDesc = eq.description ?? '';
     this.newEqCat = eq.category;
@@ -383,12 +462,9 @@ export class EquipmentComponent implements OnInit {
 
     this.newEqWarranty = eq.warrantyPeriodMonths ?? 12;
 
-    // Components
-    this.partsBuffer = [...(eq.components ?? [])];
+    this.partsBuffer = [...(eq.spareParts ?? [])];
 
-    // Service Plan
     if (eq.servicePlan) {
-
       this.includeServicePlan = true;
 
       this.spRef = eq.servicePlan.agreementReference ?? '';
@@ -398,11 +474,8 @@ export class EquipmentComponent implements OnInit {
           ? String(eq.servicePlan.expiryDate).substring(0, 10)
           : null;
 
-      this.spFreeServices =
-        eq.servicePlan.noOfFreeService ?? 0;
-
-      this.spServicePerAnnum =
-        eq.servicePlan.servicePerAnnum ?? 0;
+      this.spFreeServices = eq.servicePlan.noOfFreeService ?? 0;
+      this.spServicePerAnnum = eq.servicePlan.servicePerAnnum ?? 0;
 
       this.spServiceCosts = [
         eq.servicePlan.serviceCosts?.year1 ?? 0,
@@ -436,14 +509,9 @@ export class EquipmentComponent implements OnInit {
         eq.servicePlan.otherCosts?.year5 ?? 0
       ];
 
-      this.sparePartsCostsBuffer = [
-        ...(eq.servicePlan.sparePartsCosts ?? [])
-      ];
-
+      this.sparePartsCostsBuffer = [...(eq.servicePlan.sparePartsCosts ?? [])];
     } else {
-
       this.includeServicePlan = false;
-
     }
 
     this.showAddModal = true;
@@ -456,46 +524,14 @@ export class EquipmentComponent implements OnInit {
   }
 
   public viewRepairHistory(eq: Equipment) {
-    alert(`Showing repair history for ${eq.name} (To be implemented)`);
+    this.repairHistoryEq = eq;
+    this.showRepairHistoryPanel = true;
+    console.log('repair history for',eq.name, eq.id)
   }
 
-
-
-  // Pagination Logic
-  /*public updatePagination() {
-    //this.totalPages = Math.ceil(this.apiService.equipmentList().length / this.pageSize) || 1;
-    if (this.currentPage() > this.totalPages()) {
-      this.currentPage.set(this.totalPages());
-    }
-    const startIndex = (this.currentPage() - 1) * this.pageSize();
-    //this.apiService.equipmentList().slice(startIndex, startIndex + this.pageSize);
-  }*/
-
-  public nextPage() {
-    this.currentPage.update(p => p + 1);
-    this.getEquipment();
-  }
-
-  public prevPage() {
-    if (this.currentPage() <= 1) {
-      return;
-    }
-
-    this.currentPage.update(p => p - 1);
-    this.getEquipment();
-  }
-
-  public goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages()) {
-      this.currentPage.set(page);
-      this.getEquipment();
-    }
-  }
-
-  public isAdmin(): boolean {
-    if (this.userApi.currentSession() === null) return false;
-    return ['SUPER_ADMIN_PDHS', 'ADMIN_PDHS'].includes(this.userApi.currentSession()?.activeRole.role ?? '')
-    //return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']);
+  public closeRepairHistory() {
+    this.showRepairHistoryPanel = false;
+    this.repairHistoryEq = null;
   }
 
 }

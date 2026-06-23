@@ -1,24 +1,26 @@
 import { Component, effect, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { BiomedStateService } from '../../core/services/biomed-state.service';
 import {
-  Equipment,
   RepairRequest,
-  WorkOrder,
   InventoryItem,
   Institution,
 } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
+import { Permission, RoleType, ScopeType } from '../../core/auth/permission.types';
+import { HasScopeDirective } from '../../core/directive/scope-directive';
+import { HasPermissionDirective } from "../../core/directive/permission-directive";
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, HasScopeDirective, HasPermissionDirective],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnInit {
+  public scopeType = ScopeType;
+  public permission = Permission;
   public institutions: Institution[] = [];
 
   // Master lists
@@ -42,7 +44,6 @@ export class DashboardComponent implements OnInit {
   constructor(public userFacade: UserFacadeService,
     private service: QueryService) { 
       effect((onCleanup:any)=>{
-        console.log("user", this.userFacade.currentUser()?.fullName);
         this.loadDashboard();
       })
     }
@@ -98,7 +99,7 @@ export class DashboardComponent implements OnInit {
 
     this.service.getSummary()
       .subscribe(summary => {
-        console.log('summary', summary)
+        //console.log('summary', summary)
 
         this.totalAssets.set(summary.totalAssets);
 

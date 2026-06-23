@@ -3,8 +3,9 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { UserFacadeService } from '../core/services/user-facade.service';
 import { AuthService } from '../core/auth/auth.service';
-import { HasPermissionDirective } from '../core/auth/permission-directive';
+import { HasPermissionDirective } from '../core/directive/permission-directive';
 import { Permission } from '../core/auth/permission.types';
+import { RoleType } from "../core/auth/permission.types";
 
 /**
  * ShellComponent — the authenticated application layout.
@@ -46,7 +47,7 @@ export class ShellComponent implements OnInit {
   constructor(
     public userFacade: UserFacadeService,
     private authService: AuthService,
-  ) {}
+  ) { }
 
   ngOnInit() {
     if (
@@ -84,19 +85,10 @@ export class ShellComponent implements OnInit {
     if (!this.userFacade.currentUser()) return false;
 
     switch (module) {
-      case 'dashboard':
-      case 'inventory':
-        return true;
-
-      case 'repairs':
-        return !this.userFacade.hasAnyRole(['PROCUREMENT_OFFICER']);
-
-      case 'procurement':
-        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'PROCUREMENT_OFFICER', 'VIEWER_PDHS']);
-
+      
       case 'audit':
       case 'admin':
-        return this.userFacade.hasAnyRole(['SUPER_ADMIN_PDHS', 'ADMIN_PDHS']);
+        return this.userFacade.hasAnyRole([RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS]);
 
       default:
         return false;

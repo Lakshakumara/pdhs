@@ -1,0 +1,286 @@
+<!-- BACKDROP -->
+<div
+  class="fixed inset-0 z-40 bg-zinc-950/50 backdrop-blur-sm"
+  (click)="close()"
+  aria-hidden="true">
+</div>
+
+<!-- SLIDE-OVER PANEL -->
+<aside
+  class="fixed inset-y-0 right-0 z-50 w-full max-w-2xl flex flex-col bg-white dark:bg-zinc-900 shadow-2xl border-l border-zinc-200 dark:border-zinc-800 animate-slide-in-right">
+
+  <!-- ── PANEL HEADER ─────────────────────────────────────────────── -->
+  <div class="flex-none px-6 py-5 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-sm">
+    <div class="flex items-start justify-between gap-4">
+      <div class="min-w-0">
+        <p class="text-[10px] uppercase font-bold tracking-widest text-emerald-600 dark:text-emerald-400 mb-0.5">
+          Equipment Repair History
+        </p>
+        <h2 class="text-base font-bold text-zinc-900 dark:text-zinc-50 truncate">{{ equipmentName || 'Equipment' }}</h2>
+        <p *ngIf="equipmentSerial" class="text-xs font-mono text-zinc-400 dark:text-zinc-500 mt-0.5">
+          SN: {{ equipmentSerial }}
+        </p>
+      </div>
+      <button
+        (click)="close()"
+        id="repair-history-close-btn"
+        class="flex-none p-2 rounded-xl hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors"
+        title="Close panel">
+        <i class="pi pi-times text-sm"></i>
+      </button>
+    </div>
+
+    <!-- Summary strip -->
+    <div class="mt-3 flex items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+      <span *ngIf="!loading()">
+        <span class="font-bold text-zinc-900 dark:text-zinc-100">{{ total() }}</span>
+        completed repair{{ total() !== 1 ? 's' : '' }} on record
+      </span>
+      <span *ngIf="loading()" class="animate-pulse">Loading history…</span>
+    </div>
+  </div>
+
+  <!-- ── PANEL BODY ────────────────────────────────────────────────── -->
+  <div class="flex-1 overflow-y-auto min-h-0 px-6 py-5 space-y-4">
+
+    <!-- LOADING SKELETON -->
+    <ng-container *ngIf="loading()">
+      <div *ngFor="let s of [1,2,3]" class="animate-pulse rounded-2xl border border-zinc-100 dark:border-zinc-800 p-4 space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="h-4 w-4 rounded-full bg-zinc-200 dark:bg-zinc-700"></div>
+          <div class="h-3 w-48 rounded bg-zinc-200 dark:bg-zinc-700"></div>
+          <div class="ml-auto h-5 w-16 rounded-full bg-zinc-200 dark:bg-zinc-700"></div>
+        </div>
+        <div class="h-3 w-full rounded bg-zinc-100 dark:bg-zinc-800"></div>
+        <div class="h-3 w-2/3 rounded bg-zinc-100 dark:bg-zinc-800"></div>
+      </div>
+    </ng-container>
+
+    <!-- EMPTY STATE -->
+    <div
+      *ngIf="!loading() && entries().length === 0"
+      class="flex flex-col items-center justify-center py-20 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
+        <i class="pi pi-history text-2xl text-zinc-300 dark:text-zinc-600"></i>
+      </div>
+      <p class="text-sm font-semibold text-zinc-500 dark:text-zinc-400">No completed repairs found</p>
+      <p class="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+        This equipment has no closed repair records yet.
+      </p>
+    </div>
+
+    <!-- REPAIR HISTORY ENTRIES -->
+    <ng-container *ngIf="!loading()">
+      @for (entry of entries(); track entry.repairRequest.id) {
+        <div
+          class="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+
+          <!-- Entry Header (always visible) -->
+          <div class="px-4 pt-4 pb-3">
+            <div class="flex items-start gap-3">
+
+              <!-- Status icon circle -->
+              <div class="flex-none w-8 h-8 rounded-full flex items-center justify-center mt-0.5"
+                [class]="entry.workOrder ? 'bg-emerald-100 dark:bg-emerald-950/40' : 'bg-zinc-100 dark:bg-zinc-800'">
+                <i class="pi text-sm"
+                  [class]="entry.workOrder ? 'pi-check-circle text-emerald-600 dark:text-emerald-400' : 'pi-circle text-zinc-400'">
+                </i>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <!-- Top row: dates + priority -->
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                  <span class="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">
+                    {{ entry.repairRequest.submissionDate | date:'dd MMM yyyy' }}
+                  </span>
+                  <span class="text-zinc-300 dark:text-zinc-700">•</span>
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    [class]="getPriorityClass(entry.repairRequest.priority)">
+                    <i class="pi text-[9px]" [class]="getPriorityIcon(entry.repairRequest.priority)"></i>
+                    {{ entry.repairRequest.priority }}
+                  </span>
+                  <span
+                    *ngIf="entry.workOrder"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                    [class]="getStatusClass(entry.workOrder.status)">
+                    <i class="pi text-[9px]" [class]="getStatusIcon(entry.workOrder.status)"></i>
+                    {{ entry.workOrder.status }}
+                  </span>
+                </div>
+
+                <!-- Fault Description -->
+                <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-100 leading-snug mb-1">
+                  {{ entry.repairRequest.faultDescription || 'No fault description provided.' }}
+                </p>
+
+                <!-- Meta row -->
+                <div class="flex items-center gap-3 text-[10px] text-zinc-400 dark:text-zinc-500 flex-wrap">
+                  <span *ngIf="entry.repairRequest.institutionName">
+                    <i class="pi pi-building mr-1"></i>{{ entry.repairRequest.institutionName }}
+                  </span>
+                  <span *ngIf="entry.repairRequest.submittedByUserName">
+                    <i class="pi pi-user mr-1"></i>{{ entry.repairRequest.submittedByUserName }}
+                  </span>
+                  <span *ngIf="entry.workOrder?.assignedTechnicianName">
+                    <i class="pi pi-wrench mr-1"></i>Tech: {{ entry.workOrder?.assignedTechnicianName  }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Expand toggle -->
+              <button
+                (click)="toggleExpand(entry.repairRequest.id)"
+                class="flex-none p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-all"
+                [title]="isExpanded(entry.repairRequest.id) ? 'Collapse' : 'Expand details'">
+                <i class="pi text-xs transition-transform duration-200"
+                  [class.pi-chevron-down]="!isExpanded(entry.repairRequest.id)"
+                  [class.pi-chevron-up]="isExpanded(entry.repairRequest.id)"></i>
+              </button>
+            </div>
+
+            <!-- Spare part reference if fault was on a specific part -->
+            <div *ngIf="entry.repairRequest.sparePartName"
+              class="mt-2 ml-11 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+              <i class="pi pi-box text-[9px]"></i>
+              Affected part: {{ entry.repairRequest.sparePartName }}
+            </div>
+          </div>
+
+          <!-- ── EXPANDABLE DETAIL SECTION ──────────────────────────── -->
+          <div *ngIf="isExpanded(entry.repairRequest.id)" class="border-t border-zinc-100 dark:border-zinc-800 px-4 pb-4 pt-3 space-y-4">
+
+            <!-- No work order -->
+            <p *ngIf="!entry.workOrder" class="text-xs text-zinc-400 dark:text-zinc-500 italic">
+              No work order details available for this request.
+            </p>
+
+            <ng-container *ngIf="entry.workOrder as wo">
+
+              <!-- Diagnosis Notes -->
+              <div *ngIf="wo.diagnosisNotes">
+                <p class="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mb-1">Diagnosis Notes</p>
+                <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-50 dark:bg-zinc-800/60 rounded-xl px-3 py-2.5 border border-zinc-100 dark:border-zinc-800">
+                  {{ wo.diagnosisNotes }}
+                </p>
+              </div>
+
+              <!-- Work order status date -->
+              <div class="flex items-center gap-4 text-[10px] text-zinc-400 dark:text-zinc-500">
+                <span *ngIf="wo.statusDate">
+                  <i class="pi pi-calendar mr-1"></i>
+                  Status date: {{ wo.statusDate | date:'dd MMM yyyy, h:mm a' }}
+                </span>
+              </div>
+
+              <!-- Inspected Spare Parts -->
+              <div *ngIf="wo.inspectedSpareParts && wo.inspectedSpareParts.length > 0">
+                <p class="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mb-2">Inspected Spare Parts</p>
+                <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-700">
+                      <tr>
+                        <th class="px-3 py-2">Part Name</th>
+                        <th class="px-3 py-2 text-center">Inspected</th>
+                        <th class="px-3 py-2">Condition Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      <tr *ngFor="let part of wo.inspectedSpareParts" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
+                        <td class="px-3 py-2 font-medium text-zinc-800 dark:text-zinc-200">
+                          {{ part.sparePartName || part.sparePartId }}
+                        </td>
+                        <td class="px-3 py-2 text-center">
+                          <span class="inline-flex items-center justify-center w-5 h-5 rounded-full"
+                            [class]="part.inspected ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-red-100 text-red-500 dark:bg-red-950/40 dark:text-red-400'">
+                            <i class="pi text-[9px]" [class]="part.inspected ? 'pi-check' : 'pi-times'"></i>
+                          </span>
+                        </td>
+                        <td class="px-3 py-2 text-zinc-500 dark:text-zinc-400 italic">
+                          {{ part.conditionNotes || '—' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Parts Used -->
+              <div *ngIf="wo.partsUsed && wo.partsUsed.length > 0">
+                <p class="text-[10px] uppercase font-bold tracking-wider text-zinc-400 mb-2">Parts Used / Consumed</p>
+                <div class="rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+                  <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 font-semibold border-b border-zinc-200 dark:border-zinc-700">
+                      <tr>
+                        <th class="px-3 py-2">Part / Item</th>
+                        <th class="px-3 py-2 text-center">Qty</th>
+                        <th class="px-3 py-2">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                      <tr *ngFor="let part of wo.partsUsed" class="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10">
+                        <td class="px-3 py-2 font-medium text-zinc-800 dark:text-zinc-200">
+                          {{ part.inventoryItemName || part.inventoryItemId }}
+                        </td>
+                        <td class="px-3 py-2 text-center font-mono font-bold text-zinc-700 dark:text-zinc-300">
+                          {{ part.quantityUsed }}
+                        </td>
+                        <td class="px-3 py-2 text-zinc-500 dark:text-zinc-400 italic text-[10px]">
+                          {{ part.description || '—' }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- No detail info at all -->
+              <p *ngIf="!wo.diagnosisNotes && (!wo.inspectedSpareParts || wo.inspectedSpareParts.length === 0) && (!wo.partsUsed || wo.partsUsed.length === 0)"
+                class="text-xs text-zinc-400 dark:text-zinc-500 italic">
+                No further detail recorded for this work order.
+              </p>
+            </ng-container>
+          </div>
+
+        </div>
+      }
+    </ng-container>
+  </div>
+
+  <!-- ── PAGINATION FOOTER ─────────────────────────────────────────── -->
+  <div
+    *ngIf="!loading() && total() > pageSize()"
+    class="flex-none px-6 py-3 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/80 flex items-center justify-between">
+
+    <span class="text-[10px] text-zinc-400 dark:text-zinc-500">
+      Page {{ currentPage() }} of {{ totalPages() }} &bull; {{ total() }} total records
+    </span>
+
+    <div class="flex gap-1">
+      <button
+        (click)="goToPage(currentPage() - 1)"
+        [disabled]="currentPage() === 1"
+        class="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+        <i class="pi pi-angle-left"></i>
+      </button>
+
+      <button
+        *ngFor="let p of pageNumbers"
+        (click)="goToPage(p)"
+        [class.bg-emerald-500]="currentPage() === p"
+        [class.text-white]="currentPage() === p"
+        [class.border-emerald-500]="currentPage() === p"
+        class="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+        {{ p }}
+      </button>
+
+      <button
+        (click)="goToPage(currentPage() + 1)"
+        [disabled]="currentPage() === totalPages()"
+        class="px-2.5 py-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 disabled:opacity-40 hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
+        <i class="pi pi-angle-right"></i>
+      </button>
+    </div>
+  </div>
+
+</aside>

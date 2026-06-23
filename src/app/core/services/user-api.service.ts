@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { RoleType, UserDto, UserRoleDto } from '../models/biomed.interface';
+import { PagedResult, UserDto, UserRoleDto } from '../models/biomed.interface';
+import { Permission, RoleType } from "../auth/permission.types";
 import { ScopeType } from '../auth/permission.types';
 import { environment } from '../../../environments/environment';
 
@@ -9,17 +10,28 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class UserApiService {
+  
 
   private baseUrl = environment.apiUrl + '/users';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  // ─────────────────────────────
-  // READ
-  // ─────────────────────────────
+  dev_getAllUsers(page?: number,
+    size?: number,
+  ): Observable<PagedResult<UserDto>> {
+    let params = new HttpParams()
+      .set('page', page ?? 1)
+      .set('size', size ?? 20);
+    return this.http.get<PagedResult<UserDto>>(environment.apiUrl + '/developer/users', { params });
+  }
 
-  getAllUsers(): Observable<UserDto[]> {
-    return this.http.get<UserDto[]>(this.baseUrl);
+  getAllUsers(page?: number,
+    size?: number,
+  ): Observable<PagedResult<UserDto>> {
+    let params = new HttpParams()
+      .set('page', page ?? 1)
+      .set('size', size ?? 10);
+    return this.http.get<PagedResult<UserDto>>(this.baseUrl, { params });
   }
 
   getUserById(userId: string): Observable<UserDto> {
@@ -71,18 +83,30 @@ export class UserApiService {
   // ROLES
   // ─────────────────────────────
 
-  assignRole(payload: {
-    userId: string;
+  assignRole(userId: string, payload: {
     role: RoleType;
     scopeType: ScopeType;
     scopeId?: string | null;
   }): Observable<UserRoleDto> {
     return this.http.post<UserRoleDto>(
-      `${this.baseUrl}/${payload.userId}/roles`,
+      `${this.baseUrl}/${userId}/roles`,
       payload
     );
   }
 
+  addPermission(userId: string,  permissions: Permission[]): Observable<Permission[]> {
+     return this.http.put<Permission[]>(
+      `${this.baseUrl}/${userId}/permissions`,
+     {permissions}
+    );
+  }
+
+/**
+ * 
+ * @param userId 
+ * @param roleId 
+ * @returns 
+ */
   removeRole(userId: string, roleId: string): Observable<void> {
     return this.http.delete<void>(
       `${this.baseUrl}/${userId}/roles/${roleId}`

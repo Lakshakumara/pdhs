@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder } from '../models/biomed.interface';
+import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, RepairHistoryEntry, WorkOrder, AuditLog } from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
 import { OrganizationTreeNode } from '../../layout/organization.chart/organiization.tree.node';
 import { environment } from '../../../environments/environment';
@@ -10,8 +10,6 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class QueryService {
-
-
 
   private baseUrl = environment.apiUrl
 
@@ -30,9 +28,9 @@ export class QueryService {
   }
 
   getDistrtcs() {
-    return this.http.get<District[]>(`${this.baseUrl}/districts`,
-    );
+    return this.http.get<District[]>(`${this.baseUrl}/districts`,);
   }
+
   getInstitute(
     page: number,
     size: number,
@@ -44,20 +42,13 @@ export class QueryService {
       .set('size', size);
 
     if (search) {
-      params =
-        params.set('search', search);
+      params = params.set('search', search);
     }
 
     if (districtId) {
-      params =
-        params.set(
-          'districtId',
-          districtId
-        );
+      params = params.set('districtId', districtId);
     }
-    console.log('Query institute ', this.userApi.currentSession())
-    return this.http.get<PagedResult<Institution>>(`${this.baseUrl}/institute`,
-      { params });
+    return this.http.get<PagedResult<Institution>>(`${this.baseUrl}/institute`, { params });
   }
 
   getEquipment(
@@ -93,7 +84,6 @@ export class QueryService {
           assignedInstitutionId
         );
     }
-    console.log('params sent', page, size, search, status, category, assignedInstitutionId)
     return this.http.get<PagedResult<Equipment>>(`${this.baseUrl}/equipment`,
       { params });
   }
@@ -192,5 +182,71 @@ export class QueryService {
     return this.http.get<OrganizationTreeNode>(
       `${this.baseUrl}/dashboard/organization-tree`
     );
+  }
+
+  /**
+   * Fetch paginated completed repair requests for a specific equipment.
+   * The backend filters by equipmentId and returns requests whose
+   * linked work orders have a terminal status (Completed / Verified & Closed).
+   */
+  getEquipmentRepairHistory(
+    equipmentId: string,
+    page: number = 1,
+    size: number = 10,
+    status?: string
+  ) {
+    let params = new HttpParams()
+      .set('equipmentId', equipmentId)
+      .set('page', page)
+      .set('size', size);
+
+    if (status) {
+      params = params.set('status', status);
+    }
+console.log('sent to back end for history equipmentid ', equipmentId)
+    return this.http.get<PagedResult<RepairRequest>>(
+      `${this.baseUrl}/repair-history`,
+      { params }
+    );
+  }
+
+  /** Fetch the single work order linked to a specific repair request. */
+  getWorkOrderByRepairRequest(repairRequestId: string) {
+    const params = new HttpParams()
+      .set('repairRequestId', repairRequestId)
+      .set('page', 1)
+      .set('size', 1);
+
+    return this.http.get<PagedResult<WorkOrder>>(
+      `${this.baseUrl}/work-orders`,
+      { params }
+    );
+  }
+
+  getAuditLogs(page: number, size: number, search: string,
+    selectedAction: string,
+    from: string | undefined,
+    to: string | undefined) {
+
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    if (selectedAction) {
+      params = params.set('selectedAction', selectedAction);
+    }
+    if (from) {
+      params = params.set('from', from);
+    }
+
+    if (to) {
+      params = params.set('to', to);
+    }
+    return this.http.get<PagedResult<AuditLog>>(`${this.baseUrl}/audit`,
+      { params });
   }
 }

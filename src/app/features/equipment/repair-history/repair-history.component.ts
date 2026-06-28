@@ -83,8 +83,8 @@ export class RepairHistoryComponent implements OnInit, OnChanges {
 
           // For each repair request, fetch its linked work order in parallel
           const woRequests = result.items.map((req) =>
-            this.queryService.getWorkOrderByRepairRequest(req.id).pipe(
-              map((woResult) => woResult.items[0] ?? undefined),
+            this.queryService.getWorkOrder(req.id).pipe(
+              map((woResult) => woResult ?? undefined),
               catchError(() => of(undefined))
             )
           );

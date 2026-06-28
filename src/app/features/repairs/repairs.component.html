@@ -16,12 +16,16 @@
   </p-toolbar>
 
   <!-- Repairs Table -->
-  <div
-    class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
-    <p-table [value]="repairRequests()" [lazy]="true" (onLazyLoad)="onLazyLoad($event)" [loading]="loading()"
-      [paginator]="true" [rows]="pageSize()" [totalRecords]="total()" [rowsPerPageOptions]="[10, 25, 50]"
-      [showCurrentPageReport]="true" currentPageReportTemplate="{first} to {last} of {totalRecords} requests"
-      dataKey="id" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '60rem' }">
+  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 
+    dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+    <p-table [value]="repairRequests()" [lazy]="true" 
+    (onLazyLoad)="onLazyLoad($event)" [loading]="loading()"
+      [paginator]="true" [rows]="pageSize()" [totalRecords]="total()" 
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true" 
+      currentPageReportTemplate="{first} to {last} of {totalRecords} requests"
+      dataKey="id" styleClass="p-datatable-sm" 
+      [tableStyle]="{ 'min-width': '60rem' }">
 
       <!-- Header filter row -->
       <ng-template pTemplate="caption">
@@ -78,7 +82,7 @@
 
           <td class="text-zinc-500">{{ req.submissionDate | date:'mediumDate' }}</td>
 
-          <td *ngIf="getWO(req.id) as wo">
+          <td *ngIf="req.workorder as wo">
             <p-tag [value]="wo.status" [severity]="getStatusSeverity(wo.status)" styleClass="text-[10px]" />
           </td>
 
@@ -423,7 +427,7 @@
           <p-button *ngIf="selectedWO()?.status === 'Diagnosed'" label="Move to &quot;In Repair&quot; Queue"
             severity="contrast" (onClick)="runWorkOrderStep('StartRepair')" />
           <p-button *ngIf="selectedWO()?.status === 'In Repair' || selectedWO()?.status === 'Diagnosed'"
-            label="Complete & Dispatch to Hospital" (onClick)="runWorkOrderStep('Complete')" />
+            label="Complete & Dispatch to Institute" (onClick)="runWorkOrderStep('Complete')" />
         </div>
         <p-button label="Cancel Changes" severity="secondary" [outlined]="true" (onClick)="closeTechnicianModal()" />
       </div>

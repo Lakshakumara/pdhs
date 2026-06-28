@@ -160,7 +160,7 @@ export class Test implements OnInit {
   }
 
   getWorkOrders() {
-    this.queryService.getWorkOrder(
+    this.queryService.getWorkOrders(
       this.currentPage(),
       this.pageSize(),
       this.searchTerm(),

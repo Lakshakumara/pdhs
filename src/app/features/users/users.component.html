@@ -301,9 +301,6 @@
   </form>
 </p-dialog>
 
-
-
-
 <p-dialog [visible]="drawerVisible()" (visibleChange)="drawerVisible.set($event)"
   [header]="drawerUser()?.fullName ?? 'User Details'"
   [modal]="true" [draggable]="false" position="right"
@@ -583,7 +580,7 @@
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
         Permission <span class="text-red-500">*</span>
       </label>
-      <p-select formControlName="permission" [options]="permOptions" [filter]="true"
+      <p-select formControlName="permission" [options]="deniedPermissions()" [filter]="true"
         filterPlaceholder="Search permissions…" placeholder="Select permission…"
         styleClass="w-full !rounded-xl" />
     </div>

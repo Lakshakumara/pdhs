@@ -109,8 +109,7 @@ export class RepairsComponent implements OnInit {
     private queryService: QueryService,
     private upsertService: UpsertService,
     private notify: NotificationService,
-    private userFacade: UserFacadeService,
-    private stateService: BiomedStateService) { }
+    private userFacade: UserFacadeService,) { }
 
   ngOnInit() {
     this.getEquipment();
@@ -143,7 +142,7 @@ export class RepairsComponent implements OnInit {
       next: result => {
         this.repairRequests.set(result.items);
         this.total.set(result.total);
-        this.getWorkOrders(); // keep work-order join in sync with current page
+        // this.getWorkOrders(); // keep work-order join in sync with current page
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -180,15 +179,19 @@ export class RepairsComponent implements OnInit {
     ).subscribe(result => this.equipments.set(result.items));
   }
 
-  getWorkOrders() {
-    this.queryService.getWorkOrder(
-      this.currentPage(), this.pageSize(), this.searchTerm, this.selectedCategory, this.selectedStatus,
-    ).subscribe(result => this.workOrders.set(result.items));
+  getWorkOrder(repairRequestId: string) {
+    this.queryService.getWorkOrder(repairRequestId)
+      .subscribe(result => this.selectedWO.set(result));
   }
 
-  public getWO(repairRequestId: string): WorkOrder | undefined {
+  /*public getWO(repairRequestId: string): WorkOrder | undefined {
+    console.log('repair request id', repairRequestId)
+     this.queryService.getWorkOrders(
+       this.currentPage(), this.pageSize(), this.searchTerm, this.selectedCategory, this.selectedStatus,
+     ).subscribe(result => {return result.items});
+  
     return this.workOrders().find(o => o.repairRequestId === repairRequestId);
-  }
+  }*/
 
   // Lifecycle helper for the p-dialog timeline — replaces the long chained
   // *ngClass boolean expressions with one lookup
@@ -205,7 +208,7 @@ export class RepairsComponent implements OnInit {
   // Details Dialog
   public openDetails(req: RepairRequest) {
     this.selectedReq.set(req);
-    this.selectedWO.set(this.getWO(req.id) ?? null);
+    //this.selectedWO.set(this.getWO(req.id) ?? null);
     this.showDetailModal = true;
   }
 
@@ -214,11 +217,11 @@ export class RepairsComponent implements OnInit {
     this.selectedReq.set(null);
     this.selectedWO.set(null);
   }
-
+/*
   private syncSelectedWO() {
     const req = this.selectedReq();
-    if (req) this.selectedWO.set(this.getWO(req.id) ?? null);
-  }
+    // if (req) this.selectedWO.set(this.getWO(req.id) ?? null);
+  }*/
 
   // New Request Submission
   public openRequestModal() {
@@ -268,10 +271,12 @@ export class RepairsComponent implements OnInit {
 
   // Technician Actions Dialog
   public openTechnicianModal(req: any) {
+    console.log('openTechnicianModal', req)
     this.selectedReq.set(req);
-    this.syncSelectedWO();
+    this.getWorkOrder(req.repairRequestId)
 
     const wo = this.selectedWO();
+    console.log('WO', wo)
     if (!wo) return;
 
     this.diagnosisNotes = wo.diagnosisNotes || '';

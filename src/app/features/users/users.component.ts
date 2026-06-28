@@ -72,6 +72,10 @@ export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Perm
     permissions: [Permission.USER_VIEW, Permission.USER_CREATE, Permission.USER_UPDATE, Permission.USER_DELETE],
   },
   {
+    group: 'Permission', icon: 'pi-key',
+    permissions: [Permission.PERMISSION_VIEW, Permission.PERMISSION_CREATE, Permission.PERMISSION_CREATE_TEMPORARY, Permission.PERMISSION_REMOVE],
+  },
+  {
     group: 'Audit', icon: 'pi-history',
     permissions: [Permission.AUDIT_VIEW],
   },
@@ -552,10 +556,18 @@ export class UsersComponent implements OnInit {
   }
   onRoleScopeChange() { this.roleForm.patchValue({ role: null, scopeId: null }); }
 
-  permOptions = Object.values(Permission).map(p => ({
-    label: p.replace(/_/g, ' '), value: p,
-  }));
+  deniedPermissions = computed(() => {
+    const enabledPermissions = this.permMatrix();
 
+    return Object.values(Permission)
+      // Filter out permissions that are currently enabled in the set
+      .filter(p => !enabledPermissions.has(p))
+      // Map the remaining "denied" permissions to the label/value structure
+      .map(p => ({
+        label: p.replace(/_/g, ' '),
+        value: p,
+      }));
+  });
   private toast(severity: string, detail: string) {
     this.msg.add({ severity, summary: severity === 'success' ? 'Success' : 'Error', detail, life: 3500 });
   }

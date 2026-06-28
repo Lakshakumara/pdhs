@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, RepairHistoryEntry, WorkOrder, AuditLog } from '../models/biomed.interface';
+import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder, AuditLog } from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
 import { OrganizationTreeNode } from '../../layout/organization-chart/organization-tree-node';
 import { environment } from '../../../environments/environment';
@@ -112,14 +112,15 @@ export class QueryService {
       params =
         params.set('priority', priority);
     }
-
-
-    console.log('params sent', page, size, search, status, priority)
     return this.http.get<PagedResult<RepairRequest>>(`${this.baseUrl}/repair-requests`,
       { params });
   }
 
-  getWorkOrder(
+  getWorkOrder(repairRequestId?: string,) {
+    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${repairRequestId}`,);
+  }
+
+  getWorkOrders(
     page: number,
     size: number,
     search?: string,
@@ -143,13 +144,9 @@ export class QueryService {
       params =
         params.set('repairRequestId', repairRequestId);
     }
-
-
-    console.log('get word order params sent', page, size, search, status, repairRequestId)
-    return this.http.get<PagedResult<WorkOrder>>(`${this.baseUrl}/work-orders`,
+    return this.http.get<PagedResult<WorkOrder>>(`${this.baseUrl}/work-order`,
       { params });
   }
-
   getInventorytem(page: number,
     size: number,
     search?: string,
@@ -203,22 +200,9 @@ export class QueryService {
     if (status) {
       params = params.set('status', status);
     }
-console.log('sent to back end for history equipmentid ', equipmentId)
+    console.log('sent to back end for history equipmentid ', equipmentId)
     return this.http.get<PagedResult<RepairRequest>>(
       `${this.baseUrl}/repair-history`,
-      { params }
-    );
-  }
-
-  /** Fetch the single work order linked to a specific repair request. */
-  getWorkOrderByRepairRequest(repairRequestId: string) {
-    const params = new HttpParams()
-      .set('repairRequestId', repairRequestId)
-      .set('page', 1)
-      .set('size', 1);
-
-    return this.http.get<PagedResult<WorkOrder>>(
-      `${this.baseUrl}/work-orders`,
       { params }
     );
   }

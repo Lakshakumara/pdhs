@@ -114,7 +114,7 @@ export interface EquipmentSpareParts {
 
 export interface Equipment {
   id: string;
-  invoiceNumber:string;
+  invoiceNumber: string;
   name: string;
   description: string;
   category: EquipmentCategory;
@@ -174,10 +174,10 @@ export interface RepairRequest {
   submissionDate: string;
   institutionId: string;
   institutionName: string;
+  workorder?: WorkOrder;
 }
-export interface EquipmentRepairHistory extends RepairRequest{
-workorder:WorkOrder;
-
+export interface EquipmentRepairHistory extends RepairRequest {
+  workorder: WorkOrder;
 }
 export interface InspectedSparePart {
   id?: string;
@@ -283,7 +283,7 @@ export interface AuditLog {
   userId: string;
   userName: string;
   userRole: string;
-  action: 'CREATE' | 'UPDATE' | 'DELETE'| 'LOGIN'|'LOGOUT'| 'ASSIGN' | 'STATUS_CHANGE';
+  action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'ASSIGN' | 'STATUS_CHANGE';
   entityName: string;
   recordId: string;
   description: string;

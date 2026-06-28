@@ -533,5 +533,4 @@ export class EquipmentComponent implements OnInit {
     this.showRepairHistoryPanel = false;
     this.repairHistoryEq = null;
   }
-
 }

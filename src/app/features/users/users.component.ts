@@ -268,7 +268,7 @@ export class UsersComponent implements OnInit {
     // 2. Combine all parallel HTTP streams into a forkJoin
     forkJoin({
       usersRes: this.useService.getAllUsers(pageNumber, this.rows),
-      districtsRes: this.service.getDistrtcs(),
+      districtsRes: this.service.getDistricts(),
       institutionsRes: this.service.getInstitute(1, 100)
     })
       .pipe(

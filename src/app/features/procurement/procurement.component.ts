@@ -103,7 +103,7 @@ export class ProcurementComponent implements OnInit {
     });
 
     this.stateService.workOrders$.subscribe(list => {
-      this.activeWorkOrders = list.filter(wo => wo.status !== 'Verified & Closed');
+      this.activeWorkOrders = list.filter(wo => wo.status !== 'VERIFIED_CLOSED');
     });
   }
 

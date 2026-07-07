@@ -38,8 +38,8 @@ export const routes: Routes = [
         loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {
-        path: 'org',
-        loadComponent: () => import('./layout/organization-chart/organization-chart.component').then(m => m.OrganizationChart),
+        path: 'institute',
+        loadComponent: () => import('./features/institute/institute.component').then(m => m.InstituteComponent),
       },
       {
         path: 'inventory',
@@ -52,6 +52,10 @@ export const routes: Routes = [
       {
         path: 'repairs',
         loadComponent: () => import('./features/repairs/repairs.component').then(m => m.RepairsComponent),
+      },
+      {
+        path: 'supplier',
+        loadComponent: () => import('./features/supplier/supplier.component').then(m => m.SupplierComponent),
       },
       {
         path: 'procurement',

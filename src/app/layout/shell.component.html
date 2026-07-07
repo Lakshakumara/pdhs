@@ -49,6 +49,13 @@
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Dashboard</span>
         </a>
 
+        <a *appHasPermission="permission.INSTITUTE_VIEW" routerLink="/institute" routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Institute'" [class.justify-center]="isSidebarCollapsed">
+          <i class="pi pi-box text-lg group-hover:scale-110 transition-transform"></i>
+          <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Institute</span>
+        </a>
+
         <a *appHasPermission="permission.EQUIPMENT_VIEW" routerLink="/equipment" routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
           class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
           [title]="'Equipment Registry'" [class.justify-center]="isSidebarCollapsed">
@@ -62,6 +69,13 @@
           [title]="'Repairs & Work Orders'" [class.justify-center]="isSidebarCollapsed">
           <i class="pi pi-wrench text-lg group-hover:scale-110 transition-transform"></i>
           <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Repairs & Orders</span>
+        </a>
+ <a *appHasPermission="permission.PROCUREMENT_VIEW" routerLink="/supplier"
+          routerLinkActive="bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white"
+          class="flex items-center gap-3 px-3.5 py-3 rounded-xl transition-all duration-150 hover:bg-zinc-100 dark:hover:bg-zinc-800 group"
+          [title]="'Supplier'" [class.justify-center]="isSidebarCollapsed">
+          <i class="pi pi-shopping-cart text-lg group-hover:scale-110 transition-transform"></i>
+          <span *ngIf="!isSidebarCollapsed" class="text-sm font-medium">Supplier</span>
         </a>
 
         <a *appHasPermission="permission.PROCUREMENT_VIEW" routerLink="/procurement"

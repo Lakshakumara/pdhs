@@ -204,7 +204,7 @@ export class BiomedStateService {
       tap(updatedWorkOrder => {
         this.fetchWorkOrders();
         // If completed, we might need to fetch inventory if parts were used
-        if (nextStatus === 'Completed') {
+        if (nextStatus === 'COMPLETED') {
           this.fetchInventoryItems();
         }
         this.logAudit('UPDATE', 'WorkOrder', woId, `Changed work order status to ${nextStatus}.`);

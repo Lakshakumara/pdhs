@@ -1,0 +1,152 @@
+<div class="space-y-6">
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+    <div>
+      <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Institution Registry</h2>
+      <p class="text-xs text-zinc-500">Manage hospitals, units, and regional clinic assignments</p>
+    </div>
+    <button *appHasPermission="permission.INSTITUTE_CREATE" (click)="openCreate()"
+      class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2">
+      <i class="pi pi-plus text-xs"></i> Add Institution
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">Filter by District / RDHS</span>
+      <div class="flex flex-wrap gap-2">
+        <button (click)="filterByDistrict(null)"
+          [class]="!selectedDistrictId() ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200'"
+          class="text-xs px-3 py-1.5 rounded-lg font-medium transition">
+          All Districts
+        </button>
+        <button *ngFor="let d of districts()" (click)="filterByDistrict(d.id)"
+          [class]="selectedDistrictId() === d.id ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200'"
+          class="text-xs px-3 py-1.5 rounded-lg font-medium transition">
+          {{ d.name }}
+        </button>
+      </div>
+    </div>
+
+    <div class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">Filter by Facility Type</span>
+      <div class="flex flex-wrap gap-2">
+        <button (click)="filterByType(null)"
+          [class]="!selectedType() ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200'"
+          class="text-xs px-3 py-1.5 rounded-lg font-medium transition">
+          All Types
+        </button>
+        <button *ngFor="let type of institutionTypes" (click)="filterByType(type.value)"
+          [class]="selectedType() === type.value ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200'"
+          class="text-xs px-3 py-1.5 rounded-lg font-medium transition">
+          {{ type.value }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+    <p-table [value]="institutions()" [lazy]="true" [paginator]="true" [rows]="rows" [first]="first"
+      [totalRecords]="totalRecords()" [loading]="isLoading()" (onPageChange)="onPageChange($event)"
+      [rowsPerPageOptions]="[10, 20, 50]" styleClass="p-datatable-normal">
+
+      <ng-template pTemplate="header">
+        <tr
+          class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 text-left text-xs uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+          <th class="p-4">Name</th>
+          <th class="p-4">Type</th>
+          <th class="p-4">District</th>
+          <th class="p-4">Email</th>
+          <th class="p-4">Telephone</th>
+          <th class="p-4 w-24" *appHasPermission="permission.INSTITUTE_UPDATE">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-inst>
+        <tr
+          class="border-b border-zinc-100 dark:border-zinc-800/60 text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition">
+          <td class="p-4 font-semibold text-zinc-900 dark:text-zinc-100">{{ inst.name }}</td>
+          <td class="p-4"><span class="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-xs">{{ inst.type }}</span>
+          </td>
+          <td class="p-4 text-zinc-600 dark:text-zinc-400">{{ inst.district?.name || 'Unassigned' }}</td>
+          <td class="p-4 text-zinc-500 italic">{{ inst.email || '-' }}</td>
+          <td class="p-4 text-zinc-500">{{ inst.tp || '-' }}</td>
+          <td class="p-4" *appHasPermission="permission.INSTITUTE_UPDATE">
+            <button (click)="openEdit(inst)"
+              class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 p-2 rounded-lg transition">
+              <i class="pi pi-pencil"></i>
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog [header]="isNewMode() ? 'Add New Institution' : 'Modify Institution Details'" [(visible)]="isDialogVisible"
+  [modal]="true" [draggable]="false" [resizable]="false" [style]="{ width: '450px' }"
+  styleClass="dark:bg-zinc-900 dark:text-zinc-100 border dark:border-zinc-800 rounded-2xl shadow-xl">
+
+  <form [formGroup]="institutionForm" (ngSubmit)="save()" class="flex flex-col gap-4 mt-2">
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">District Boundary Assignment</label>
+      <p-select [options]="districts()" formControlName="districtId" optionLabel="name" optionValue="id"
+        placeholder="Select a District" styleClass="w-full">
+      </p-select>
+
+      @if (institutionForm.get('districtId')?.touched && institutionForm.get('districtId')?.invalid) {
+      <small class="text-red-500 text-xs">District assignment is required.</small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Institution Name</label>
+      <input pInputText formControlName="name" placeholder="e.g. Base Hospital Balangoda" class="w-full" />
+      @if (institutionForm.get('name')?.touched && institutionForm.get('name')?.invalid) {
+      <small class="text-red-500 text-xs">Please enter a valid name (Min 3 characters).</small>
+      }
+
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Facility Type Classification</label>
+      <p-select [options]="institutionTypes" formControlName="type" optionLabel="label" optionValue="value"
+        placeholder="Select Facility Level" styleClass="w-full">
+      </p-select>
+      @if (institutionForm.get('type')?.touched && institutionForm.get('type')?.invalid) {
+      <small class="text-red-500 text-xs">Classification type is required.</small>
+      }
+
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Official Communication Email</label>
+      <input pInputText formControlName="email" type="email" placeholder="e.g. contact@hospital.gov.lk"
+        class="w-full" />
+      @if (institutionForm.get('email')?.touched && institutionForm.get('email')?.invalid) {
+      <small class="text-red-500 text-xs">Please enter a valid institutional mailing address.</small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Contact Telephone Number</label>
+      <input pInputText formControlName="tp" placeholder="e.g. 0452222222" class="w-full" />
+      @if (institutionForm.get('tp')?.touched && institutionForm.get('tp')?.invalid) {
+      <small class="text-red-500 text-xs">Invalid format! Use a standard phone sequence (9 digits total without leading
+        country zeroes).</small>
+      }
+    </div>
+
+    <div class="flex justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-2">
+      <button type="button" (click)="isDialogVisible.set(false)"
+        class="px-4 py-2 text-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition font-medium">
+        Cancel
+      </button>
+      <button type="submit"
+        class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition font-medium shadow-sm">
+        Save Changes
+      </button>
+    </div>
+  </form>
+</p-dialog>

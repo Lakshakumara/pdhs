@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, tap, catchError } from 'rxjs';
-import { Equipment, EquipmentAssignment, RepairPriority, RepairRequest, WorkOrder, WorkOrderStatus } from '../models/biomed.interface';
+import { Equipment, EquipmentAssignment, EscalateToVendorDto, RepairPriority, RepairRequest, Supplier, VendorCompletedDto, WorkOrder, WorkOrderStatus } from '../models/biomed.interface';
 import { NotificationService } from './notification.service';
 import { environment } from '../../../environments/environment';
 
@@ -9,11 +9,26 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class UpsertService {
+  
   private baseUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
     private notify: NotificationService) { }
+
+    escalateToVendor(workOrderId: string, dto: EscalateToVendorDto) {
+  return this.http.post<WorkOrder>(
+    `${this.baseUrl}/work-orders/${workOrderId}/escalate-vendor`,
+    dto
+  );
+}
+ 
+markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
+  return this.http.post<WorkOrder>(
+    `${this.baseUrl}/work-orders/${workOrderId}/vendor-completed`,
+    dto
+  );
+}
 
   public upsertEquipment(eq: Omit<Equipment, 'id'>): Observable<Equipment> {
     console.log('add equipment ', eq)
@@ -51,8 +66,9 @@ export class UpsertService {
   public submitRepairRequest(eqId: string, componentId: string | undefined,
     faultDescription: string, priority: RepairPriority, submittedByUserId: string
   ): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
+    
     const body = { equipmentId: eqId, componentId, faultDescription, priority, submittedByUserId };
-console.log('sent body', body)
+    console.log('sent body', body)
     return this.http.post<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
       (`${this.baseUrl}/repair-requests`, body).pipe(
         tap(result => {
@@ -69,6 +85,27 @@ console.log('sent body', body)
       })
     );
   }
+
+   updateSupplier(supplierid: string, payload: any) {
+      alert('Method not implemented.');
+      return this.http.put<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
+      (`${this.baseUrl}/supplier/${supplierid}/edit`, payload)
+      .pipe(
+        tap(result => {
+          this.logAudit('CREATE', 'Supplier', result.repairRequest.id, `Submitted repair request for ${result.repairRequest.equipmentName}. Status: Submitted.`);
+        })
+      );
+  }
+  createSupplier(payload: any){
+      alert('Method not implemented.');
+      return this.http.post<{ supplier:Supplier }>(`${this.baseUrl}/supplier/add`, payload).pipe(
+        tap(result => {
+          this.logAudit('CREATE', 'Supplier', result.supplier.id, 
+            ``);
+        })
+      );
+  }
+
 
   public logAudit(action: 'CREATE' | 'UPDATE' | 'DELETE', entityName: string, recordId: string, description: string): void {
     // In a real app, you might send this to the backend via an endpoint.

@@ -13,9 +13,7 @@ import { DividerModule } from 'primeng/divider';
 import { CheckboxModule } from 'primeng/checkbox';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { BiomedStateService } from '../../core/services/biomed-state.service';
 import { UserDto } from '../../core/models/biomed.interface';
-import { environment } from '../../../environments/environment';
 import { UserApiService } from '../../core/services/user-api.service';
 
 interface DevUserOption {

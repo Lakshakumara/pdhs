@@ -151,13 +151,71 @@ export interface EquipmentAssignment {
 }
 
 export type RepairPriority = 'Routine' | 'Urgent' | 'Emergency';
+
 export type WorkOrderStatus =
-  | 'Submitted'
-  | 'Acknowledged'
-  | 'Diagnosed'
-  | 'In Repair'
-  | 'Completed'
-  | 'Verified & Closed';
+  | 'SUBMITTED'
+  | 'ACKNOWLEDGED'
+  | 'DIAGNOSED'
+  | 'AWAITING_PARTS'
+  | 'IN_REPAIR'
+  | 'COMPLETED'
+  | 'VERIFIED_CLOSED'
+  | 'ESCALATED_TO_VENDOR'
+  | 'VENDOR_IN_PROGRESS'
+  | 'VENDOR_COMPLETED';
+
+export type RepairTrack = 'INTERNAL' | 'VENDOR';
+export type RepairBasis = 'WARRANTY' | 'PAID';
+export type HandoverType = 'FIELD_VISIT' | 'EQUIPMENT_SENT';
+
+
+export interface WorkOrder {
+  id: string;
+  repairTrack?: RepairTrack;          // defaults to 'INTERNAL' on the backend
+  repairRequestId: string;
+  assignedTechnicianId?: string;
+  assignedTechnicianName?: string;
+  diagnosisNotes?: string;
+  resolutionDetails?: string;
+  status: WorkOrderStatus;
+  statusDate: string;
+  institutionId?: string;
+  institutionName?: string;
+  completedDate?: string;
+  inspectedSpareParts?: InspectedSparePart[];
+  partsUsed?: PartUsedDetail[];
+  vendorRepair?: VendorRepair;        // populated only when repairTrack === 'VENDOR'
+}
+
+// Mirrors the VendorRepair Prisma model — one-to-one with WorkOrder.
+export interface VendorRepair {
+  id: string;
+  workOrderId: string;
+
+  vendorName: string;
+  vendorContact?: string;
+  vendorEmail?: string;
+
+  repairBasis: RepairBasis;
+  handoverType: HandoverType;
+
+  // EQUIPMENT_SENT fields
+  dispatchDate?: string;
+  dispatchedBy?: string;
+  courierRef?: string;
+
+  // FIELD_VISIT fields
+  scheduledDate?: string;
+  visitLocation?: string;
+
+  // Completion tracking
+  vendorRefNumber?: string;
+  returnDate?: string;
+  returnNotes?: string;
+
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface RepairRequest {
   id: string;
@@ -174,7 +232,8 @@ export interface RepairRequest {
   submissionDate: string;
   institutionId: string;
   institutionName: string;
-  workorder?: WorkOrder;
+  workOrder?: WorkOrder;
+  equipment?: Equipment;
 }
 export interface EquipmentRepairHistory extends RepairRequest {
   workorder: WorkOrder;
@@ -198,8 +257,9 @@ export interface PartUsedDetail {
   workOrderId?: string;
 }
 
-export interface WorkOrder {
+/*export interface WorkOrder {
   id: string;
+  repairTrack?: string;
   repairRequestId: string;
   assignedTechnicianId?: string;
   assignedTechnicianName?: string;
@@ -212,6 +272,29 @@ export interface WorkOrder {
   completedDate?: string;
   inspectedSpareParts?: InspectedSparePart[];
   partsUsed: PartUsedDetail[];
+}*/
+export interface EscalateToVendorDto {
+  vendorName: string;
+  vendorContact?: string;
+  vendorEmail?: string;
+  repairBasis: 'WARRANTY' | 'PAID';
+  handoverType: 'FIELD_VISIT' | 'EQUIPMENT_SENT';
+
+  // EQUIPMENT_SENT fields
+  dispatchDate?: Date;
+  dispatchedBy?: string;
+  courierRef?: string;
+
+  // FIELD_VISIT fields
+  scheduledDate?: Date;
+  visitLocation?: string;
+
+  vendorRefNumber?: string;
+}
+
+export interface VendorCompletedDto {
+  returnDate: Date;
+  returnNotes?: string;
 }
 
 /** A completed repair record pairing a RepairRequest with its WorkOrder */
@@ -223,7 +306,7 @@ export interface RepairHistoryEntry {
 export interface Supplier {
   id: string;
   name: string;
-  contactName: string;
+  contactPerson: string;
   phone: string;
   email: string;
   performanceNotes: string;

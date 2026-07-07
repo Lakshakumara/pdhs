@@ -10,7 +10,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class QueryService {
-
+  
   private baseUrl = environment.apiUrl
 
   constructor(
@@ -27,7 +27,7 @@ export class QueryService {
     return this.http.get<any>(`${this.baseUrl}/dashboard/summary`);
   }
 
-  getDistrtcs() {
+  getDistricts() {
     return this.http.get<District[]>(`${this.baseUrl}/districts`,);
   }
 
@@ -116,8 +116,8 @@ export class QueryService {
       { params });
   }
 
-  getWorkOrder(repairRequestId?: string,) {
-    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${repairRequestId}`,);
+  getWorkOrder(workOederId?: string,) {
+    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${workOederId}`,);
   }
 
   getWorkOrders(
@@ -206,6 +206,27 @@ export class QueryService {
       { params }
     );
   }
+  getSuppliers(
+    page: number,
+    size: number,
+    rating?: number | null,
+    search?: string,) {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size);
+    if (rating) {
+      params = params.set('rating', rating);
+    }
+    if (search) {
+      params =
+        params.set('search', search);
+    }
+    return this.http.get<PagedResult<any>>(
+      `${this.baseUrl}/supplier`,
+      { params }
+    );
+  }
+
 
   getAuditLogs(page: number, size: number, search: string,
     selectedAction: string,

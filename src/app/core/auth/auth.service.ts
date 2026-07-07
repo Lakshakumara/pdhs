@@ -207,7 +207,7 @@ export class AuthService {
     console.log('applied permissions from Auth', permissions)
 
     const firstRole = user.roles?.[0];
-    
+
     this.userFacade.setSession(
       user,
       {

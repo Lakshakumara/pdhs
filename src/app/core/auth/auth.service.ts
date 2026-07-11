@@ -56,7 +56,6 @@ export class AuthService {
         }
       }),
       catchError(error => {
-        console.error('Login failed', error);
         return throwError(() => error);
       }),
     );
@@ -198,13 +197,10 @@ export class AuthService {
 
   private applySession(user: UserDto) {
 
-    console.log('applying session for user', user)
-
     const permissions = user.permissions.filter(p => {
       return !p.expiresAt || new Date(p.expiresAt) > new Date()
     }).map(p => p.permission) ?? [];
 
-    console.log('applied permissions from Auth', permissions)
 
     const firstRole = user.roles?.[0];
 

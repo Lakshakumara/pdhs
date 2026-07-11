@@ -12,7 +12,7 @@
 
     <div class="hidden md:flex items-center gap-4 text-center">
       <div>
-        <p class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{{ users().length }}</p>
+        <p class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{{ totalRecords() }}</p>
         <p class="text-[10px] text-zinc-400 uppercase tracking-wide">Total</p>
       </div>
       <div class="h-8 w-px bg-zinc-200 dark:bg-zinc-800"></div>
@@ -33,8 +33,8 @@
 <div class="flex flex-wrap items-center gap-3 mb-4">
   <p-iconfield class="flex-1 min-w-[200px] max-w-sm">
     <p-inputicon styleClass="pi pi-search" />
-    <input pInputText type="text" placeholder="Search name, username, email…"
-      class="w-full !rounded-xl text-sm" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+    <input pInputText type="text" placeholder="Search name, username, email…" class="w-full !rounded-xl text-sm"
+      [ngModel]="search()" (ngModelChange)="search.set($event)" />
   </p-iconfield>
 
   <p-select [options]="roleOptions" [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event)"
@@ -43,14 +43,15 @@
   <p-select [options]="activeOptions" [ngModel]="filterActive()" (ngModelChange)="filterActive.set($event)"
     styleClass="!rounded-xl text-sm min-w-[140px]" />
 
-  <button pButton icon="pi pi-user-plus" label="New User" severity="success"
-    class="!rounded-xl ml-auto" (click)="openCreate()"></button>
+  <button pButton icon="pi pi-user-plus" label="New User" severity="success" class="!rounded-xl ml-auto"
+    (click)="openCreate()"></button>
 </div>
 
-<div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-  <p-table [value]="filteredUsers()" [loading]="loading()" [paginator]="true"
-    [first]="first" [rows]="rows" [totalRecords]="totalRecords" [rowsPerPageOptions]="[3, 10, 15, 25, 50]"
-    styleClass="p-datatable-sm" [rowHover]="true" dataKey="id">
+<div
+  class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+  <p-table [value]="users()" [loading]="loading()" [paginator]="true" [first]="first()" [rows]="rows()"
+    [totalRecords]="totalRecords()" [rowsPerPageOptions]="[10, 15, 25, 50]" styleClass="p-datatable-sm"
+    [rowHover]="true" dataKey="id" [lazy]="true" (onPage)="onPage($event)">
 
     <ng-template pTemplate="header">
       <tr class="text-xs uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -71,15 +72,15 @@
 
         <td>
           <div class="flex items-center gap-3 py-1">
-            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            <div
+              class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
               [style.background]="getAvatarBg(user.fullName)">
               {{ getInitials(user.fullName) }}
             </div>
             <div class="min-w-0">
               <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                 {{ user.fullName }}
-                <i *ngIf="user.mustChangePassword"
-                  class="pi pi-key text-amber-500 text-xs ml-1"
+                <i *ngIf="user.mustChangePassword" class="pi pi-key text-amber-500 text-xs ml-1"
                   pTooltip="Must change password" tooltipPosition="top"></i>
               </p>
               <p class="text-xs text-zinc-400 font-mono">&#64;{{ user.username }}</p>
@@ -90,11 +91,9 @@
 
         <td (click)="$event.stopPropagation()">
           <div class="flex flex-wrap gap-1 py-1 max-w-xs">
-            <span *ngFor="let r of user.roles"
-              class="px-2 py-0.5 rounded-lg text-[10px] font-bold text-white"
+            <span *ngFor="let r of user.roles" class="px-2 py-0.5 rounded-lg text-[10px] font-bold text-white"
               [style.background]="getRoleColor(r.role)"
-              [pTooltip]="r.scopeType + (r.scopeId ? ' · ' + scopeLabel(r) : '')"
-              tooltipPosition="top">
+              [pTooltip]="r.scopeType + (r.scopeId ? ' · ' + scopeLabel(r) : '')" tooltipPosition="top">
               {{ r.role.replace('_', ' ') | titlecase }}
             </span>
             <span *ngIf="user.roles.length === 0" class="text-xs text-zinc-400 italic">No roles</span>
@@ -108,10 +107,9 @@
 
         <td class="text-center" (click)="$event.stopPropagation()">
           <div class="flex flex-col items-center gap-1">
-            <p-toggleswitch [ngModel]="user.active" (ngModelChange)="toggleActive(user)"
-              pTooltip="Toggle active" tooltipPosition="top" />
-            <span class="text-[10px] font-semibold"
-              [class]="user.active ? 'text-emerald-600' : 'text-red-500'">
+            <p-toggleswitch [ngModel]="user.active" (ngModelChange)="toggleActive(user)" pTooltip="Toggle active"
+              tooltipPosition="top" />
+            <span class="text-[10px] font-semibold" [class]="user.active ? 'text-emerald-600' : 'text-red-500'">
               {{ user.active ? 'Active' : 'Inactive' }}
             </span>
           </div>
@@ -121,12 +119,12 @@
 
         <td (click)="$event.stopPropagation()">
           <div class="flex items-center justify-center gap-1">
-            <button pButton icon="pi pi-eye" severity="secondary" size="small" text rounded
-              class="!w-8 !h-8" pTooltip="View details" (click)="openDrawer(user)"></button>
-            <button pButton icon="pi pi-key" severity="warn" size="small" text rounded
-              class="!w-8 !h-8" pTooltip="Reset password" (click)="confirmReset(user)"></button>
-            <button pButton icon="pi pi-trash" severity="danger" size="small" text rounded
-              class="!w-8 !h-8" pTooltip="Delete" (click)="confirmDelete(user)"></button>
+            <button pButton icon="pi pi-eye" severity="secondary" size="small" text rounded class="!w-8 !h-8"
+              pTooltip="View details" (click)="openDrawer(user)"></button>
+            <button pButton icon="pi pi-key" severity="warn" size="small" text rounded class="!w-8 !h-8"
+              pTooltip="Reset password" (click)="confirmReset(user)"></button>
+            <button pButton icon="pi pi-trash" severity="danger" size="small" text rounded class="!w-8 !h-8"
+              pTooltip="Delete" (click)="confirmDelete(user)"></button>
           </div>
         </td>
       </tr>
@@ -145,9 +143,8 @@
   </p-table>
 </div>
 
-<p-dialog [visible]="dialogVisible()" (visibleChange)="dialogVisible.set($event)"
-  header="Create New User" [modal]="true" [draggable]="false"
-  styleClass="!w-full !max-w-2xl">
+<p-dialog [visible]="dialogVisible()" (visibleChange)="dialogVisible.set($event)" header="Create New User"
+  [modal]="true" [draggable]="false" styleClass="!w-full !max-w-2xl">
 
   <form [formGroup]="createForm" class="pt-2">
     <p-stepper [(value)]="createStep">
@@ -175,8 +172,7 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Full Name <span class="text-red-500">*</span>
                 </label>
-                <input pInputText formControlName="fullName" placeholder="User Full name"
-                  class="w-full !rounded-xl"
+                <input pInputText formControlName="fullName" placeholder="User Full name" class="w-full !rounded-xl"
                   [ngClass]="{'ng-invalid ng-dirty': createForm.get('fullName')?.invalid && createForm.get('fullName')?.touched}" />
               </div>
               <div class="col-span-2 sm:col-span-1">
@@ -190,8 +186,8 @@
               </div>
               <div class="col-span-2 sm:col-span-1">
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Email</label>
-                <input pInputText formControlName="email" type="email"
-                  placeholder="jane@pdhs.health.gov.lk" class="w-full !rounded-xl" />
+                <input pInputText formControlName="email" type="email" placeholder="jane@pdhs.health.gov.lk"
+                  class="w-full !rounded-xl" />
               </div>
               <div class="col-span-2 sm:col-span-1">
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
@@ -208,7 +204,8 @@
                   placeholder="Select institution (optional)" [showClear]="true" [filter]="true"
                   styleClass="w-full !rounded-xl text-sm" />
               </div>
-              <div class="col-span-2 flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl">
+              <div
+                class="col-span-2 flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl">
                 <p-checkbox formControlName="mustChangePassword" [binary]="true" inputId="mustChangePw" />
                 <label for="mustChangePw" class="text-sm text-amber-800 dark:text-amber-300 cursor-pointer">
                   <span class="font-semibold">Require password change</span> on next login
@@ -216,8 +213,8 @@
               </div>
             </div>
             <div class="flex justify-end pt-2">
-              <button pButton label="Next: Role & Scope" icon="pi pi-arrow-right" iconPos="right"
-                severity="success" class="!rounded-xl"
+              <button pButton label="Next: Role & Scope" icon="pi pi-arrow-right" iconPos="right" severity="success"
+                class="!rounded-xl"
                 [disabled]="createForm.get('fullName')?.invalid || createForm.get('username')?.invalid || createForm.get('password')?.invalid"
                 (click)="activateCallback(1)"></button>
             </div>
@@ -231,9 +228,8 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Scope Level <span class="text-red-500">*</span>
                 </label>
-                <p-select formControlName="scopeType" [options]="scopeOptions"
-                  placeholder="Select scope…" styleClass="w-full !rounded-xl"
-                  (onChange)="onCreateScopeChange()" />
+                <p-select formControlName="scopeType" [options]="scopeOptions" placeholder="Select scope…"
+                  styleClass="w-full !rounded-xl" (onChange)="onCreateScopeChange()" />
                 <small class="text-[10px] text-zinc-400 mt-0.5 block">
                   Determines what level this user operates at — PDHS, RDHS district, or a specific institution.
                 </small>
@@ -243,24 +239,24 @@
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   District <span class="text-red-500">*</span>
                 </label>
-                <p-select formControlName="scopeId" [options]="districtOptions()"
-                  placeholder="Select district…" [filter]="true" styleClass="w-full !rounded-xl" />
+                <p-select formControlName="scopeId" [options]="districtOptions()" placeholder="Select district…"
+                  [filter]="true" styleClass="w-full !rounded-xl" />
               </div>
 
               <div *ngIf="createForm.get('scopeType')?.value === 'INSTITUTE'">
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Institution <span class="text-red-500">*</span>
                 </label>
-                <p-select formControlName="scopeId" [options]="institutionOptions()"
-                  placeholder="Select institution…" [filter]="true" styleClass="w-full !rounded-xl" />
+                <p-select formControlName="scopeId" [options]="institutionOptions()" placeholder="Select institution…"
+                  [filter]="true" styleClass="w-full !rounded-xl" />
               </div>
 
               <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
                   Role <span class="text-red-500">*</span>
                 </label>
-                <p-select formControlName="role" [options]="filteredRoleOptions()"
-                  placeholder="Select role…" styleClass="w-full !rounded-xl" />
+                <p-select formControlName="role" [options]="filteredRoleOptions()" placeholder="Select role…"
+                  styleClass="w-full !rounded-xl" />
                 <small *ngIf="!createForm.get('scopeType')?.value" class="text-[10px] text-zinc-400 mt-0.5 block">
                   Select a scope level first to see available roles.
                 </small>
@@ -286,13 +282,11 @@
             </div>
 
             <div class="flex justify-between pt-2">
-              <button pButton label="Back" icon="pi pi-arrow-left" severity="secondary"
-                class="!rounded-xl" (click)="activateCallback(0)"></button>
+              <button pButton label="Back" icon="pi pi-arrow-left" severity="secondary" class="!rounded-xl"
+                (click)="activateCallback(0)"></button>
               <button pButton [label]="submitting() ? 'Creating…' : 'Create User'"
-                [icon]="submitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-                severity="success" class="!rounded-xl"
-                [disabled]="createForm.invalid || submitting()"
-                (click)="saveCreate()"></button>
+                [icon]="submitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'" severity="success" class="!rounded-xl"
+                [disabled]="createForm.invalid || submitting()" (click)="saveCreate()"></button>
             </div>
           </ng-template>
         </p-step-panel>
@@ -302,12 +296,12 @@
 </p-dialog>
 
 <p-dialog [visible]="drawerVisible()" (visibleChange)="drawerVisible.set($event)"
-  [header]="drawerUser()?.fullName ?? 'User Details'"
-  [modal]="true" [draggable]="false" position="right"
+  [header]="drawerUser()?.fullName ?? 'User Details'" [modal]="true" [draggable]="false" position="right"
   styleClass="!w-full !max-w-3xl !h-screen !my-0 !rounded-none">
 
   <ng-container *ngIf="drawerUser() as user">
-    <div class="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 mb-4">
+    <div
+      class="flex items-center gap-4 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 mb-4">
       <div class="w-14 h-14 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
         [style.background]="getAvatarBg(user.fullName)">
         {{ getInitials(user.fullName) }}
@@ -317,19 +311,18 @@
         <p class="text-xs font-mono text-zinc-400">&#64;{{ user.username }}</p>
         <p *ngIf="user.email" class="text-xs text-zinc-400">{{ user.email }}</p>
         <div class="flex gap-2 mt-1.5">
-          <p-tag [value]="user.active ? 'Active' : 'Inactive'"
-            [severity]="user.active ? 'success' : 'danger'" styleClass="text-[10px]" />
-          <p-tag *ngIf="user.mustChangePassword" value="Pw Reset Required"
-            severity="warn" styleClass="text-[10px]" />
-          <p-tag *ngIf="user.institutionName" [value]="user.institutionName"
-            severity="secondary" styleClass="text-[10px]" />
+          <p-tag [value]="user.active ? 'Active' : 'Inactive'" [severity]="user.active ? 'success' : 'danger'"
+            styleClass="text-[10px]" />
+          <p-tag *ngIf="user.mustChangePassword" value="Pw Reset Required" severity="warn" styleClass="text-[10px]" />
+          <p-tag *ngIf="user.institutionName" [value]="user.institutionName" severity="secondary"
+            styleClass="text-[10px]" />
         </div>
       </div>
       <div class="flex gap-1">
-        <button pButton icon="pi pi-key" severity="warn" text rounded size="small"
-          pTooltip="Reset password" (click)="confirmReset(user)"></button>
-        <button pButton icon="pi pi-trash" severity="danger" text rounded size="small"
-          pTooltip="Delete user" (click)="confirmDelete(user)"></button>
+        <button pButton icon="pi pi-key" severity="warn" text rounded size="small" pTooltip="Reset password"
+          (click)="confirmReset(user)"></button>
+        <button pButton icon="pi pi-trash" severity="danger" text rounded size="small" pTooltip="Delete user"
+          (click)="confirmDelete(user)"></button>
       </div>
     </div>
 
@@ -347,13 +340,14 @@
               <p class="text-xs font-bold text-zinc-500 uppercase tracking-wider">
                 Assigned Roles ({{ user.roles.length }})
               </p>
-              <button pButton icon="pi pi-plus" label="Add Role" severity="success" size="small"
-                class="!rounded-xl" (click)="openAddRole()"></button>
+              <button pButton icon="pi pi-plus" label="Add Role" severity="success" size="small" class="!rounded-xl"
+                (click)="openAddRole()"></button>
             </div>
 
             <div *ngFor="let r of user.roles"
               class="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
+              <div
+                class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0"
                 [style.background]="getRoleColor(r.role)">
                 {{ r.role.charAt(0) }}
               </div>
@@ -362,8 +356,7 @@
                   {{ r.role.replace('_', ' ') | titlecase }}
                 </p>
                 <div class="flex items-center gap-2 mt-0.5">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide"
-                    [ngClass]="{
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide" [ngClass]="{
                       'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-300': r.scopeType === 'PDHS',
                       'bg-teal-100 text-teal-700 dark:bg-teal-950/30 dark:text-teal-300': r.scopeType === 'RDHS',
                       'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300': r.scopeType === 'INSTITUTE'
@@ -401,12 +394,11 @@
                 </p>
               </div>
               <div class="flex gap-2">
-                <button pButton label="Reset" icon="pi pi-refresh" severity="secondary" size="small"
-                  class="!rounded-xl" [disabled]="!permMatrixDirty()" (click)="resetPermMatrix()"></button>
+                <button pButton label="Reset" icon="pi pi-refresh" severity="secondary" size="small" class="!rounded-xl"
+                  [disabled]="!permMatrixDirty()" (click)="resetPermMatrix()"></button>
                 <button pButton [label]="permSyncing() ? 'Saving…' : 'Save Changes'"
-                  [icon]="permSyncing() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-                  severity="success" size="small" class="!rounded-xl"
-                  [disabled]="!permMatrixDirty() || permSyncing()"
+                  [icon]="permSyncing() ? 'pi pi-spin pi-spinner' : 'pi pi-check'" severity="success" size="small"
+                  class="!rounded-xl" [disabled]="!permMatrixDirty() || permSyncing()"
                   (click)="syncPermissions()"></button>
               </div>
             </div>
@@ -420,18 +412,21 @@
             <div class="space-y-3">
               <div *ngFor="let group of permGroups"
                 class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden">
-                <div class="flex items-center gap-2 px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+                <div
+                  class="flex items-center gap-2 px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
                   <i class="pi text-emerald-600 dark:text-emerald-400 text-xs" [ngClass]="group.icon"></i>
                   <p class="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider">
                     {{ group.group }}
                   </p>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-6 gap-0 divide-x divide-y divide-zinc-100 dark:divide-zinc-800">
+                <div
+                  class="grid grid-cols-2 sm:grid-cols-6 gap-0 divide-x divide-y divide-zinc-100 dark:divide-zinc-800">
                   <div *ngFor="let perm of group.permissions"
                     class="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                     [ngClass]="permMatrix().has(perm) ? 'bg-emerald-50/50 dark:bg-emerald-950/10' : ''"
                     (click)="togglePermission(perm)">
-                    <div class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                    <div
+                      class="w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors"
                       [ngClass]="permMatrix().has(perm) ? 'bg-emerald-500 border-emerald-500' : 'border-zinc-300 dark:border-zinc-600'">
                       <i *ngIf="permMatrix().has(perm)" class="pi pi-check text-white text-[8px]"></i>
                     </div>
@@ -454,20 +449,18 @@
                   Grant a permission with an expiry date — auto-expires, preserved for audit.
                 </p>
               </div>
-              <button pButton icon="pi pi-plus" label="Grant Temp Permission"
-                severity="success" size="small" class="!rounded-xl" (click)="openGrantPerm()"></button>
+              <button pButton icon="pi pi-plus" label="Grant Temp Permission" severity="success" size="small"
+                class="!rounded-xl" (click)="openGrantPerm()"></button>
             </div>
 
-            <div *ngFor="let p of user.permissions"
-              class="flex items-start gap-3 p-3 border rounded-xl transition-all"
+            <div *ngFor="let p of user.permissions" class="flex items-start gap-3 p-3 border rounded-xl transition-all"
               [ngClass]="{
                 'border-amber-200 bg-amber-50/50 dark:border-amber-900/30 dark:bg-amber-950/10': p.expiresAt && !isExpired(p),
                 'border-red-200 bg-red-50/50 dark:border-red-900/30 dark:bg-red-950/10': isExpired(p),
                 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900': !p.expiresAt
               }">
-              
-              <div class="w-2 h-2 rounded-full mt-2 flex-shrink-0"
-                [ngClass]="{
+
+              <div class="w-2 h-2 rounded-full mt-2 flex-shrink-0" [ngClass]="{
                   'bg-emerald-500': p.active && !p.expiresAt,
                   'bg-amber-500': p.active && !!p.expiresAt,
                   'bg-red-500': isExpired(p)
@@ -515,46 +508,47 @@
 </p-dialog>
 
 
-<p-dialog [visible]="roleDialogVisible()" (visibleChange)="roleDialogVisible.set($event)"
-  header="Add Role Assignment" [modal]="true" [draggable]="false" styleClass="!w-full !max-w-md">
-  
+<p-dialog [visible]="roleDialogVisible()" (visibleChange)="roleDialogVisible.set($event)" header="Add Role Assignment"
+  [modal]="true" [draggable]="false" styleClass="!w-full !max-w-md">
+
   <form [formGroup]="roleForm" class="pt-2 space-y-4">
     <div>
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
         Scope Level <span class="text-red-500">*</span>
       </label>
-      <p-select formControlName="scopeType" [options]="scopeOptions"
-        placeholder="Select scope…" styleClass="w-full !rounded-xl" (onChange)="onRoleScopeChange()" />
+      <p-select formControlName="scopeType" [options]="scopeOptions" placeholder="Select scope…"
+        styleClass="w-full !rounded-xl" (onChange)="onRoleScopeChange()" />
     </div>
 
     <div *ngIf="roleForm.get('scopeType')?.value === 'RDHS'">
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
         District <span class="text-red-500">*</span>
       </label>
-      <p-select formControlName="scopeId" [options]="districtOptions()"
-        placeholder="Select district…" [filter]="true" styleClass="w-full !rounded-xl" />
+      <p-select formControlName="scopeId" [options]="districtOptions()" placeholder="Select district…" [filter]="true"
+        styleClass="w-full !rounded-xl" />
     </div>
 
     <div *ngIf="roleForm.get('scopeType')?.value === 'INSTITUTE'">
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
         Institution <span class="text-red-500">*</span>
       </label>
-      <p-select formControlName="scopeId" [options]="institutionOptions()"
-        placeholder="Select institution…" [filter]="true" styleClass="w-full !rounded-xl" />
+      <p-select formControlName="scopeId" [options]="institutionOptions()" placeholder="Select institution…"
+        [filter]="true" styleClass="w-full !rounded-xl" />
     </div>
 
     <div>
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
         Role <span class="text-red-500">*</span>
       </label>
-      <p-select formControlName="role" [options]="roleDialogRoleOptions()"
-        placeholder="Select role…" styleClass="w-full !rounded-xl" />
+      <p-select formControlName="role" [options]="roleDialogRoleOptions()" placeholder="Select role…"
+        styleClass="w-full !rounded-xl" />
     </div>
 
     <div class="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl">
       <p class="text-[10px] text-blue-700 dark:text-blue-400 leading-relaxed">
         <i class="pi pi-info-circle mr-1"></i>
-        Adding a role will seed any <strong>new permissions</strong> from that role's defaults into this user's permission set.
+        Adding a role will seed any <strong>new permissions</strong> from that role's defaults into this user's
+        permission set.
       </p>
     </div>
   </form>
@@ -581,11 +575,11 @@
         Permission <span class="text-red-500">*</span>
       </label>
       <p-select formControlName="permission" [options]="deniedPermissions()" [filter]="true"
-        filterPlaceholder="Search permissions…" placeholder="Select permission…"
-        styleClass="w-full !rounded-xl" />
+        filterPlaceholder="Search permissions…" placeholder="Select permission…" styleClass="w-full !rounded-xl" />
     </div>
 
-    <div class="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl">
+    <div
+      class="flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl">
       <p-checkbox formControlName="temporary" [binary]="true" inputId="isTemp" />
       <label for="isTemp" class="text-sm text-amber-800 dark:text-amber-300 cursor-pointer font-medium">
         Set expiry date (temporary grant)
@@ -596,9 +590,8 @@
       <label class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5">
         Expiry Date <span class="text-red-500">*</span>
       </label>
-      <p-datepicker formControlName="expiresAt" [minDate]="minDate"
-        placeholder="Select expiry…" [showTime]="true" hourFormat="24"
-        styleClass="w-full !rounded-xl" />
+      <p-datepicker formControlName="expiresAt" [minDate]="minDate" placeholder="Select expiry…" [showTime]="true"
+        hourFormat="24" styleClass="w-full !rounded-xl" />
       <small class="text-[10px] text-zinc-400 mt-0.5 block">
         Permission expires automatically at this time. The record is kept for audit purposes.
       </small>

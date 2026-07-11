@@ -200,7 +200,6 @@ export class QueryService {
     if (status) {
       params = params.set('status', status);
     }
-    console.log('sent to back end for history equipmentid ', equipmentId)
     return this.http.get<PagedResult<RepairRequest>>(
       `${this.baseUrl}/repair-history`,
       { params }

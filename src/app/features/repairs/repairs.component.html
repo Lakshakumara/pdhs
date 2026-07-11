@@ -326,7 +326,7 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- DIALOG: SUBMIT REPAIR REQUEST                                  -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <p-dialog header="Create Repair Request Ticket" [(visible)]="showRequestModal" [modal]="true"
+  <p-dialog [maximizable]="true" header="Create Repair Request Ticket" [(visible)]="showRequestModal" [modal]="true"
     [style]="{ width: '32rem' }" [breakpoints]="{ '640px': '95vw' }" (onHide)="closeRequestModal()">
 
     <div class="space-y-4">
@@ -370,83 +370,154 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- DIALOG: OFFICER REVIEW & TRIAGE                               -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <p-dialog header="Review Repair Request" [(visible)]="showReviewModal" [modal]="true"
+  <p-dialog [maximizable]="true" header="Review Repair Request" [(visible)]="showReviewModal" [modal]="true"
     [style]="{ width: '54rem' }" [breakpoints]="{ '960px': '90vw' }" (onHide)="closeReviewModal()">
 
     <ng-container *ngIf="selectedReq() as req">
-      <h3 class="font-bold text-base text-zinc-900 dark:text-zinc-50 pt-1 mb-1">{{ req.equipmentName }}</h3>
-      <p class="text-[10px] font-mono text-zinc-400 mb-4">{{ req.id }} · Submitted {{ req.submissionDate | date:'mediumDate' }} · {{ req.institutionName }}</p>
-      {{ req | json }}
+
+      <!-- ── Equipment context strip ──────────────────────────────────── -->
+      <div class="flex items-start justify-between gap-4 mb-5 pt-1">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap mb-1">
+            <h3 class="font-bold text-base text-zinc-900 dark:text-zinc-50">{{ req.equipmentName }}</h3>
+            <p-tag [value]="req.priority" [severity]="getPrioritySeverity(req.priority)" styleClass="text-[10px] uppercase" />
+          </div>
+          <p class="text-[10px] font-mono text-zinc-400">{{ req.id }} · S/N {{ req.equipmentSerialNumber }}</p>
+          <p class="text-[10px] text-zinc-500 mt-0.5">
+            <i class="pi pi-map-marker mr-1"></i>{{ req.institutionName }}
+            <span class="mx-1">·</span>Submitted {{ req.submissionDate | date:'mediumDate' }}
+          </p>
+        </div>
+        <div class="flex flex-col gap-1.5 items-end shrink-0">
+          <span *ngIf="req.equipment?.category"
+            class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+            <i class="pi pi-tag mr-0.5"></i>{{ req.equipment?.category }}
+          </span>
+          <span *ngIf="req.equipment?.warrantyPeriodMonths"
+            class="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+            <i class="pi pi-shield mr-0.5"></i>{{ req.equipment?.warrantyPeriodMonths }}m Warranty
+          </span>
+        </div>
+      </div>
+
+      <!-- ── 2-column grid: fault + service plan ───────────────────────── -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
 
         <!-- Left: fault details -->
         <div class="space-y-3">
-          <div class="flex items-center gap-2 mb-2">
-            <p-tag [value]="req.priority" [severity]="getPrioritySeverity(req.priority)" styleClass="text-[10px] uppercase" />
-            <span class="text-[10px] text-zinc-400">{{ req.equipmentSerialNumber }}</span>
-          </div>
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5">Fault Report</h4>
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1">Reported Fault</p>
             <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-red-50/30 dark:bg-zinc-800/40 p-3 rounded-lg border border-red-100/30 dark:border-zinc-700">
               {{ req.faultDescription }}</p>
           </div>
           <div *ngIf="req.sparePartName">
-            <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1">Reported Faulty Part</p>
-            <p class="text-xs font-semibold text-emerald-600">{{ req.sparePartName }}</p>
+            <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1">Faulty Component</p>
+            <p class="text-xs font-semibold text-emerald-600">
+              <i class="pi pi-cog mr-1"></i>{{ req.sparePartName }}
+            </p>
           </div>
         </div>
 
-        <!-- Right: service plan from equipment registry -->
-        <div class="space-y-3">
+        <!-- Right: service plan with Y1–Y5 tab navigation -->
+        <div>
           <ng-container *ngIf="req.equipment?.servicePlan as sp; else noServicePlan">
-            <div class="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl">
-              <p class="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 mb-2 tracking-wider">
-                <i class="pi pi-file-check mr-1"></i>Active Service Agreement
-              </p>
-              <div class="space-y-1.5 text-xs">
-                <div class="flex justify-between">
-                  <span class="text-zinc-500">Ref</span>
-                  <span class="font-mono font-semibold text-zinc-800 dark:text-zinc-200">{{ sp.agreementReference }}</span>
+            <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl overflow-hidden">
+
+              <!-- Plan header -->
+              <div class="px-3 pt-3 pb-2 border-b border-emerald-100 dark:border-emerald-900/30">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">
+                    <i class="pi pi-file-check mr-1"></i>Active Service Agreement
+                  </p>
+                  <span class="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded">
+                    {{ sp.agreementReference }}
+                  </span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-zinc-500">Expires</span>
-                  <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ sp.expiryDate | date:'mediumDate' }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-zinc-500">Free services</span>
-                  <span class="font-semibold text-zinc-800 dark:text-zinc-200">{{ sp.noOfFreeService }} / year</span>
+                <div class="flex gap-4 text-[10px] text-zinc-500">
+                  <span>Expires <strong class="text-zinc-700 dark:text-zinc-300">{{ sp.expiryDate | date:'mediumDate' }}</strong></span>
+                  <span>Free <strong class="text-zinc-700 dark:text-zinc-300">{{ sp.noOfFreeService }}/yr</strong></span>
                 </div>
               </div>
-              <p-divider styleClass="my-2" />
-              <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1.5">Year 1 Cost Breakdown</p>
-              <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                <div class="flex justify-between">
+
+              <!-- Year tabs Y1–Y5 -->
+              <div class="flex border-b border-emerald-100 dark:border-emerald-900/30 bg-white/30 dark:bg-zinc-800/20">
+                <button *ngFor="let yr of [1,2,3,4,5]"
+                  (click)="selectedServiceYear = yr"
+                  class="flex-1 py-1.5 text-[11px] font-bold tracking-wider transition-colors duration-150"
+                  [class.bg-emerald-600]="selectedServiceYear === yr"
+                  [class.text-white]="selectedServiceYear === yr"
+                  [class.text-emerald-700]="selectedServiceYear !== yr"
+                  [class.hover:bg-emerald-100]="selectedServiceYear !== yr">
+                  Y{{ yr }}
+                </button>
+              </div>
+
+              <!-- Cost breakdown for selected year -->
+              <div class="p-3 space-y-1.5 text-xs">
+                <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Service</span>
-                  <span class="font-mono text-zinc-800 dark:text-zinc-200">{{ sp.serviceCosts?.year1 | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.serviceCosts, selectedServiceYear) | number }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Labour</span>
-                  <span class="font-mono text-zinc-800 dark:text-zinc-200">{{ sp.labourCosts?.year1 | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.labourCosts, selectedServiceYear) | number }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Transport</span>
-                  <span class="font-mono text-zinc-800 dark:text-zinc-200">{{ sp.transportCosts?.year1 | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.transportCosts, selectedServiceYear) | number }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Other</span>
-                  <span class="font-mono text-zinc-800 dark:text-zinc-200">{{ sp.otherCosts?.year1 | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.otherCosts, selectedServiceYear) | number }}</span>
+                </div>
+                <!-- Total row -->
+                <div class="flex justify-between items-center border-t border-emerald-200/70 dark:border-emerald-800/50 pt-1.5 mt-0.5">
+                  <span class="font-bold text-zinc-700 dark:text-zinc-300">Total — Year {{ selectedServiceYear }}</span>
+                  <span class="font-mono font-bold text-base text-emerald-700 dark:text-emerald-400">
+                    LKR {{ getYearCost(sp.totalCosts, selectedServiceYear) | number }}
+                  </span>
                 </div>
               </div>
+
+              <!-- Spare parts for selected year -->
+              <div *ngIf="sp.sparePartsCosts?.length" class="border-t border-emerald-100 dark:border-emerald-900/30 px-3 py-2">
+                <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1.5">Spare Parts (Year {{ selectedServiceYear }})</p>
+                <div class="space-y-1">
+                  <div *ngFor="let part of sp.sparePartsCosts"
+                    class="flex justify-between items-center text-[11px]">
+                    <span class="text-zinc-600 dark:text-zinc-400 truncate mr-3 flex-1">{{ part.name }}</span>
+                    <span class="font-mono shrink-0"
+                      [class.text-zinc-400]="getPartYearCost(part, selectedServiceYear) === 0"
+                      [class.text-amber-600]="getPartYearCost(part, selectedServiceYear) > 0"
+                      [class.font-semibold]="getPartYearCost(part, selectedServiceYear) > 0">
+                      {{ getPartYearCost(part, selectedServiceYear) === 0 ? '—' : 'LKR ' + (getPartYearCost(part, selectedServiceYear) | number) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </ng-container>
+
           <ng-template #noServicePlan>
-            <div class="p-3 bg-zinc-50 dark:bg-zinc-800/40 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs text-zinc-500 italic">
-              <i class="pi pi-info-circle mr-1"></i>No active service agreement for this equipment.
-              Repair will be at standard rates.
+            <div class="p-4 bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200 dark:border-amber-900/30 rounded-xl">
+              <div class="flex items-start gap-2">
+                <i class="pi pi-exclamation-triangle text-amber-500 text-sm mt-0.5 shrink-0"></i>
+                <div>
+                  <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-0.5">No Service Agreement</p>
+                  <p class="text-[10px] text-amber-600/80 dark:text-amber-500/80 leading-relaxed">
+                    No active service contract found. Company repair will be billed at standard market rates.
+                    Consider internal repair if technically feasible to reduce cost.
+                  </p>
+                </div>
+              </div>
             </div>
           </ng-template>
         </div>
+
       </div>
+
 
       <p-divider />
 
@@ -560,7 +631,7 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- DIALOG: TECHNICIAN WORKBENCH (internal track only)             -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <p-dialog header="Technician Workbench" [(visible)]="showTechnicianModal" [modal]="true"
+  <p-dialog [maximizable]="true" header="Technician Workbench" [(visible)]="showTechnicianModal" [modal]="true"
     [style]="{ width: '48rem' }" [breakpoints]="{ '960px': '90vw' }" (onHide)="closeTechnicianModal()">
 
     <ng-container *ngIf="selectedReq() as req">

@@ -131,6 +131,7 @@ export class RepairsComponent implements OnInit {
   // 'INTERNAL' = assign to PDHS biomedical team
   // 'COMPANY'  = send to external company/vendor
   public triageDecision: 'PENDING' | 'INTERNAL' | 'COMPANY' = 'PENDING';
+  public selectedServiceYear = 1;
 
   // Company repair form (minimal)
   public vendorName = '';
@@ -537,6 +538,17 @@ console.log('wo', wo)
 
   public isSupervisor(): boolean {
     return this.userFacade.hasAnyRole([RoleType.ADMIN_PDHS, RoleType.SUPER_ADMIN_PDHS]);
+  }
+
+  // ── Service plan year-cost helpers ─────────────────────────────────
+  public getYearCost(costs: any, year: number): number {
+    if (!costs) return 0;
+    return costs[`year${year}`] ?? 0;
+  }
+
+  public getPartYearCost(part: any, year: number): number {
+    if (!part) return 0;
+    return part[`year${year}`] ?? 0;
   }
   
 }

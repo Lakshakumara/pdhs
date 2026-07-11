@@ -25,12 +25,19 @@ export class UserApiService {
     return this.http.get<PagedResult<UserDto>>(environment.apiUrl + '/developer/users', { params });
   }
 
-  getAllUsers(page?: number,
-    size?: number,
+  getAllUsers(
+    page: number = 1,
+    size: number = 10,
+    search?: string,
+    role?: string,
+    active?: string,          // 'true' | 'false' | undefined
   ): Observable<PagedResult<UserDto>> {
     let params = new HttpParams()
-      .set('page', page ?? 1)
-      .set('size', size ?? 10);
+      .set('page', page)
+      .set('size', size);
+    if (search) params = params.set('search', search);
+    if (role)   params = params.set('role', role);
+    if (active !== undefined) params = params.set('active', active);
     return this.http.get<PagedResult<UserDto>>(this.baseUrl, { params });
   }
 
@@ -66,9 +73,13 @@ export class UserApiService {
 
   updateUserStatus(userId: string, active: boolean): Observable<UserDto> {
     return this.http.patch<UserDto>(
-      `${this.baseUrl}/${userId}/status`,
+      `${this.baseUrl}/${userId}/active`,
       { active }
     );
+  }
+
+  passwordReset(userId: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${userId}/reset-password`,{});
   }
 
   // ─────────────────────────────

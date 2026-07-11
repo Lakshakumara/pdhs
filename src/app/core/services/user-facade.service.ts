@@ -38,7 +38,6 @@ export class UserFacadeService {
       permission: permission
     });
     this.setPermissions(permission)
-    console.log('permission updated', permission)
   }
 /*
   setSessionById(userId: string) {

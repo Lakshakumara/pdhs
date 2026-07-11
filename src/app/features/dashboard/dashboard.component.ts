@@ -99,7 +99,6 @@ export class DashboardComponent implements OnInit {
 
     this.service.getSummary()
       .subscribe(summary => {
-        //console.log('summary', summary)
 
         this.totalAssets.set(summary.totalAssets);
 

@@ -90,7 +90,6 @@ export class BiomedStateService {
   }
 
   private handleError(error: any) {
-    console.error('An error occurred:', error);
     return throwError(() => new Error(error.message || error));
   }
 
@@ -188,7 +187,6 @@ export class BiomedStateService {
   // System Audit Logger (simplified - just logs to console for now, backend handles audit)
   public logAudit(action: 'CREATE' | 'UPDATE' | 'DELETE', entityName: string, recordId: string, description: string): void {
     // In a real app, you might send this to the backend via an endpoint.
-    // For now, we'll just log to console and not update the auditLogsSubject directly.
     console.log('Audit Log:', { action, entityName, recordId, description });
     // Optionally, you could refetch audit logs after a delay to get the latest from backend.
     // setTimeout(() => this.fetchAuditLogs(), 1000);

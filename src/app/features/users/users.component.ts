@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, signal, computed, inject, ChangeDetectionStrategy
+  Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, effect
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -33,7 +33,7 @@ import { UserApiService } from '../../core/services/user-api.service';
 import { District, Institution, UserDto, UserPermissionRecord, UserRoleDto } from '../../core/models/biomed.interface';
 import { RoleType, SCOPE_ROLES } from "../../core/models/permission.types";
 import { QueryService } from '../../core/services/query.service';
-import { PaginatorState } from 'primeng/paginator';
+import { TablePageEvent } from 'primeng/table';
 import { forkJoin, finalize } from 'rxjs';
 import { Permission, ScopeType } from '../../core/models/permission.types';
 
@@ -120,7 +120,7 @@ export class UsersComponent implements OnInit {
   loading = signal(false);
   search = signal('');
   filterRole = signal('');
-  filterActive = signal<boolean | null>(null);
+  filterActive = signal<'true' | 'false' | null>(null);
 
   // Create/Edit dialog
   dialogVisible = signal(false);
@@ -151,39 +151,45 @@ export class UsersComponent implements OnInit {
   permMatrixDirty = signal(false);
   permSyncing = signal(false);
 
-  //Paginator
-  first: number = 0;
-  rows: number = 10;
-  totalRecords: number = 0;
+  // ── Pagination (server-side) ──────────────────────────────────────
+  // Signals so OnPush picks up changes
+  first = signal(0);
+  rows = signal(10);
+  totalRecords = signal(0);
 
-  constructor(private useService: UserApiService,
+  // Debounce handle for search/filter changes
+  private _filterDebounce: ReturnType<typeof setTimeout> | null = null;
+
+  constructor(private userService: UserApiService,
     private service: QueryService,
-  ) { }
-  // ── Computed ─────────────────────────────────────────────────────
-  filteredUsers = computed(() => {
-    let list = this.users();
-    const q = this.search().toLowerCase();
-    if (q) list = list.filter(u =>
-      u.fullName.toLowerCase().includes(q) ||
-      u.username.toLowerCase().includes(q) ||
-      (u.email ?? '').toLowerCase().includes(q),
-    );
-    const r = this.filterRole();
-    if (r) list = list.filter(u => u.roles.some(ur => ur.role === r));
-    const a = this.filterActive();
-    if (a !== null) list = list.filter(u => u.active === a);
-    return list;
-  });
+  ) {
+    // Re-fetch users whenever any filter changes.
+    // Reset to page 0 first so the backend page is always correct.
+    effect(() => {
+      // Track filter signals
+      const _s = this.search();
+      const _r = this.filterRole();
+      const _a = this.filterActive();
 
-  onPageChange(event: PaginatorState) {
-    this.first = event.first ?? 0;
-    this.rows = event.rows ?? 10;
-    this.loadData();
+      // Debounce so rapid keystrokes don't spam the backend
+      if (this._filterDebounce) clearTimeout(this._filterDebounce);
+      this._filterDebounce = setTimeout(() => {
+        this.first.set(0);   // reset to first page
+        this.loadUsers();
+      }, 300);
+    });
+  }
+  // ── Pagination event (from p-table's (onPage)) ───────────────────
+  onPage(event: TablePageEvent) {
+    this.first.set(event.first);
+    this.rows.set(event.rows);
+    this.loadUsers();
   }
 
   get activeCount() { return this.users().filter(u => u.active).length; }
   get inactiveCount() { return this.users().filter(u => !u.active).length; }
   get pendingPwCount() { return this.users().filter(u => u.mustChangePassword).length; }
+
 
   // ── Form ─────────────────────────────────────────────────────────
   createForm!: FormGroup;
@@ -199,8 +205,8 @@ export class UsersComponent implements OnInit {
   ];
   readonly activeOptions = [
     { label: 'All Users', value: null },
-    { label: 'Active Only', value: true },
-    { label: 'Inactive Only', value: false },
+    { label: 'Active Only', value: 'true' },
+    { label: 'Inactive Only', value: 'false' },
   ];
   readonly permGroups = PERMISSION_GROUPS;
   readonly allPermissions = Object.values(Permission);
@@ -229,7 +235,8 @@ export class UsersComponent implements OnInit {
 
   ngOnInit() {
     this.buildForms();
-    this.loadData();
+    this.loadRefData();
+    // Initial user load is triggered by the filter effect in the constructor
   }
 
   private buildForms() {
@@ -259,45 +266,44 @@ export class UsersComponent implements OnInit {
     });
   }
 
-  private loadData() {
-    // 1. Turn on the loading indicator
-    this.loading.set(true);
-
-    const pageNumber = Math.floor(this.first / this.rows) + 1;
-
-    // 2. Combine all parallel HTTP streams into a forkJoin
+  /** Load static reference data once on init. */
+  private loadRefData() {
     forkJoin({
-      usersRes: this.useService.getAllUsers(pageNumber, this.rows),
       districtsRes: this.service.getDistricts(),
-      institutionsRes: this.service.getInstitute(1, 100)
-    })
-      .pipe(
-        // 3. The finalize block runs no matter what (on success OR on error)
-        finalize(() => this.loading.set(false))
-      )
+      institutionsRes: this.service.getInstitute(1, 100),
+    }).subscribe({
+      next: ({ districtsRes, institutionsRes }) => {
+        this.districts.set(districtsRes ?? []);
+        this.institutions.set(institutionsRes.items ?? []);
+      },
+      error: () => this.toast('error', 'Failed to load reference data'),
+    });
+  }
+
+  /** Load one page of users from the backend, applying current filters. */
+  private loadUsers() {
+    this.loading.set(true);
+    const page = Math.floor(this.first() / this.rows()) + 1;
+
+    this.userService.getAllUsers(
+      page,
+      this.rows(),
+      this.search() || undefined,
+      this.filterRole() || undefined,
+      this.filterActive() ?? undefined,  // 'true' | 'false' | undefined
+    )
+      .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ usersRes, districtsRes, institutionsRes }) => {
-          console.log('Received users', usersRes);
-          console.log('Received districts', districtsRes);
-
-          // 4. Update all signals with the resolved payloads
-          this.users.set(usersRes.items);
-          this.totalRecords = usersRes.total;
-
-          this.districts.set(districtsRes ?? []);
-          this.institutions.set(institutionsRes.items ?? []);
+        next: (res) => {
+          this.users.set(res.items);
+          this.totalRecords.set(res.total);
         },
-        error: (err) => {
-          console.error(err);
-          // Fallback notification or toast message
-          this.toast('error', 'Failed to load metadata or user list');
-        }
+        error: () => this.toast('error', 'Failed to load users'),
       });
   }
 
   reloadUser(userId: string) {
-    //this.http.get<UserDto>(`/api/users/${userId}`)
-    this.useService.getUserById(userId)
+    this.userService.getUserById(userId)
       .subscribe({
         next: u => {
           this.users.update(list => list.map(x => x.id === userId ? u : x));
@@ -318,10 +324,9 @@ export class UsersComponent implements OnInit {
   }
 
   saveCreate() {
-    //this.http.post<UserDto>('/api/users', this.createForm.value)
     if (this.createForm.invalid) { this.createForm.markAllAsTouched(); return; }
     this.submitting.set(true);
-    this.useService.createUser(this.createForm.value)
+    this.userService.createUser(this.createForm.value)
       .subscribe({
         next: u => {
           this.users.update(list => [u, ...list]);
@@ -337,7 +342,7 @@ export class UsersComponent implements OnInit {
   openDrawer(user: UserDto) {
     this.drawerUser.set(user);
     this.drawerTab.set(0);
-    console.log('selected permissions', user.permissions)
+    //console.log('selected permissions', user.permissions)
     // Init permission matrix from user's active permissions
     /*const active = new Set<Permission>(
       user.permissions.filter(p => p.active).map(p => p.permission) ?? [],);*/
@@ -356,7 +361,7 @@ export class UsersComponent implements OnInit {
 
   // ── Toggle active ─────────────────────────────────────────────────
   toggleActive(user: UserDto) {
-    this.http.patch<UserDto>(`/api/users/${user.id}/active`, { active: !user.active }).subscribe({
+    this.userService.updateUserStatus(user.id, !user.active).subscribe({
       next: u => this.users.update(list => list.map(x => x.id === user.id ? u : x)),
       error: () => this.toast('error', 'Failed to update status'),
     });
@@ -369,8 +374,7 @@ export class UsersComponent implements OnInit {
       header: 'Reset Password',
       icon: 'pi pi-key',
       accept: () => {
-
-        this.http.post(`/api/users/${user.id}/reset-password`, {}).subscribe({
+        this.userService.passwordReset(user.id).subscribe({
           next: () => {
             this.toast('success', 'Password reset to default');
             this.reloadUser(user.id);
@@ -388,11 +392,13 @@ export class UsersComponent implements OnInit {
       header: 'Delete User',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        this.http.delete(`/api/users/${user.id}`).subscribe({
+        //this.http.delete(`/api/users/${user.id}`)
+        this.userService.deleteUser(user.id).subscribe({
           next: () => {
             this.users.update(list => list.filter(u => u.id !== user.id));
             if (this.drawerUser()?.id === user.id) this.drawerVisible.set(false);
             this.toast('success', 'User deleted');
+            this.loadUsers();
           },
           error: e => this.toast('error', e?.error?.message ?? 'Delete failed'),
         });
@@ -407,7 +413,7 @@ export class UsersComponent implements OnInit {
     if (this.roleForm.invalid) { this.roleForm.markAllAsTouched(); return; }
     const userId = this.drawerUser()!.id;
     this.roleSubmitting.set(true);
-    this.useService.assignRole(userId, this.roleForm.value)
+    this.userService.assignRole(userId, this.roleForm.value)
       //this.http.post(`/api/users/${userId}/roles`, this.roleForm.value)
       .subscribe({
         next: () => {
@@ -427,7 +433,7 @@ export class UsersComponent implements OnInit {
       header: 'Remove Role',
       icon: 'pi pi-minus-circle',
       accept: () => {
-        this.useService.removeRole(userId, roleId)
+        this.userService.removeRole(userId, roleId)
           //this.http.delete(`/api/users/${userId}/roles/${roleId}`)
           .subscribe({
             next: () => { this.reloadUser(userId); this.toast('success', 'Role removed'); },
@@ -450,7 +456,7 @@ export class UsersComponent implements OnInit {
   syncPermissions() {
     const userId = this.drawerUser()!.id;
     this.permSyncing.set(true);
-    this.useService.addPermission(userId, Array.from(this.permMatrix()),
+    this.userService.addPermission(userId, Array.from(this.permMatrix()),
     )
       /* this.http.put(`/api/users/${userId}/permissions`, {
          permissions: Array.from(this.permMatrix()),

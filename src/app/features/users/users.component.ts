@@ -392,7 +392,6 @@ export class UsersComponent implements OnInit {
       header: 'Delete User',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        //this.http.delete(`/api/users/${user.id}`)
         this.userService.deleteUser(user.id).subscribe({
           next: () => {
             this.users.update(list => list.filter(u => u.id !== user.id));
@@ -414,7 +413,6 @@ export class UsersComponent implements OnInit {
     const userId = this.drawerUser()!.id;
     this.roleSubmitting.set(true);
     this.userService.assignRole(userId, this.roleForm.value)
-      //this.http.post(`/api/users/${userId}/roles`, this.roleForm.value)
       .subscribe({
         next: () => {
           this.roleDialogVisible.set(false);

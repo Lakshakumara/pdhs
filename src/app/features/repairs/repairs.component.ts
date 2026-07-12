@@ -42,6 +42,16 @@ const INTERNAL_STEPS: WorkOrderStatus[] = [
   'AWAITING_PARTS', 'IN_REPAIR', 'COMPLETED', 'VERIFIED_CLOSED'
 ];
 
+const STEP_LABELS: Record<string, string> = {
+  SUBMITTED: 'Submitted',
+  ACKNOWLEDGED: 'Assigned',
+  DIAGNOSED: 'Diagnosed',
+  AWAITING_PARTS: 'Awaiting Parts',
+  IN_REPAIR: 'In Repair',
+  COMPLETED: 'Completed',
+  VERIFIED_CLOSED: 'Closed',
+};
+
 @Component({
   selector: 'app-repairs',
   imports: [
@@ -175,7 +185,7 @@ export class RepairsComponent implements OnInit {
     this.sortField = (event.sortField as string) || '';
     this.sortOrder = event.sortOrder ?? 1;
 
-    this.queryService.getRepairRequest(page, rows, this.searchTerm, this.selectedCategory, this.selectedStatus)
+    this.queryService.getRepairRequest(page, rows, this.searchTerm, this.selectedPriority, this.selectedStatus)
       .subscribe({
         next: result => {
           console.log('result', result)
@@ -232,17 +242,17 @@ export class RepairsComponent implements OnInit {
 
   public getStatusSeverity(status: string): 'warn' | 'info' | 'secondary' | 'contrast' | 'success' | 'danger' {
     switch (status) {
-      case 'SUBMITTED':           return 'warn';
-      case 'ACKNOWLEDGED':        return 'info';
-      case 'DIAGNOSED':           return 'contrast';
-      case 'AWAITING_PARTS':      return 'warn';
-      case 'IN_REPAIR':           return 'info';
+      case 'SUBMITTED': return 'warn';
+      case 'ACKNOWLEDGED': return 'info';
+      case 'DIAGNOSED': return 'contrast';
+      case 'AWAITING_PARTS': return 'warn';
+      case 'IN_REPAIR': return 'info';
       case 'ESCALATED_TO_VENDOR': return 'contrast';
-      case 'VENDOR_IN_PROGRESS':  return 'info';
-      case 'VENDOR_COMPLETED':    return 'success';
-      case 'COMPLETED':           return 'success';
-      case 'VERIFIED_CLOSED':     return 'secondary';
-      default:                    return 'secondary';
+      case 'VENDOR_IN_PROGRESS': return 'info';
+      case 'VENDOR_COMPLETED': return 'success';
+      case 'COMPLETED': return 'success';
+      case 'VERIFIED_CLOSED': return 'secondary';
+      default: return 'secondary';
     }
   }
 
@@ -251,11 +261,16 @@ export class RepairsComponent implements OnInit {
     return found?.label ?? status;
   }
 
+  /** Friendly short label for the step-through stepper dots. */
+  public stepLabel(status: WorkOrderStatus): string {
+    return STEP_LABELS[status] ?? status;
+  }
+
   public getPrioritySeverity(p: RepairPriority): 'danger' | 'warn' | 'secondary' {
     switch (p) {
       case 'Emergency': return 'danger';
-      case 'Urgent':    return 'warn';
-      default:          return 'secondary';
+      case 'Urgent': return 'warn';
+      default: return 'secondary';
     }
   }
 
@@ -404,15 +419,16 @@ export class RepairsComponent implements OnInit {
   // ── Technician Workbench modal ──────────────────────────────────────
   public openTechnicianModal(req: RepairRequest) {
     this.selectedReq.set(req);
-    this.queryService.getWorkOrder(req.workOrder!.id).subscribe(wo => {
+    console.log('openTechnicianModal', req)
+    this.queryService.getWorkOrder(req.id).subscribe(wo => {
       this.workOrder.set(wo);
       if (!wo) return;
-console.log('wo', wo)
+      console.log('wo', wo)
       this.diagnosisNotes = wo.diagnosisNotes || '';
       this.techInspectedSpareParts = wo.inspectedSpareParts?.length
         ? [...wo.inspectedSpareParts]
         : (req as any).equipment?.spareParts?.map((c: any) =>
-            ({ sparePartId: c.id, sparePartName: c.name, inspected: false, conditionNotes: '' })) ?? [];
+          ({ sparePartId: c.id, sparePartName: c.name, inspected: false, conditionNotes: '' })) ?? [];
       this.techPartsUsed = [...(wo.partsUsed || [])];
       this.tempItem = null;
       this.tempPartQty = 1;
@@ -550,7 +566,7 @@ console.log('wo', wo)
     if (!part) return 0;
     return part[`year${year}`] ?? 0;
   }
-  
+
 }
 
 function equalsIgnoreCase(a: string | undefined, b: string | undefined): boolean {

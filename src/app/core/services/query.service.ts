@@ -106,7 +106,7 @@ export class QueryService {
 
     if (status) {
       params =
-        params.set('status', status);
+        params.set('workOrder.status', status);
     }
     if (priority) {
       params =
@@ -116,8 +116,8 @@ export class QueryService {
       { params });
   }
 
-  getWorkOrder(workOederId?: string,) {
-    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${workOederId}`,);
+  getWorkOrder(repairRequestId?: string,) {
+    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${repairRequestId}`,);
   }
 
   getWorkOrders(

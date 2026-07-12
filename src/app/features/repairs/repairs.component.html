@@ -5,19 +5,21 @@
     <ng-template pTemplate="start">
       <div>
         <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Equipment Repairs & Work Orders</h2>
-        <p class="text-xs text-zinc-500 dark:text-zinc-400">Track biomedical hardware repair requests and technical queues</p>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">Track biomedical hardware repair requests and technical
+          queues</p>
       </div>
     </ng-template>
     <ng-template pTemplate="end">
-      <p-button *appHasPermission="permission.REPAIR_REQUEST_CREATE" label="Submit Repair Request"
-        icon="pi pi-plus" (onClick)="openRequestModal()" />
+      <p-button *appHasPermission="permission.REPAIR_REQUEST_CREATE" label="Submit Repair Request" icon="pi pi-plus"
+        (onClick)="openRequestModal()" />
     </ng-template>
   </p-toolbar>
 
   <!-- Repairs Table -->
-  <div class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+  <div
+    class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
     <p-table [value]="repairRequests()" [lazy]="true" (onLazyLoad)="onLazyLoad($event)" [loading]="loading()"
-      [paginator]="true" [rows]="pageSize()" [totalRecords]="total()" [rowsPerPageOptions]="[10, 25, 50]"
+      [paginator]="true" [rows]="pageSize()" [totalRecords]="total()" [rowsPerPageOptions]="[3, 10, 25, 50]"
       [showCurrentPageReport]="true" currentPageReportTemplate="{first} to {last} of {totalRecords} requests"
       dataKey="id" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '64rem' }">
 
@@ -63,7 +65,8 @@
           <td class="text-zinc-700 dark:text-zinc-300">{{ req.institutionName }}</td>
 
           <td>
-            <p-tag [value]="req.priority" [severity]="getPrioritySeverity(req.priority)" styleClass="text-[10px] uppercase" />
+            <p-tag [value]="req.priority" [severity]="getPrioritySeverity(req.priority)"
+              styleClass="text-[10px] uppercase" />
           </td>
 
           <td class="text-zinc-500">{{ req.submissionDate | date:'mediumDate' }}</td>
@@ -93,28 +96,23 @@
 
             <!-- Everyone can view timeline -->
             <p-button label="View" size="small" severity="secondary" [outlined]="true"
-              pTooltip="View details & timeline" tooltipPosition="top"
-              (onClick)="openDetails(req)" />
+              pTooltip="View details & timeline" tooltipPosition="top" (onClick)="openDetails(req)" />
 
             <!-- Officer: review pending non-emergency requests -->
-            <p-button *ngIf="isOfficer() && needsOfficerReview(req)"
-              label="Review" size="small" severity="warn"
+            <p-button *ngIf="isOfficer() && needsOfficerReview(req)" label="Review" size="small" severity="warn"
               pTooltip="Review request and decide repair route" tooltipPosition="top"
               (onClick)="openReviewModal(req)" />
 
             <!-- Technician: emergency self-acknowledge bypass -->
-            <p-button *ngIf="isTechnician() && canSelfAcknowledge(req)"
-              label="Accept Emergency" size="small" severity="danger"
-              pTooltip="Acknowledge this emergency job immediately" tooltipPosition="top"
+            <p-button *ngIf="isTechnician() && canSelfAcknowledge(req)" label="Accept Emergency" size="small"
+              severity="danger" pTooltip="Acknowledge this emergency job immediately" tooltipPosition="top"
               (onClick)="selfAcknowledge(req)" />
 
             <!-- Technician: manage internal track work orders -->
             <ng-container *ngIf="isTechnician() && req.workOrder?.repairTrack !== 'VENDOR'
               && !['SUBMITTED','VERIFIED_CLOSED','COMPLETED'].includes(req.workOrder?.status ?? '')">
-              <p-button *appHasPermission="permission.WORK_ORDER_ASSIGN"
-                label="Manage Job" size="small"
-                pTooltip="Open technician workbench" tooltipPosition="top"
-                (onClick)="openTechnicianModal(req)" />
+              <p-button *appHasPermission="permission.WORK_ORDER_ASSIGN" label="Manage Job" size="small"
+                pTooltip="Open technician workbench" tooltipPosition="top" (onClick)="openTechnicianModal(req)" />
             </ng-container>
 
           </td>
@@ -142,8 +140,8 @@
   <!-- ═══════════════════════════════════════════════════════════════ -->
   <!-- DIALOG: DETAILS & TIMELINE                                     -->
   <!-- ═══════════════════════════════════════════════════════════════ -->
-  <p-dialog header="Repair Details" [(visible)]="showDetailModal" [modal]="true"
-    [style]="{ width: '50rem' }" [breakpoints]="{ '960px': '90vw' }" (onHide)="closeDetails()">
+  <p-dialog header="Repair Details" [(visible)]="showDetailModal" [modal]="true" [style]="{ width: '50rem' }"
+    [breakpoints]="{ '960px': '90vw' }" (onHide)="closeDetails()">
 
     <ng-container *ngIf="selectedReq() as req">
       <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50 pt-1 mb-1">
@@ -154,7 +152,8 @@
       <ng-container *ngIf="req.workOrder as wo">
 
         <!-- Current Status + Track -->
-        <div class="flex items-center gap-3 mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-100 dark:border-zinc-700">
+        <div
+          class="flex items-center gap-3 mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-100 dark:border-zinc-700">
           <div class="flex-1">
             <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1">Current Status</p>
             <p-tag [value]="getStatusLabel(wo.status)" [severity]="getStatusSeverity(wo.status)" />
@@ -183,24 +182,26 @@
           <p class="text-[10px] uppercase font-bold text-zinc-400 mb-3 tracking-wider">Lifecycle Progress</p>
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 relative">
             <div class="absolute hidden md:block left-4 right-4 top-4 h-0.5 bg-zinc-200 dark:bg-zinc-700 -z-10"></div>
-            <div *ngFor="let s of internalSteps; let i = index"
-              class="flex md:flex-col items-center gap-2 z-10">
+            <div *ngFor="let s of internalSteps; let i = index" class="flex md:flex-col items-center gap-2 z-10">
               <div [class.bg-emerald-500]="isStepComplete(s, wo.status)"
-                [class.text-white]="isStepComplete(s, wo.status)"
-                [class.bg-zinc-200]="!isStepComplete(s, wo.status)"
+                [class.text-white]="isStepComplete(s, wo.status)" [class.bg-zinc-200]="!isStepComplete(s, wo.status)"
                 [class.text-zinc-500]="!isStepComplete(s, wo.status)"
                 class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] shadow-sm transition-all">
                 <i class="pi pi-check text-[9px]" *ngIf="isStepComplete(s, wo.status)"></i>
                 <span *ngIf="!isStepComplete(s, wo.status)">{{ i + 1 }}</span>
               </div>
-              <p class="text-[9px] font-bold text-zinc-600 dark:text-zinc-400 md:text-center truncate max-w-[60px]">{{ s }}</p>
+              <p
+                class="text-[9px] font-bold text-zinc-600 dark:text-zinc-400 md:text-center leading-tight max-w-[60px]">
+                {{ stepLabel(s) }}</p>
             </div>
           </div>
         </div>
 
         <!-- Vendor track: show vendor info panel instead of stepper -->
-        <div *ngIf="wo.repairTrack === 'VENDOR' && wo.vendorRepair" class="mb-6 p-4 bg-purple-50/50 dark:bg-purple-950/10 border border-purple-100 dark:border-purple-900/30 rounded-xl">
-          <p class="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400 mb-3 tracking-wider">Company Repair Details</p>
+        <div *ngIf="wo.repairTrack === 'VENDOR' && wo.vendorRepair"
+          class="mb-6 p-4 bg-purple-50/50 dark:bg-purple-950/10 border border-purple-100 dark:border-purple-900/30 rounded-xl">
+          <p class="text-[10px] uppercase font-bold text-purple-600 dark:text-purple-400 mb-3 tracking-wider">Company
+            Repair Details</p>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div>
               <p class="text-[10px] uppercase font-bold text-zinc-400">Company / Vendor</p>
@@ -218,15 +219,18 @@
             </div>
             <div *ngIf="wo.vendorRepair.scheduledDate">
               <p class="text-[10px] uppercase font-bold text-zinc-400">Scheduled Date</p>
-              <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ wo.vendorRepair.scheduledDate | date:'mediumDate' }}</p>
+              <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ wo.vendorRepair.scheduledDate |
+                date:'mediumDate' }}</p>
             </div>
             <div *ngIf="wo.vendorRepair.dispatchDate">
               <p class="text-[10px] uppercase font-bold text-zinc-400">Dispatch Date</p>
-              <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ wo.vendorRepair.dispatchDate | date:'mediumDate' }}</p>
+              <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ wo.vendorRepair.dispatchDate |
+                date:'mediumDate' }}</p>
             </div>
             <div *ngIf="wo.vendorRepair.returnDate">
               <p class="text-[10px] uppercase font-bold text-zinc-400">Return Date</p>
-              <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ wo.vendorRepair.returnDate | date:'mediumDate' }}</p>
+              <p class="font-semibold text-zinc-800 dark:text-zinc-200">{{ wo.vendorRepair.returnDate |
+                date:'mediumDate' }}</p>
             </div>
             <div *ngIf="wo.vendorRepair.returnNotes" class="col-span-2 md:col-span-3">
               <p class="text-[10px] uppercase font-bold text-zinc-400">Return Notes</p>
@@ -249,7 +253,8 @@
             </div>
             <div>
               <p class="text-[10px] uppercase font-bold text-zinc-400">Fault Description</p>
-              <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-red-50/30 dark:bg-zinc-800/40 p-3 rounded-lg border border-red-100/30 dark:border-zinc-700">
+              <p
+                class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-red-50/30 dark:bg-zinc-800/40 p-3 rounded-lg border border-red-100/30 dark:border-zinc-700">
                 {{ req.faultDescription }}</p>
             </div>
           </div>
@@ -258,18 +263,21 @@
             <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1">Technical Notes</h4>
             <div *ngIf="wo.diagnosisNotes">
               <p class="text-[10px] uppercase font-bold text-zinc-400">Diagnostic Findings</p>
-              <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-50 dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
+              <p
+                class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-zinc-50 dark:bg-zinc-900 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
                 {{ wo.diagnosisNotes }}</p>
             </div>
             <div *ngIf="!wo.diagnosisNotes">
-              <p class="text-xs text-zinc-400 italic"><i class="pi pi-info-circle mr-1"></i>No diagnostics logged yet.</p>
+              <p class="text-xs text-zinc-400 italic"><i class="pi pi-info-circle mr-1"></i>No diagnostics logged yet.
+              </p>
             </div>
           </div>
         </div>
 
         <!-- Inspection checklist -->
         <div *ngIf="wo.inspectedSpareParts?.length" class="mb-6">
-          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5 mb-2">Parts Inspection Log</h4>
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5 mb-2">Parts Inspection Log
+          </h4>
           <p-table [value]="wo.inspectedSpareParts ?? []" styleClass="p-datatable-sm">
             <ng-template pTemplate="header">
               <tr>
@@ -281,7 +289,8 @@
             <ng-template pTemplate="body" let-item>
               <tr class="text-xs">
                 <td class="font-semibold">{{ item.sparePartName }}</td>
-                <td><p-tag [value]="item.inspected ? 'Yes' : 'No'" [severity]="item.inspected ? 'success' : 'danger'" styleClass="text-[9px]" /></td>
+                <td><p-tag [value]="item.inspected ? 'Yes' : 'No'" [severity]="item.inspected ? 'success' : 'danger'"
+                    styleClass="text-[9px]" /></td>
                 <td class="text-zinc-600 dark:text-zinc-400">{{ item.conditionNotes || '—' }}</td>
               </tr>
             </ng-template>
@@ -305,7 +314,8 @@
                 <td>{{ part.inventoryItemName }}</td>
                 <td class="text-center font-bold">{{ part.quantityUsed }}</td>
                 <td class="text-right font-mono text-zinc-500">LKR {{ part.unitCost | number }}</td>
-                <td class="text-right font-mono font-bold">LKR {{ (part.quantityUsed * (part.unitCost ?? 0)) | number }}</td>
+                <td class="text-right font-mono font-bold">LKR {{ (part.quantityUsed * (part.unitCost ?? 0)) | number }}
+                </td>
               </tr>
             </ng-template>
           </p-table>
@@ -315,7 +325,8 @@
     </ng-container>
 
     <ng-template pTemplate="footer">
-      <p-button *ngIf="isSupervisor() && ['COMPLETED','VENDOR_COMPLETED'].includes(selectedReq()?.workOrder?.status ?? '')"
+      <p-button
+        *ngIf="isSupervisor() && ['COMPLETED','VENDOR_COMPLETED'].includes(selectedReq()?.workOrder?.status ?? '')"
         label="Verify & Close Work Order" icon="pi pi-verified"
         (onClick)="verifyAndCloseWorkOrder(selectedReq()!.workOrder!.id)" />
       <p-button label="Close" severity="secondary" [outlined]="true" (onClick)="closeDetails()" />
@@ -331,17 +342,19 @@
 
     <div class="space-y-4">
       <div>
-        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Target Equipment *</label>
-        <p-select [(ngModel)]="reqEqId" (onChange)="onEqChange()" [options]="equipments()"
-          optionLabel="name" optionValue="id" placeholder="-- Select Equipment --" styleClass="w-full">
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Target Equipment
+          *</label>
+        <p-select [(ngModel)]="reqEqId" (onChange)="onEqChange()" [options]="equipments()" optionLabel="name"
+          optionValue="id" placeholder="-- Select Equipment --" styleClass="w-full">
           <ng-template let-eq pTemplate="item">{{ eq.name }} ({{ eq.serialNumber }})</ng-template>
         </p-select>
       </div>
 
       <div *ngIf="selectedEqSparePartList.length > 0">
-        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Faulty Spare Part (Optional)</label>
-        <p-select [(ngModel)]="reqCompId" [options]="selectedEqSparePartList"
-          optionLabel="name" optionValue="id" placeholder="-- Entire Equipment / Unknown --" styleClass="w-full" />
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Faulty Spare Part
+          (Optional)</label>
+        <p-select [(ngModel)]="reqCompId" [options]="selectedEqSparePartList" optionLabel="name" optionValue="id"
+          placeholder="-- Entire Equipment / Unknown --" styleClass="w-full" />
       </div>
 
       <div>
@@ -354,7 +367,8 @@
       </div>
 
       <div>
-        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Fault Description *</label>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Fault Description
+          *</label>
         <textarea pTextarea [(ngModel)]="reqFaultDesc" rows="4" class="w-full"
           placeholder="Describe symptoms, error codes, or physical damage observed..."></textarea>
       </div>
@@ -380,7 +394,8 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2 flex-wrap mb-1">
             <h3 class="font-bold text-base text-zinc-900 dark:text-zinc-50">{{ req.equipmentName }}</h3>
-            <p-tag [value]="req.priority" [severity]="getPrioritySeverity(req.priority)" styleClass="text-[10px] uppercase" />
+            <p-tag [value]="req.priority" [severity]="getPrioritySeverity(req.priority)"
+              styleClass="text-[10px] uppercase" />
           </div>
           <p class="text-[10px] font-mono text-zinc-400">{{ req.id }} · S/N {{ req.equipmentSerialNumber }}</p>
           <p class="text-[10px] text-zinc-500 mt-0.5">
@@ -408,7 +423,8 @@
           <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5">Fault Report</h4>
           <div>
             <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1">Reported Fault</p>
-            <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-red-50/30 dark:bg-zinc-800/40 p-3 rounded-lg border border-red-100/30 dark:border-zinc-700">
+            <p
+              class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed bg-red-50/30 dark:bg-zinc-800/40 p-3 rounded-lg border border-red-100/30 dark:border-zinc-700">
               {{ req.faultDescription }}</p>
           </div>
           <div *ngIf="req.sparePartName">
@@ -422,7 +438,8 @@
         <!-- Right: service plan with Y1–Y5 tab navigation -->
         <div>
           <ng-container *ngIf="req.equipment?.servicePlan as sp; else noServicePlan">
-            <div class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl overflow-hidden">
+            <div
+              class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl overflow-hidden">
 
               <!-- Plan header -->
               <div class="px-3 pt-3 pb-2 border-b border-emerald-100 dark:border-emerald-900/30">
@@ -430,23 +447,24 @@
                   <p class="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 tracking-wider">
                     <i class="pi pi-file-check mr-1"></i>Active Service Agreement
                   </p>
-                  <span class="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded">
+                  <span
+                    class="text-[9px] font-mono font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded">
                     {{ sp.agreementReference }}
                   </span>
                 </div>
                 <div class="flex gap-4 text-[10px] text-zinc-500">
-                  <span>Expires <strong class="text-zinc-700 dark:text-zinc-300">{{ sp.expiryDate | date:'mediumDate' }}</strong></span>
-                  <span>Free <strong class="text-zinc-700 dark:text-zinc-300">{{ sp.noOfFreeService }}/yr</strong></span>
+                  <span>Expires <strong class="text-zinc-700 dark:text-zinc-300">{{ sp.expiryDate | date:'mediumDate'
+                      }}</strong></span>
+                  <span>Free <strong class="text-zinc-700 dark:text-zinc-300">{{ sp.noOfFreeService
+                      }}/yr</strong></span>
                 </div>
               </div>
 
               <!-- Year tabs Y1–Y5 -->
               <div class="flex border-b border-emerald-100 dark:border-emerald-900/30 bg-white/30 dark:bg-zinc-800/20">
-                <button *ngFor="let yr of [1,2,3,4,5]"
-                  (click)="selectedServiceYear = yr"
+                <button *ngFor="let yr of [1,2,3,4,5]" (click)="selectedServiceYear = yr"
                   class="flex-1 py-1.5 text-[11px] font-bold tracking-wider transition-colors duration-150"
-                  [class.bg-emerald-600]="selectedServiceYear === yr"
-                  [class.text-white]="selectedServiceYear === yr"
+                  [class.bg-emerald-600]="selectedServiceYear === yr" [class.text-white]="selectedServiceYear === yr"
                   [class.text-emerald-700]="selectedServiceYear !== yr"
                   [class.hover:bg-emerald-100]="selectedServiceYear !== yr">
                   Y{{ yr }}
@@ -457,22 +475,27 @@
               <div class="p-3 space-y-1.5 text-xs">
                 <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Service</span>
-                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.serviceCosts, selectedServiceYear) | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.serviceCosts,
+                    selectedServiceYear) | number }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Labour</span>
-                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.labourCosts, selectedServiceYear) | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.labourCosts,
+                    selectedServiceYear) | number }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Transport</span>
-                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.transportCosts, selectedServiceYear) | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.transportCosts,
+                    selectedServiceYear) | number }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="text-zinc-500">Other</span>
-                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.otherCosts, selectedServiceYear) | number }}</span>
+                  <span class="font-mono text-zinc-700 dark:text-zinc-300">LKR {{ getYearCost(sp.otherCosts,
+                    selectedServiceYear) | number }}</span>
                 </div>
                 <!-- Total row -->
-                <div class="flex justify-between items-center border-t border-emerald-200/70 dark:border-emerald-800/50 pt-1.5 mt-0.5">
+                <div
+                  class="flex justify-between items-center border-t border-emerald-200/70 dark:border-emerald-800/50 pt-1.5 mt-0.5">
                   <span class="font-bold text-zinc-700 dark:text-zinc-300">Total — Year {{ selectedServiceYear }}</span>
                   <span class="font-mono font-bold text-base text-emerald-700 dark:text-emerald-400">
                     LKR {{ getYearCost(sp.totalCosts, selectedServiceYear) | number }}
@@ -481,17 +504,19 @@
               </div>
 
               <!-- Spare parts for selected year -->
-              <div *ngIf="sp.sparePartsCosts?.length" class="border-t border-emerald-100 dark:border-emerald-900/30 px-3 py-2">
-                <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1.5">Spare Parts (Year {{ selectedServiceYear }})</p>
+              <div *ngIf="sp.sparePartsCosts?.length"
+                class="border-t border-emerald-100 dark:border-emerald-900/30 px-3 py-2">
+                <p class="text-[10px] uppercase font-bold text-zinc-400 mb-1.5">Spare Parts (Year {{ selectedServiceYear
+                  }})</p>
                 <div class="space-y-1">
-                  <div *ngFor="let part of sp.sparePartsCosts"
-                    class="flex justify-between items-center text-[11px]">
+                  <div *ngFor="let part of sp.sparePartsCosts" class="flex justify-between items-center text-[11px]">
                     <span class="text-zinc-600 dark:text-zinc-400 truncate mr-3 flex-1">{{ part.name }}</span>
                     <span class="font-mono shrink-0"
                       [class.text-zinc-400]="getPartYearCost(part, selectedServiceYear) === 0"
                       [class.text-amber-600]="getPartYearCost(part, selectedServiceYear) > 0"
                       [class.font-semibold]="getPartYearCost(part, selectedServiceYear) > 0">
-                      {{ getPartYearCost(part, selectedServiceYear) === 0 ? '—' : 'LKR ' + (getPartYearCost(part, selectedServiceYear) | number) }}
+                      {{ getPartYearCost(part, selectedServiceYear) === 0 ? '—' : 'LKR ' + (getPartYearCost(part,
+                      selectedServiceYear) | number) }}
                     </span>
                   </div>
                 </div>
@@ -501,7 +526,8 @@
           </ng-container>
 
           <ng-template #noServicePlan>
-            <div class="p-4 bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200 dark:border-amber-900/30 rounded-xl">
+            <div
+              class="p-4 bg-amber-50/50 dark:bg-amber-950/10 border border-amber-200 dark:border-amber-900/30 rounded-xl">
               <div class="flex items-start gap-2">
                 <i class="pi pi-exclamation-triangle text-amber-500 text-sm mt-0.5 shrink-0"></i>
                 <div>
@@ -523,7 +549,8 @@
 
       <!-- Decision section -->
       <div class="mt-4">
-        <p class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-3">Officer Decision — Select Repair Route</p>
+        <p class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-3">Officer Decision — Select Repair
+          Route</p>
 
         <!-- Decision buttons -->
         <div *ngIf="triageDecision === 'PENDING'" class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -583,35 +610,41 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Company / Vendor Name *</label>
-              <input pInputText type="text" [(ngModel)]="vendorName"
-                placeholder="e.g. Prime Diagnostics Ltd" class="w-full" />
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Company / Vendor
+                Name *</label>
+              <input pInputText type="text" [(ngModel)]="vendorName" placeholder="e.g. Prime Diagnostics Ltd"
+                class="w-full" />
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Contact (Optional)</label>
-              <input pInputText type="text" [(ngModel)]="vendorContact"
-                placeholder="Name or phone number" class="w-full" />
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Contact
+                (Optional)</label>
+              <input pInputText type="text" [(ngModel)]="vendorContact" placeholder="Name or phone number"
+                class="w-full" />
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Repair Basis *</label>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Repair Basis
+                *</label>
               <p-select [(ngModel)]="repairBasis" [options]="repairBasisOptions" styleClass="w-full" />
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Handover Type *</label>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Handover Type
+                *</label>
               <p-select [(ngModel)]="handoverType" [options]="handoverTypeOptions" styleClass="w-full" />
             </div>
             <div *ngIf="handoverType === 'FIELD_VISIT'">
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Scheduled Visit Date *</label>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Scheduled Visit
+                Date *</label>
               <p-datepicker [(ngModel)]="scheduledDate" dateFormat="yy-mm-dd" [showIcon]="true" [fluid]="true" />
             </div>
             <div *ngIf="handoverType === 'EQUIPMENT_SENT'">
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Dispatch Date *</label>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Dispatch Date
+                *</label>
               <p-datepicker [(ngModel)]="dispatchDate" dateFormat="yy-mm-dd" [showIcon]="true" [fluid]="true" />
             </div>
             <div *ngIf="handoverType === 'EQUIPMENT_SENT'">
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Courier / Waybill Ref</label>
-              <input pInputText type="text" [(ngModel)]="courierRef"
-                placeholder="e.g. WB-99281" class="w-full" />
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Courier / Waybill
+                Ref</label>
+              <input pInputText type="text" [(ngModel)]="courierRef" placeholder="e.g. WB-99281" class="w-full" />
             </div>
           </div>
         </div>
@@ -620,10 +653,10 @@
 
     <ng-template pTemplate="footer">
       <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closeReviewModal()" />
-      <p-button *ngIf="triageDecision === 'INTERNAL'" label="Confirm — Assign to PDHS Team"
-        icon="pi pi-check" (onClick)="confirmInternalRepair()" />
-      <p-button *ngIf="triageDecision === 'COMPANY'" label="Confirm — Send to Company"
-        icon="pi pi-building" severity="help" (onClick)="confirmCompanyRepair()" />
+      <p-button *ngIf="triageDecision === 'INTERNAL'" label="Confirm — Assign to PDHS Team" icon="pi pi-check"
+        (onClick)="confirmInternalRepair()" />
+      <p-button *ngIf="triageDecision === 'COMPANY'" label="Confirm — Send to Company" icon="pi pi-building"
+        severity="help" (onClick)="confirmCompanyRepair()" />
     </ng-template>
   </p-dialog>
 
@@ -648,20 +681,23 @@
 
         <!-- Diagnostic notes -->
         <div class="mb-5">
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Diagnostic Findings *</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Diagnostic Findings
+            *</label>
           <textarea pTextarea [(ngModel)]="diagnosisNotes" rows="4" class="w-full"
             placeholder="Diagnostic test results, root cause, spare part checks..."></textarea>
         </div>
 
         <!-- Spare parts inspection checklist -->
         <div *ngIf="techInspectedSpareParts.length > 0" class="mb-5">
-          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5 mb-3">Spare Parts Checklist</h4>
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5 mb-3">Spare Parts
+            Checklist</h4>
           <div class="space-y-2">
             <div *ngFor="let item of techInspectedSpareParts"
               class="flex flex-col md:flex-row gap-3 items-start md:items-center bg-zinc-50 dark:bg-zinc-900 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800">
               <div class="flex items-center gap-2 shrink-0">
                 <p-checkbox [(ngModel)]="item.inspected" [binary]="true" />
-                <span class="text-xs font-bold text-zinc-900 dark:text-zinc-300 truncate max-w-[180px]">{{ item.sparePartName }}</span>
+                <span class="text-xs font-bold text-zinc-900 dark:text-zinc-300 truncate max-w-[180px]">{{
+                  item.sparePartName }}</span>
               </div>
               <input pInputText type="text" [(ngModel)]="item.conditionNotes"
                 placeholder="Condition note (e.g. OK / replaced / damaged)" class="flex-1 w-full text-xs" />
@@ -671,25 +707,29 @@
 
         <!-- Parts consumption -->
         <div>
-          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5 mb-3">Parts from Store</h4>
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
+          <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider border-b pb-1.5 mb-3">Parts from Store
+          </h4>
+          <div
+            class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4 bg-zinc-50 dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
             <div class="md:col-span-7">
               <p-autocomplete [(ngModel)]="tempItem" [forceSelection]="true" [suggestions]="inventoryItems()"
-                (completeMethod)="filterItems($event)" [fluid]="true" [dropdown]="true"
-                optionLabel="name" placeholder="Search store inventory...">
+                (completeMethod)="filterItems($event)" [fluid]="true" [dropdown]="true" optionLabel="name"
+                placeholder="Search store inventory...">
                 <ng-template let-item pTemplate="item">
                   <div class="flex items-center justify-between w-full p-2">
                     <div class="flex flex-col min-w-0">
                       <span class="font-medium text-sm truncate">{{ item.name }}</span>
                       <div class="flex gap-2 mt-0.5">
-                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600">{{ item.category }}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600">{{
+                          item.category }}</span>
                         <span class="text-[10px]" [class.text-red-500]="item.currentStock <= item.minStockThreshold"
                           [class.text-zinc-500]="item.currentStock > item.minStockThreshold">
                           Stock: {{ item.currentStock }}
                         </span>
                       </div>
                     </div>
-                    <span class="font-semibold text-sm text-emerald-600 ml-4">{{ item.costPerUnit | number:'1.2-2' }}</span>
+                    <span class="font-semibold text-sm text-emerald-600 ml-4">{{ item.costPerUnit | number:'1.2-2'
+                      }}</span>
                   </div>
                 </ng-template>
               </p-autocomplete>
@@ -717,9 +757,11 @@
               <tr class="text-xs">
                 <td class="font-medium">{{ part.inventoryItemName }}</td>
                 <td class="text-center font-bold">{{ part.quantityUsed }}</td>
-                <td class="text-right font-mono text-zinc-500">LKR {{ (part.quantityUsed * (part.unitCost ?? 0)) | number }}</td>
+                <td class="text-right font-mono text-zinc-500">LKR {{ (part.quantityUsed * (part.unitCost ?? 0)) |
+                  number }}</td>
                 <td class="text-right">
-                  <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (onClick)="removePartFromBuffer(i)" />
+                  <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                    (onClick)="removePartFromBuffer(i)" />
                 </td>
               </tr>
             </ng-template>
@@ -731,18 +773,17 @@
 
     <ng-template pTemplate="footer">
       <div class="flex flex-wrap gap-2 w-full justify-between">
+
+        <!-- Action buttons — shown only when workOrder is loaded -->
         <div class="flex flex-wrap gap-2">
-          <p-button *ngIf="workOrder()?.status === 'ACKNOWLEDGED'"
-            label="Log Diagnosis" severity="help" icon="pi pi-stethoscope"
-            (onClick)="runWorkOrderStep('Diagnose')" />
-          <p-button *ngIf="workOrder()?.status === 'DIAGNOSED'"
-            label="Parts Needed — Await Stock" severity="warn" icon="pi pi-clock"
-            (onClick)="runWorkOrderStep('AwaitParts')" />
-          <p-button *ngIf="['DIAGNOSED','AWAITING_PARTS'].includes(workOrder()?.status ?? '')"
-            label="Start Repair" severity="contrast" icon="pi pi-wrench"
-            (onClick)="runWorkOrderStep('StartRepair')" />
-          <p-button *ngIf="workOrder()?.status === 'IN_REPAIR'"
-            label="Complete & Dispatch" icon="pi pi-check"
+
+          <p-button *ngIf="workOrder()?.status === 'ACKNOWLEDGED'" label="Log Diagnosis" severity="help"
+            icon="pi pi-stethoscope" (onClick)="runWorkOrderStep('Diagnose')" />
+          <p-button *ngIf="workOrder()?.status === 'DIAGNOSED'" label="Parts Needed — Await Stock" severity="warn"
+            icon="pi pi-clock" (onClick)="runWorkOrderStep('AwaitParts')" />
+          <p-button *ngIf="['DIAGNOSED','AWAITING_PARTS'].includes(workOrder()?.status ?? '')" label="Start Repair"
+            severity="contrast" icon="pi pi-wrench" (onClick)="runWorkOrderStep('StartRepair')" />
+          <p-button *ngIf="workOrder()?.status === 'IN_REPAIR'" label="Complete & Dispatch" icon="pi pi-check"
             (onClick)="runWorkOrderStep('Complete')" />
         </div>
         <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closeTechnicianModal()" />

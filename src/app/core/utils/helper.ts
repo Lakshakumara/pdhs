@@ -6,3 +6,7 @@ export class Helper {
     }
 
 }
+export function equalsIgnoreCase(a: string | undefined, b: string | undefined): boolean {
+  if (!a || !b) return false;
+  return a.toLowerCase() === b.toLowerCase();
+}

@@ -251,6 +251,7 @@ export interface PartUsedDetail {
   id?: string;
   description?: string;
   quantityUsed: number;
+  status?: 'BUFFERED' | 'CONSUMED';
   inventoryItemId: string;
   inventoryItemName?: string;
   unitCost?: number;
@@ -273,6 +274,7 @@ export interface PartUsedDetail {
   inspectedSpareParts?: InspectedSparePart[];
   partsUsed: PartUsedDetail[];
 }*/
+
 export interface EscalateToVendorDto {
   vendorName: string;
   vendorContact?: string;

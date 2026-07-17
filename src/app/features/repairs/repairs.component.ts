@@ -32,7 +32,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
-
+import { equalsIgnoreCase } from '../../core/utils/helper';
 // ─────────────────────────────────────────────────────────────────────
 // Internal track statuses — shown in step-through stepper
 // Vendor track statuses — shown as a single badge only
@@ -172,6 +172,17 @@ export class RepairsComponent implements OnInit {
     this.getEquipment();
     this.getInventoryItem();
   }
+  getInventoryItem() {
+    if (!this.userFacade.currentSession()) return;
+    this.queryService.getInventorytem(1, 20, '', '', '')
+      .subscribe(result => this.inventoryItems.set(result.items));
+  }
+
+  getEquipment() {
+    if (!this.userFacade.currentSession()) return;
+    this.queryService.getEquipment(1, 100, '', '', '', '')
+      .subscribe(result => this.equipments.set(result.items));
+  }
 
   // ── p-table lazy load ───────────────────────────────────────────────
   public onLazyLoad(event: TableLazyLoadEvent) {
@@ -205,18 +216,6 @@ export class RepairsComponent implements OnInit {
   public filterItems(event: AutoCompleteCompleteEvent) {
     this.queryService.getInventorytem(this.currentPage(), this.pageSize(), event.query, '', '')
       .subscribe(result => this.inventoryItems.set(result.items));
-  }
-
-  getInventoryItem() {
-    if (!this.userFacade.currentSession()) return;
-    this.queryService.getInventorytem(1, 20, '', '', '')
-      .subscribe(result => this.inventoryItems.set(result.items));
-  }
-
-  getEquipment() {
-    if (!this.userFacade.currentSession()) return;
-    this.queryService.getEquipment(1, 100, '', '', '', '')
-      .subscribe(result => this.equipments.set(result.items));
   }
 
   // ── Status helpers ──────────────────────────────────────────────────
@@ -429,7 +428,15 @@ export class RepairsComponent implements OnInit {
         ? [...wo.inspectedSpareParts]
         : (req as any).equipment?.spareParts?.map((c: any) =>
           ({ sparePartId: c.id, sparePartName: c.name, inspected: false, conditionNotes: '' })) ?? [];
-      this.techPartsUsed = [...(wo.partsUsed || [])];
+      //this.techPartsUsed = [...(wo.partsUsed || [])];
+      this.techPartsUsed = (wo.partsUsed || []).map((p: any) => ({
+        id: p.id,
+        inventoryItemId: p.inventoryItemId,
+        inventoryItemName: p.inventoryItem?.name || p.inventoryItemName,
+        quantityUsed: Number(p.quantity), // Prisma Decimal maps to string/number
+        unitCost: p.unitCost ?? p.inventoryItem?.costPerUnit ?? 0,
+        status: p.status || 'BUFFERED'   // 👈 Fallback to BUFFERED if not set
+      }));
       this.tempItem = null;
       this.tempPartQty = 1;
       this.showTechnicianModal = true;
@@ -456,7 +463,8 @@ export class RepairsComponent implements OnInit {
         inventoryItemId: this.tempItem.id,
         inventoryItemName: this.tempItem.name,
         quantityUsed: this.tempPartQty,
-        unitCost: this.tempItem.costPerUnit
+        unitCost: this.tempItem.costPerUnit,
+        status: 'BUFFERED',
       });
     }
     this.tempItem = null;
@@ -495,7 +503,7 @@ export class RepairsComponent implements OnInit {
       assignedTechnicianId: this.userFacade.currentUser()?.id,
       assignedTechnicianName: this.userFacade.currentUser()?.fullName,
     };
-
+    console.log('pay load 1', payload)
     switch (step) {
       case 'Diagnose':
         if (!this.diagnosisNotes.trim()) {
@@ -510,18 +518,23 @@ export class RepairsComponent implements OnInit {
         nextStatus = 'AWAITING_PARTS';
         payload.diagnosisNotes = this.diagnosisNotes;
         payload.inspectedSpareParts = this.techInspectedSpareParts;
+        payload.partsUsed = this.techPartsUsed;
         break;
       case 'StartRepair':
         nextStatus = 'IN_REPAIR';
+        payload.diagnosisNotes = this.diagnosisNotes;
+        payload.partsUsed = this.techPartsUsed;
         break;
       case 'Complete':
         nextStatus = 'COMPLETED';
         payload.diagnosisNotes = this.diagnosisNotes;
         payload.inspectedSpareParts = this.techInspectedSpareParts;
-        payload.partsUsed = this.techPartsUsed;
+        payload.partsUsed = this.techPartsUsed.map(p => ({
+          ...p,
+          status: 'CONSUMED'
+        }));
         break;
     }
-
     this.upsertService.updateWorkOrderStatus(wo.id, nextStatus, payload)
       .subscribe({
         next: result => {
@@ -569,7 +582,3 @@ export class RepairsComponent implements OnInit {
 
 }
 
-function equalsIgnoreCase(a: string | undefined, b: string | undefined): boolean {
-  if (!a || !b) return false;
-  return a.toLowerCase() === b.toLowerCase();
-}

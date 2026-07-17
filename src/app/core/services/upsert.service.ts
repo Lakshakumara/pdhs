@@ -9,26 +9,26 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root',
 })
 export class UpsertService {
-  
+
   private baseUrl = environment.apiUrl;
 
   constructor(
     private http: HttpClient,
     private notify: NotificationService) { }
 
-    escalateToVendor(workOrderId: string, dto: EscalateToVendorDto) {
-  return this.http.post<WorkOrder>(
-    `${this.baseUrl}/work-orders/${workOrderId}/escalate-vendor`,
-    dto
-  );
-}
- 
-markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
-  return this.http.post<WorkOrder>(
-    `${this.baseUrl}/work-orders/${workOrderId}/vendor-completed`,
-    dto
-  );
-}
+  escalateToVendor(workOrderId: string, dto: EscalateToVendorDto) {
+    return this.http.post<WorkOrder>(
+      `${this.baseUrl}/work-orders/${workOrderId}/escalate-vendor`,
+      dto
+    );
+  }
+
+  markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
+    return this.http.post<WorkOrder>(
+      `${this.baseUrl}/work-orders/${workOrderId}/vendor-completed`,
+      dto
+    );
+  }
 
   public upsertEquipment(eq: Omit<Equipment, 'id'>): Observable<Equipment> {
     console.log('add equipment ', eq)
@@ -66,7 +66,7 @@ markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
   public submitRepairRequest(eqId: string, componentId: string | undefined,
     faultDescription: string, priority: RepairPriority, submittedByUserId: string
   ): Observable<{ repairRequest: RepairRequest; workOrder: WorkOrder }> {
-    
+
     const body = { equipmentId: eqId, componentId, faultDescription, priority, submittedByUserId };
     console.log('sent body', body)
     return this.http.post<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
@@ -79,6 +79,8 @@ markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
 
   public updateWorkOrderStatus(woId: string, nextStatus: WorkOrderStatus, payload?: Partial<WorkOrder>): Observable<WorkOrder> {
     const body = { status: nextStatus, payload };
+
+    console.log('status update', payload, nextStatus);
     return this.http.put<WorkOrder>(`${this.baseUrl}/work-orders/${woId}/status`, body).pipe(
       tap(updatedWorkOrder => {
         this.logAudit('UPDATE', 'WorkOrder', woId, `Changed work order status to ${nextStatus}.`);
@@ -86,9 +88,9 @@ markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
     );
   }
 
-   updateSupplier(supplierid: string, payload: any) {
-      alert('Method not implemented.');
-      return this.http.put<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
+  updateSupplier(supplierid: string, payload: any) {
+    alert('Method not implemented.');
+    return this.http.put<{ repairRequest: RepairRequest; workOrder: WorkOrder }>
       (`${this.baseUrl}/supplier/${supplierid}/edit`, payload)
       .pipe(
         tap(result => {
@@ -96,14 +98,14 @@ markVendorCompleted(workOrderId: string, dto: VendorCompletedDto) {
         })
       );
   }
-  createSupplier(payload: any){
-      alert('Method not implemented.');
-      return this.http.post<{ supplier:Supplier }>(`${this.baseUrl}/supplier/add`, payload).pipe(
-        tap(result => {
-          this.logAudit('CREATE', 'Supplier', result.supplier.id, 
-            ``);
-        })
-      );
+  createSupplier(payload: any) {
+    alert('Method not implemented.');
+    return this.http.post<{ supplier: Supplier }>(`${this.baseUrl}/supplier/add`, payload).pipe(
+      tap(result => {
+        this.logAudit('CREATE', 'Supplier', result.supplier.id,
+          ``);
+      })
+    );
   }
 
 

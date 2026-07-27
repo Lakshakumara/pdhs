@@ -250,30 +250,13 @@ export interface InspectedSparePart {
 export interface PartUsedDetail {
   id?: string;
   description?: string;
-  quantityUsed: number;
+  quantity: number;
   status?: 'BUFFERED' | 'CONSUMED';
   inventoryItemId: string;
   inventoryItemName?: string;
   unitCost?: number;
   workOrderId?: string;
 }
-
-/*export interface WorkOrder {
-  id: string;
-  repairTrack?: string;
-  repairRequestId: string;
-  assignedTechnicianId?: string;
-  assignedTechnicianName?: string;
-  diagnosisNotes?: string;
-  resolutionDetails?: string;
-  status: WorkOrderStatus;
-  statusDate: string;
-  institutionId?: string;
-  institutionName?: string;
-  completedDate?: string;
-  inspectedSpareParts?: InspectedSparePart[];
-  partsUsed: PartUsedDetail[];
-}*/
 
 export interface EscalateToVendorDto {
   vendorName: string;

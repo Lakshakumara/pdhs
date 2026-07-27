@@ -420,23 +420,26 @@ export class RepairsComponent implements OnInit {
     this.selectedReq.set(req);
     console.log('openTechnicianModal', req)
     this.queryService.getWorkOrder(req.id).subscribe(wo => {
+      console.log('wo', wo)
       this.workOrder.set(wo);
       if (!wo) return;
-      console.log('wo', wo)
-      this.diagnosisNotes = wo.diagnosisNotes || '';
+      this.diagnosisNotes = wo?.diagnosisNotes || '';
       this.techInspectedSpareParts = wo.inspectedSpareParts?.length
         ? [...wo.inspectedSpareParts]
         : (req as any).equipment?.spareParts?.map((c: any) =>
           ({ sparePartId: c.id, sparePartName: c.name, inspected: false, conditionNotes: '' })) ?? [];
-      //this.techPartsUsed = [...(wo.partsUsed || [])];
+  
       this.techPartsUsed = (wo.partsUsed || []).map((p: any) => ({
         id: p.id,
         inventoryItemId: p.inventoryItemId,
         inventoryItemName: p.inventoryItem?.name || p.inventoryItemName,
-        quantityUsed: Number(p.quantity), // Prisma Decimal maps to string/number
+        quantity: Number(p.quantity), // Prisma Decimal maps to string/number
         unitCost: p.unitCost ?? p.inventoryItem?.costPerUnit ?? 0,
         status: p.status || 'BUFFERED'   // 👈 Fallback to BUFFERED if not set
       }));
+
+
+      console.log('techPartsUsed', this.techPartsUsed)
       this.tempItem = null;
       this.tempPartQty = 1;
       this.showTechnicianModal = true;
@@ -457,12 +460,12 @@ export class RepairsComponent implements OnInit {
     }
     const existing = this.techPartsUsed.find(p => p.inventoryItemId === this.tempItem?.id);
     if (existing) {
-      existing.quantityUsed += this.tempPartQty;
+      existing.quantity += this.tempPartQty;
     } else {
       this.techPartsUsed.push({
         inventoryItemId: this.tempItem.id,
         inventoryItemName: this.tempItem.name,
-        quantityUsed: this.tempPartQty,
+        quantity: this.tempPartQty,
         unitCost: this.tempItem.costPerUnit,
         status: 'BUFFERED',
       });

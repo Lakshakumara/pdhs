@@ -36,6 +36,7 @@ import { QueryService } from '../../core/services/query.service';
 import { TablePageEvent } from 'primeng/table';
 import { forkJoin, finalize } from 'rxjs';
 import { Permission, ScopeType } from '../../core/models/permission.types';
+import { PermissionService } from '../../core/auth/permission.service';
 
 
 export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Permission[] }[] = [
@@ -108,11 +109,13 @@ export const ROLE_COLOR: Record<string, string> = {
   providers: [MessageService, ConfirmationService],
 })
 export class UsersComponent implements OnInit {
+  private permissionService = inject(PermissionService);
   private http = inject(HttpClient);
   private msg = inject(MessageService);
   private confirm = inject(ConfirmationService);
   private fb = inject(FormBuilder);
 
+  groups$ = this.permissionService.getMeta();
   // ── State ─────────────────────────────────────────────────────────
   users = signal<UserDto[]>([]);
   districts = signal<District[]>([]);
@@ -236,7 +239,7 @@ export class UsersComponent implements OnInit {
   ngOnInit() {
     this.buildForms();
     this.loadRefData();
-    // Initial user load is triggered by the filter effect in the constructor
+    
   }
 
   private buildForms() {

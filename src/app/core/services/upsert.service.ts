@@ -79,8 +79,6 @@ export class UpsertService {
 
   public updateWorkOrderStatus(woId: string, nextStatus: WorkOrderStatus, payload?: Partial<WorkOrder>): Observable<WorkOrder> {
     const body = { status: nextStatus, payload };
-
-    console.log('status update', payload, nextStatus);
     return this.http.put<WorkOrder>(`${this.baseUrl}/work-orders/${woId}/status`, body).pipe(
       tap(updatedWorkOrder => {
         this.logAudit('UPDATE', 'WorkOrder', woId, `Changed work order status to ${nextStatus}.`);

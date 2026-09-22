@@ -5,7 +5,6 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } 
 import { forkJoin, finalize } from 'rxjs';
 import { QueryService } from '../../core/services/query.service';
 import { HasPermissionDirective } from '../../core/directives/permission-directive';
-import { Permission } from '../../core/models/permission.types';
 import { ButtonModule } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -13,6 +12,7 @@ import { TableModule } from 'primeng/table';
 import { RatingModule } from 'primeng/rating';
 import { UpsertService } from '../../core/services/upsert.service';
 import { InventoryItem, Supplier } from '../../core/models/biomed.interface';
+import { Permission } from '../../core/constants/permissions';
 
 @Component({
   selector: 'app-supplier',

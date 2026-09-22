@@ -4,8 +4,8 @@ import { CommonModule } from '@angular/common';
 import { UserFacadeService } from '../core/services/user-facade.service';
 import { AuthService } from '../core/auth/auth.service';
 import { HasPermissionDirective } from '../core/directives/permission-directive';
-import { Permission } from '../core/models/permission.types';
 import { RoleType } from "../core/models/permission.types";
+import { Permission } from '../core/constants/permissions';
 
 /**
  * ShellComponent — the authenticated application layout.

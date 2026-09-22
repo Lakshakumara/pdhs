@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { UserFacadeService } from '../services/user-facade.service';
-import { Permission } from '../models/permission.types';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { Permission } from '../constants/permissions';
 
 export interface PermissionMeta {
   groups: { group: string; icon: string; permissions: string[] }[];
@@ -24,6 +24,6 @@ export class PermissionService {
   }
 
   getMeta() {
-    return this.http.get<PermissionMeta>(`${this.baseUrl}/api/auth/permissions/meta`);
+    return this.http.get<PermissionMeta>(`${this.baseUrl}/auth/permissions/meta`);
   }
 }

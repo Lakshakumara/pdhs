@@ -2,9 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { PagedResult, UserDto, UserRoleDto } from '../models/biomed.interface';
-import { Permission, RoleType } from "../models/permission.types";
+import { RoleType } from "../models/permission.types";
 import { ScopeType } from '../models/permission.types';
 import { environment } from '../../../environments/environment';
+import { Permission } from '../constants/permissions';
 
 @Injectable({
   providedIn: 'root'
@@ -105,7 +106,13 @@ export class UserApiService {
     );
   }
 
-  addPermission(userId: string,  permissions: Permission[]): Observable<Permission[]> {
+  /*addPermission(userId: string,  permissions: Permission[]): Observable<Permission[]> {
+     return this.http.put<Permission[]>(
+      `${this.baseUrl}/${userId}/permissions`,
+     {permissions}
+    );
+  }*/
+  addPermission(userId: string,  permissions: string[]): Observable<Permission[]> {
      return this.http.put<Permission[]>(
       `${this.baseUrl}/${userId}/permissions`,
      {permissions}

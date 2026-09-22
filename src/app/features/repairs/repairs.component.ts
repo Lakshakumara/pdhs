@@ -12,7 +12,6 @@ import {
 } from '../../core/models/biomed.interface';
 import { RoleType } from '../../core/models/permission.types';
 import { HasPermissionDirective } from '../../core/directives/permission-directive';
-import { Permission } from '../../core/models/permission.types';
 
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
@@ -33,6 +32,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { DividerModule } from 'primeng/divider';
 import { equalsIgnoreCase } from '../../core/utils/helper';
+import { Permission } from '../../core/constants/permissions';
 // ─────────────────────────────────────────────────────────────────────
 // Internal track statuses — shown in step-through stepper
 // Vendor track statuses — shown as a single badge only

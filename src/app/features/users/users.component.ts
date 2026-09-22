@@ -35,8 +35,9 @@ import { RoleType, SCOPE_ROLES } from "../../core/models/permission.types";
 import { QueryService } from '../../core/services/query.service';
 import { TablePageEvent } from 'primeng/table';
 import { forkJoin, finalize } from 'rxjs';
-import { Permission, ScopeType } from '../../core/models/permission.types';
+import { ScopeType } from '../../core/models/permission.types';
 import { PermissionService } from '../../core/auth/permission.service';
+import { Permission } from '../../core/constants/permissions';
 
 
 export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Permission[] }[] = [
@@ -150,7 +151,8 @@ export class UsersComponent implements OnInit {
   permForm!: FormGroup;
 
   // Permission matrix pending changes (sync)
-  permMatrix = signal<Set<Permission>>(new Set());
+  //permMatrix = signal<Set<Permission>>(new Set());
+  permMatrix = signal<Set<string>>(new Set());
   permMatrixDirty = signal(false);
   permSyncing = signal(false);
 
@@ -445,7 +447,7 @@ export class UsersComponent implements OnInit {
   }
 
   // ── Permission matrix ─────────────────────────────────────────────
-  togglePermission(perm: Permission) {
+  togglePermission(perm: string) {
     this.permMatrix.update(s => {
       const next = new Set(s);
       if (next.has(perm)) next.delete(perm); else next.add(perm);

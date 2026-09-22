@@ -12,7 +12,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { forkJoin, finalize } from 'rxjs';
 import { QueryService } from '../../core/services/query.service';
 import { HasPermissionDirective } from '../../core/directives/permission-directive';
-import { Permission } from '../../core/models/permission.types';
+import { Permission } from '../../core/constants/permissions';
 
 @Component({
   selector: 'app-institution',

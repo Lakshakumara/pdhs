@@ -31,7 +31,7 @@ export const SCOPE_ROLES: Record<ScopeType, RoleType[]> = {
   ],
 };
 
-export enum Permission {
+/*export enum Permission {
 
   INSTITUTE_VIEW = 'INSTITUTE_VIEW',
   INSTITUTE_CREATE = 'INSTITUTE_CREATE',
@@ -75,4 +75,4 @@ export enum Permission {
   PERMISSION_REMOVE = 'PERMISSION_REMOVE',
 
   AUDIT_VIEW = 'AUDIT_VIEW'
-}
+}*/

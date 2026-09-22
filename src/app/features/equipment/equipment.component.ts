@@ -8,7 +8,6 @@ import { PermissionService } from '../../core/auth/permission.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { UpsertService } from '../../core/services/upsert.service';
 import { HasPermissionDirective } from '../../core/directives/permission-directive';
-import { Permission } from '../../core/models/permission.types';
 import { RepairHistoryComponent } from './repair-history/repair-history.component';
 
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
@@ -28,6 +27,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 import { AutoComplete } from 'primeng/autocomplete';
+import { Permission } from '../../core/constants/permissions';
 
 @Component({
   selector: 'app-equipment',

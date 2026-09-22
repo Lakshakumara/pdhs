@@ -1,4 +1,5 @@
-import { ScopeType, Permission, RoleType } from "./permission.types";
+import { Permission } from "../constants/permissions";
+import { ScopeType, RoleType } from "./permission.types";
 
 export interface District {
   id: string;

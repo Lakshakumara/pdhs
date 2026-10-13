@@ -4,5 +4,6 @@
 // environment.development.ts during `ng serve`.
 export const environment = {
   production: true,
-  apiUrl: 'http://10.20.16.17:3000/api',
+  //apiUrl: 'http://10.20.16.17:3000/api',
+  apiUrl: `${window.location.protocol}//${window.location.hostname}:3000/api`,
 };

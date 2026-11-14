@@ -23,9 +23,12 @@ export type InstitutionType =
 export interface Institution {
   id: string;
   name: string;
-  type: InstitutionType;
+  type: InstitutionType | string;
   districtId?: string; // Optional (PDHS Office has no district)
+  email?: string | null;
+  tp?: string | null;
   active: boolean;
+  district?: District;
 }
 
 export interface UserDto {

@@ -14,7 +14,7 @@ API base URL: `environment.apiUrl` → dev `http://localhost:3000/api`; prod bui
 ### Commands
 
 - Frontend: `npm start` (serve), `npm run build`, `npm test` (Vitest), `npx prettier --write .` (no ESLint/lint script).
-- Backend: `npm run start:dev`, `npm run build`, `npm run lint`, `npm test`, `npx prisma migrate deploy`, `npx prisma migrate dev --name x`, `npm run seed` (seed data source is `scripts/seed-data.ts`), `npm run gen:perms`.
+- Backend: `npm run start:dev`, `npm run build`, `npm run lint`, `npm test`, `npx prisma migrate deploy`, `npx prisma migrate dev --name x`, `npm run seed` (seed data source is `scripts/seed-data.ts`, but `npm run seed` needs `npx tsx`), `npm run gen:perms` (auto-runs on `prebuild`), `npm run sync:perms` (backfills role-default permissions to existing users).
 
 ---
 
@@ -24,9 +24,11 @@ API base URL: `environment.apiUrl` → dev `http://localhost:3000/api`; prod bui
 src/
 ├── main.ts                  # CORS, global ValidationPipe({transform, whitelist}), static client SPA fallback, port 3000
 ├── app.module.ts            # plain registry; NO global guards/pipes
-├── auth/                    # auth.module, auth.controller (api/auth/*), permission.enum.ts, role-permissions.ts,
-│   ├── permission.service.ts, scope.service.ts, strategies/jwt.strategy.ts
-│   └── constants/permission.registry.ts   # permission metadata → gen:perms generates frontend enum
+├── auth/                    # auth.module, auth.controller (api/auth/*), permission.service.ts, scope.service.ts,
+│   ├── strategies/jwt.strategy.ts
+│   ├── permission.enum.ts           # DERIVED re-export of Permission from permission.registry.ts (never hand-edit)
+│   ├── role-permissions.ts          # authorization policy: ROLE_PERMISSIONS (defaults), SCOPE_ROLES, ROLE_META, SCOPE_META
+│   └── constants/permission.registry.ts   # SINGLE SOURCE of permissions → gen:perms generates both FE files
 ├── common/
 │   ├── decorators/          # @RequirePermission(), @SkipPermission(), @ActiveRole(), @TransformDate()
 │   └── guards/              # auth.guard.ts (JwtAuthGuard, ActiveRoleGuard), permission.guard.ts (PermissionGuard)
@@ -50,8 +52,13 @@ prisma/schema.prisma         # all models; migrations in prisma/migrations/
    @RequirePermission([Permission.A_VIEW, Permission.B_VIEW]) // ANY mode (default)
    @RequirePermission((req) => req.body?.status === 'Y' ? Permission.X_VERIFY : Permission.X_ASSIGN) // resolver
    ```
-3. **Adding a permission = edit 3 files, then regenerate FE:**
-   `src/auth/permission.enum.ts` + `src/auth/constants/permission.registry.ts` + `src/auth/role-permissions.ts` → `npm run gen:perms` (writes `../../pdhs/src/app/core/constants/permissions.ts`).
+3. **Adding a permission (single-source workflow):**
+   1. `src/auth/constants/permission.registry.ts` — add the `Permission.X` entry (label/group/icon).
+   2. `src/auth/role-permissions.ts` — add it to the relevant `ROLE_PERMISSIONS[...]` defaults.
+   3. Use it: `@RequirePermission(Permission.X)` on the route.
+   4. `npm run build` — `gen:perms` runs automatically on `prebuild` and regenerates the FE files.
+   5. `npm run sync:perms` — backfills the new default to existing users (new users get it at create/role-add time).
+   Never edit `src/auth/permission.enum.ts` (derived shim) or the FE files `core/constants/permissions.ts` / `core/models/permission.types.ts` (both AUTO-GENERATED).
 4. **Scoping**: services start reads with `this.scopeService.scopeWhere(activeRole)` (PDHS=all, RDHS=district, INSTITUTE=institution). `activeRole` comes from `@ActiveRole()` (set by `ActiveRoleGuard` from `x-role`/`x-scope-type`/`x-scope-id` headers, validated against JWT).
 5. **IDs**: inject `IdService`, `this.idService.generate(ID_PREFIXES.X)` (`SUP` → supplier, etc.). Defined in `src/shared/id/id.service.ts`.
 6. **Module recipe** (copy `modules/repair` or `modules/inventory`):
@@ -85,7 +92,8 @@ src/app/
 ├── auth/login/              # public, outside shell
 ├── core/
 │   ├── auth/                # auth.service.ts (token in localStorage 'auth_token'), permission.service.ts
-│   ├── constants/permissions.ts    # AUTO-GENERATED — never hand-edit (run gen:perms in pdhs-api)
+│   ├── constants/permissions.ts    # AUTO-GENERATED Permission enum — never hand-edit (run gen:perms in pdhs-api)
+│   ├── models/permission.types.ts  # AUTO-GENERATED RoleType/ScopeType/SCOPE_ROLES/ROLE_META/SCOPE_META — never hand-edit
 │   ├── directives/          # permission-directive.ts (*appHasPermission), scope-directive.ts (*appHasScope)
 │   ├── guards/              # auth.guard.ts (functional, on shell), admin.guard.ts (institute only)
 │   ├── interceptors/        # user-session.interceptor.ts (Authorization Bearer only), error.interceptor.ts (→ toasts)
@@ -102,7 +110,7 @@ src/app/
 1. **No NgModules** — all standalone. **State = Angular signals** (`signal/computed/effect`); HTTP = RxJS (`forkJoin`, `finalize(loading)`, `subscribe({next, error})`). No ngrx.
 2. **API split convention**: reads in `QueryService` (`core/services/query.service.ts`), writes in `UpsertService` (`core/services/upsert.service.ts`). Both use `environment.apiUrl`. Feature-local services only for scoped resources (see `UserApiService`).
 3. **Errors**: services don't catch — `error.interceptor.ts` shows the toast; components still handle `error` in `subscribe` for specific messages via `NotificationService.success/error`.
-4. **Permissions in templates**: `*appHasPermission="permission.X_VIEW"` (component exposes `readonly permission = Permission`). UI checks are cosmetic — backend re-verifies. Route-level auth is only `authGuard` (+ `AdminGuard` for institute).
+4. **Permissions in templates**: `*appHasPermission="permission.X_VIEW"` (component exposes `readonly permission = Permission`). UI checks are cosmetic — backend re-verifies. Route-level auth is only `authGuard` (+ `AdminGuard` for institute). Role/permission metadata (matrix groups, default chips, role/scope labels+colors) is fetched from `GET /auth/permissions/meta` via `PermissionService.getMeta()` — no hardcoded `PERMISSION_GROUPS`/`ROLE_COLOR` in components (see `users.component.ts`).
 5. **Styling**: Tailwind v4 utility classes inline in templates (feature components often have no `.css` file). Dark mode = `.dark` class on `<html>`. PrimeNG components imported per-file.
 6. **Templates**: new control flow `@if/@for/@empty`; `strict` + `strictTemplates` are ON — template type errors break the build.
 7. Routing: add new features as children of the shell in `app.routes.ts` with `loadComponent: () => import('./features/x/x.component').then(m => m.XComponent)`.
@@ -149,7 +157,7 @@ src/app/
 
 - **Backend**: `npm run lint` runs ESLint **with `--fix`** (rewrites files) and reports ~300 pre-existing errors across the codebase — not a clean gate. `src/old-controller` is a single fully-commented-out legacy file, not a folder. `delete-deploy.controller.ts` (`api/developer`, unguarded) is a dev leftover in `UsersModule`. `npm run seed:data` is broken (points at missing `prisma/seed-data.ts`; real data is `scripts/seed-data.ts`). No meaningful tests (only stock `test/app.e2e-spec.ts`).
 - **Frontend**: `institute` route is registered twice in `app.routes.ts` (dead `loadChildren` copy). `biomed-state.service.ts` is deprecated. `README.md` is the stock Angular CLI one. No ESLint.
-- Permission changes: edit 3 backend files → `npm run gen:perms` → FE enum updates automatically.
+- Permission changes: edit `permission.registry.ts` + `role-permissions.ts` → `npm run build` (auto `gen:perms`) → `npm run sync:perms` for existing users. FE enum + types update automatically. Never hand-edit `permission.enum.ts` or the two generated FE files.
 - DB: PostgreSQL, database `biomedical`, schema `pdhs`, user `biomedical_user`; `.env` at backend repo root (`DATABASE_URL`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `PORT`).
 
 ## Verification checklist after changes

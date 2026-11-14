@@ -456,13 +456,17 @@
                   Default permissions seeded for this role
                 </p>
                 <div class="flex flex-wrap gap-1.5">
-                  <span *ngFor="let pg of permGroups">
-                    <span
-                      *ngFor="let p of pg.permissions"
-                      class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold"
-                    >
-                      {{ p }}
-                    </span>
+                  <span
+                    *ngFor="let p of roleDefaults(selectedRole)"
+                    class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold"
+                  >
+                    {{ meta()?.definitions?.[p]?.label ?? p }}
+                  </span>
+                  <span
+                    *ngIf="roleDefaults(selectedRole).length === 0"
+                    class="text-[10px] text-zinc-500 italic"
+                  >
+                    No default permissions defined for this role.
                   </span>
                 </div>
                 <p class="text-[10px] text-zinc-400 mt-2 italic">
@@ -692,7 +696,7 @@
             </div>
 
             <div class="space-y-3">
-              @for (g of (groups$ | async)?.groups; track g.group) {
+              @for (g of meta()?.groups ?? []; track g.group) {
                 <div
                   class="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden"
                 >

@@ -457,7 +457,7 @@ export class EquipmentComponent implements OnInit {
   }
 
   public updateEquipment(eq: Equipment) {
-    console.log('public updateEquipment(eq: Equipment)', eq)
+    console.log('public updateEquipment(eq: Equipment)', eq);
     this.isEditMode = true;
     this.editingEquipmentId = eq.id;
     this.newEqInvoice = eq.invoiceNumber ?? '';
@@ -477,7 +477,6 @@ export class EquipmentComponent implements OnInit {
     this.newEqQty = eq.quantityReceived ?? 1;
     this.newEqMfgDate = eq.dateOfManufacture ? new Date(eq.dateOfManufacture) : null;
     this.newEqReceiptDate = eq.dateOfReceipt ? new Date(eq.dateOfReceipt) : null;
-  
 
     this.newEqWarranty = eq.warrantyPeriodMonths ?? 12;
 

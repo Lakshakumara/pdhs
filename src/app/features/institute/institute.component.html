@@ -1,88 +1,131 @@
 <div class="space-y-6">
+  <!-- Page Header -->
   <div
     class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4"
   >
     <div>
       <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Institution Registry</h2>
-      <p class="text-xs text-zinc-500">Manage hospitals, units, and regional clinic assignments</p>
+      <p class="text-xs text-zinc-500">Manage hospitals, units, and regional health facilities</p>
     </div>
     <button
       *appHasPermission="permission.INSTITUTE_CREATE"
       (click)="openCreate()"
-      class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2"
+      class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2 cursor-pointer"
     >
       <i class="pi pi-plus text-xs"></i> Add Institution
     </button>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-    <div
-      class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800"
-    >
-      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
-        >Filter by District / RDHS</span
-      >
-      <div class="flex flex-wrap gap-2">
-        <button
-          (click)="filterByDistrict(null)"
-          [class]="
-            !selectedDistrictId()
-              ? 'bg-emerald-500 text-white'
-              : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer'
-          "
-          class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
-        >
-          All Districts
-        </button>
-        <button
-          *ngFor="let d of districts()"
-          (click)="filterByDistrict(d.id)"
-          [class]="
-            selectedDistrictId() === d.id
-              ? 'bg-emerald-500 text-white'
-              : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer'
-          "
-          class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
-        >
-          {{ d.name }}
-        </button>
+  <!-- Search & Filters Bar -->
+  <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+    <!-- Search by Name -->
+    <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+      <div class="relative flex-1 max-w-md">
+        <input
+          pInputText
+          type="text"
+          placeholder="Filter by institute name..."
+          [value]="searchTerm()"
+          (input)="onSearchInput($any($event.target).value)"
+          class="w-full !pl-3.5 !pr-10 !py-2 text-sm rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:bg-white dark:focus:bg-zinc-900 transition"
+        />
+        @if (searchTerm()) {
+          <button
+            type="button"
+            (click)="onSearchInput('')"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 text-xs p-1 cursor-pointer"
+            title="Clear search"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        } @else {
+          <i
+            class="pi pi-search absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm pointer-events-none"
+          ></i>
+        }
       </div>
+
+      @if (searchTerm() || selectedDistrictId() || selectedType()) {
+        <button
+          (click)="clearFilters()"
+          class="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition cursor-pointer self-start sm:self-auto"
+        >
+          <i class="pi pi-times text-xs"></i> Clear Filters
+        </button>
+      }
     </div>
 
-    <div
-      class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800"
-    >
-      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
-        >Filter by Facility Type</span
-      >
-      <div class="flex flex-wrap gap-2">
-        <button
-          (click)="filterByType(null)"
-          [class]="
-            !selectedType()
-              ? 'bg-emerald-500 text-white'
-              : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer'
-          "
-          class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
+    <!-- Filter Chips: District & Facility Type -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+      <!-- District Filter Chips -->
+      <div>
+        <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
+          >Filter by District / RDHS</span
         >
-          All Types
-        </button>
-        <button
-          *ngFor="let type of institutionTypes"
-          (click)="filterByType(type.value)"
-          [class]="
-            selectedType() === type.value
-              ? 'bg-emerald-500 text-white'
-              : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer'
-          "
-          class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            (click)="filterByDistrict(null)"
+            [class]="
+              !selectedDistrictId()
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            "
+            class="text-xs px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+          >
+            All Districts
+          </button>
+          @for (d of districts(); track d.id) {
+            <button
+              (click)="filterByDistrict(d.id)"
+              [class]="
+                selectedDistrictId() === d.id
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+              "
+              class="text-xs px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+            >
+              {{ d.name }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Facility Type Filter Chips -->
+      <div>
+        <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
+          >Filter by Facility Type</span
         >
-          {{ type.value }}
-        </button>
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            (click)="filterByType(null)"
+            [class]="
+              !selectedType()
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+            "
+            class="text-xs px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+          >
+            All Types
+          </button>
+          @for (type of institutionTypes; track type.value) {
+            <button
+              (click)="filterByType(type.value)"
+              [class]="
+                selectedType() === type.value
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+              "
+              class="text-xs px-2.5 py-1 rounded-lg font-medium transition cursor-pointer"
+            >
+              {{ type.label }}
+            </button>
+          }
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Institution Data Table -->
   <div
     class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden"
   >
@@ -107,7 +150,8 @@
           <th class="p-4">District</th>
           <th class="p-4">Email</th>
           <th class="p-4">Telephone</th>
-          <th class="p-4 w-24" *appHasPermission="permission.INSTITUTE_UPDATE">Actions</th>
+          <th class="p-4">Status</th>
+          <th class="p-4 w-28 text-right">Actions</th>
         </tr>
       </ng-template>
 
@@ -117,22 +161,53 @@
         >
           <td class="p-4 font-semibold text-zinc-900 dark:text-zinc-100">{{ inst.name }}</td>
           <td class="p-4">
-            <span class="bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-xs">{{
-              inst.type
-            }}</span>
+            <span class="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2.5 py-0.5 rounded-full text-xs font-medium">
+              {{ inst.type }}
+            </span>
           </td>
           <td class="p-4 text-zinc-600 dark:text-zinc-400">
             {{ inst.district?.name || 'Unassigned' }}
           </td>
-          <td class="p-4 text-zinc-500 italic">{{ inst.email || '-' }}</td>
-          <td class="p-4 text-zinc-500">{{ inst.tp || '-' }}</td>
-          <td class="p-4" *appHasPermission="permission.INSTITUTE_UPDATE">
-            <button
-              (click)="openEdit(inst)"
-              class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 p-2 rounded-lg transition"
-            >
-              <i class="pi pi-pencil"></i>
-            </button>
+          <td class="p-4 text-zinc-500 italic text-xs">{{ inst.email || '-' }}</td>
+          <td class="p-4 text-zinc-500 text-xs">{{ inst.tp || '-' }}</td>
+          <td class="p-4">
+            @if (inst.active) {
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
+              </span>
+            } @else {
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700">
+                <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span> Inactive
+              </span>
+            }
+          </td>
+          <td class="p-4 text-right">
+            <div class="flex items-center justify-end gap-1">
+              <button
+                *appHasPermission="permission.INSTITUTE_UPDATE"
+                (click)="openEdit(inst)"
+                title="Edit Institution"
+                class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 p-2 rounded-lg transition cursor-pointer"
+              >
+                <i class="pi pi-pencil"></i>
+              </button>
+              <button
+                *appHasPermission="permission.INSTITUTE_DELETE"
+                (click)="deleteInstitution(inst)"
+                title="Deactivate/Delete Institution"
+                class="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 p-2 rounded-lg transition cursor-pointer"
+              >
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="p-8 text-center text-zinc-400 text-sm">
+            No institutions found matching the criteria.
           </td>
         </tr>
       </ng-template>
@@ -140,17 +215,20 @@
   </div>
 </div>
 
+<!-- Add / Edit Modal Dialog -->
 <p-dialog
   [header]="isNewMode() ? 'Add New Institution' : 'Modify Institution Details'"
   [(visible)]="isDialogVisible"
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '450px' }"
+  [style]="{ width: '480px' }"
+  [contentStyle]="{ padding: '0.75rem 1.25rem' }"
+  [pt]="{ header: { style: { padding: '0.75rem 1.25rem' } } }"
   styleClass="dark:bg-zinc-900 dark:text-zinc-100 border dark:border-zinc-800 rounded-2xl shadow-xl"
 >
-  <form [formGroup]="institutionForm" (ngSubmit)="save()" class="flex flex-col gap-4 mt-2">
-    <div class="flex flex-col gap-1.5">
+  <form [formGroup]="institutionForm" (ngSubmit)="save()" class="flex flex-col gap-3.5 mt-1">
+    <div class="flex flex-col gap-1">
       <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400"
         >District Boundary Assignment</label
       >
@@ -159,34 +237,15 @@
         formControlName="districtId"
         optionLabel="name"
         optionValue="id"
-        placeholder="Select a District"
+        placeholder="Select a District (Optional for Provincial)"
         styleClass="w-full"
       >
       </p-select>
-
-      @if (
-        institutionForm.get('districtId')?.touched && institutionForm.get('districtId')?.invalid
-      ) {
-        <small class="text-red-500 text-xs">District assignment is required.</small>
-      }
     </div>
 
-    <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Institution Name</label>
-      <input
-        pInputText
-        formControlName="name"
-        placeholder="e.g. Base Hospital Balangoda"
-        class="w-full"
-      />
-      @if (institutionForm.get('name')?.touched && institutionForm.get('name')?.invalid) {
-        <small class="text-red-500 text-xs">Please enter a valid name (Min 3 characters).</small>
-      }
-    </div>
-
-    <div class="flex flex-col gap-1.5">
+    <div class="flex flex-col gap-1">
       <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400"
-        >Facility Type Classification</label
+        >Facility Type Classification *</label
       >
       <p-select
         [options]="institutionTypes"
@@ -202,7 +261,20 @@
       }
     </div>
 
-    <div class="flex flex-col gap-1.5">
+    <div class="flex flex-col gap-1">
+      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Institution Name *</label>
+      <input
+        pInputText
+        formControlName="name"
+        placeholder="e.g. Base Hospital Balangoda"
+        class="w-full text-sm"
+      />
+      @if (institutionForm.get('name')?.touched && institutionForm.get('name')?.invalid) {
+        <small class="text-red-500 text-xs">Please enter a valid name (Min 3 characters).</small>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1">
       <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400"
         >Official Communication Email</label
       >
@@ -211,39 +283,57 @@
         formControlName="email"
         type="email"
         placeholder="e.g. contact@hospital.gov.lk"
-        class="w-full"
+        class="w-full text-sm"
       />
       @if (institutionForm.get('email')?.touched && institutionForm.get('email')?.invalid) {
         <small class="text-red-500 text-xs"
-          >Please enter a valid institutional mailing address.</small
+          >Please enter a valid email address.</small
         >
       }
     </div>
 
-    <div class="flex flex-col gap-1.5">
+    <div class="flex flex-col gap-1">
       <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400"
         >Contact Telephone Number</label
       >
-      <input pInputText formControlName="tp" placeholder="e.g. 0452222222" class="w-full" />
+      <input
+        pInputText
+        formControlName="tp"
+        placeholder="e.g. 0452222222 or +94452222222"
+        class="w-full text-sm"
+      />
       @if (institutionForm.get('tp')?.touched && institutionForm.get('tp')?.invalid) {
         <small class="text-red-500 text-xs"
-          >Invalid format! Use a standard phone sequence (9 digits total without leading country
-          zeroes).</small
+          >Invalid format. Please enter a valid telephone number (7-20 digits).</small
         >
       }
     </div>
 
-    <div class="flex justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-2">
+    @if (!isNewMode()) {
+      <div class="flex items-center gap-2 pt-1">
+        <input
+          type="checkbox"
+          id="activeStatus"
+          formControlName="active"
+          class="rounded text-emerald-600 focus:ring-emerald-500"
+        />
+        <label for="activeStatus" class="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+          Institution is Active
+        </label>
+      </div>
+    }
+
+    <div class="flex justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-3 mt-1">
       <button
         type="button"
         (click)="isDialogVisible.set(false)"
-        class="px-4 py-2 text-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition font-medium"
+        class="px-4 py-2 text-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition font-medium cursor-pointer"
       >
         Cancel
       </button>
       <button
         type="submit"
-        class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition font-medium shadow-sm"
+        class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition font-medium shadow-sm cursor-pointer"
       >
         Save Changes
       </button>

@@ -7,6 +7,12 @@ import { Permission } from '../constants/permissions';
 export interface PermissionMeta {
   groups: { group: string; icon: string; permissions: string[] }[];
   definitions: Record<string, { label: string; description: string; icon: string }>;
+  /** Role → default permissions (backend role-permissions.ts) */
+  roleDefaults: Record<string, string[]>;
+  /** Role → display metadata (label, color) */
+  roleMeta: Record<string, { label: string; color: string }>;
+  /** Scope level → display label */
+  scopeMeta: Record<string, { label: string }>;
 }
 
 @Injectable({

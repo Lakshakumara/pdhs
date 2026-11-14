@@ -75,11 +75,6 @@ export const routes: Routes = [
           import('./features/audit/audit.component').then((m) => m.AuditComponent),
       },
       {
-        path: 'institute',
-        loadChildren: () =>
-          import('./features/institute/institute.routes').then((m) => m.instituteRoutes),
-      },
-      {
         path: 'usermanagement',
         loadComponent: () =>
           import('./features/users/users.component').then((m) => m.UsersComponent),

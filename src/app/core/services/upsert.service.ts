@@ -5,6 +5,7 @@ import {
   Equipment,
   EquipmentAssignment,
   EscalateToVendorDto,
+  Institution,
   RepairPriority,
   RepairRequest,
   Supplier,
@@ -224,6 +225,30 @@ export class UpsertService {
     return this.http.delete<Supplier>(`${this.baseUrl}/supplier/${supplierId}`).pipe(
       tap(() => {
         this.logAudit('DELETE', 'Supplier', supplierId, `Deleted supplier: ${supplierId}`);
+      }),
+    );
+  }
+
+  createInstitution(payload: Partial<Institution>): Observable<Institution> {
+    return this.http.post<Institution>(`${this.baseUrl}/institutions`, payload).pipe(
+      tap((newInst) => {
+        this.notify.success('Institution created', `Institution "${newInst.name}" created successfully`);
+      }),
+    );
+  }
+
+  updateInstitution(id: string, payload: Partial<Institution>): Observable<Institution> {
+    return this.http.put<Institution>(`${this.baseUrl}/institutions/${id}`, payload).pipe(
+      tap((updated) => {
+        this.notify.success('Institution updated', `Institution "${updated.name}" updated successfully`);
+      }),
+    );
+  }
+
+  deleteInstitution(id: string): Observable<Institution> {
+    return this.http.delete<Institution>(`${this.baseUrl}/institutions/${id}`).pipe(
+      tap(() => {
+        this.notify.success('Institution removed', 'Institution removed/deactivated successfully');
       }),
     );
   }

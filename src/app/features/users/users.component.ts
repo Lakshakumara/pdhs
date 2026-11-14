@@ -47,117 +47,14 @@ import {
   UserPermissionRecord,
   UserRoleDto,
 } from '../../core/models/biomed.interface';
-import { RoleType, SCOPE_ROLES } from '../../core/models/permission.types';
+import { RoleType, SCOPE_ROLES, ROLE_META, SCOPE_META } from '../../core/models/permission.types';
 import { QueryService } from '../../core/services/query.service';
 import { TablePageEvent } from 'primeng/table';
 import { forkJoin, finalize } from 'rxjs';
 import { ScopeType } from '../../core/models/permission.types';
-import { PermissionService } from '../../core/auth/permission.service';
+import { PermissionService, PermissionMeta } from '../../core/auth/permission.service';
 import { Permission } from '../../core/constants/permissions';
-
-export const PERMISSION_GROUPS: { group: string; icon: string; permissions: Permission[] }[] = [
-  {
-    group: 'Institutions',
-    icon: 'pi-building',
-    permissions: [
-      Permission.INSTITUTE_VIEW,
-      Permission.INSTITUTE_CREATE,
-      Permission.INSTITUTE_UPDATE,
-      Permission.INSTITUTE_DELETE,
-    ],
-  },
-  {
-    group: 'Inventory',
-    icon: 'pi-warehouse',
-    permissions: [
-      Permission.INVENTORY_VIEW,
-      Permission.INVENTORY_CREATE,
-      Permission.INVENTORY_UPDATE,
-      Permission.INVENTORY_DELETE,
-    ],
-  },
-  {
-    group: 'Equipment',
-    icon: 'pi-box',
-    permissions: [
-      Permission.EQUIPMENT_VIEW,
-      Permission.EQUIPMENT_CREATE,
-      Permission.EQUIPMENT_UPDATE,
-      Permission.EQUIPMENT_ASSIGN,
-      Permission.EQUIPMENT_DISPOSE,
-      Permission.EQUIPMENT_DELETE,
-    ],
-  },
-  {
-    group: 'Repairs',
-    icon: 'pi-wrench',
-    permissions: [
-      Permission.REPAIR_REQUEST_VIEW,
-      Permission.REPAIR_REQUEST_CREATE,
-      Permission.REPAIR_REQUEST_UPDATE,
-    ],
-  },
-  {
-    group: 'Work Orders',
-    icon: 'pi-clipboard',
-    permissions: [
-      Permission.WORK_ORDER_VIEW,
-      Permission.WORK_ORDER_ASSIGN,
-      Permission.WORK_ORDER_COMPLETE,
-    ],
-  },
-  {
-    group: 'Procurement',
-    icon: 'pi-shopping-cart',
-    permissions: [
-      Permission.PROCUREMENT_VIEW,
-      Permission.PROCUREMENT_CREATE,
-      Permission.PROCUREMENT_APPROVE,
-    ],
-  },
-  {
-    group: 'Users',
-    icon: 'pi-users',
-    permissions: [
-      Permission.USER_VIEW,
-      Permission.USER_CREATE,
-      Permission.USER_UPDATE,
-      Permission.USER_DELETE,
-    ],
-  },
-  {
-    group: 'Permission',
-    icon: 'pi-key',
-    permissions: [
-      Permission.PERMISSION_VIEW,
-      Permission.PERMISSION_CREATE,
-      Permission.PERMISSION_CREATE_TEMPORARY,
-      Permission.PERMISSION_REMOVE,
-    ],
-  },
-  {
-    group: 'Audit',
-    icon: 'pi-history',
-    permissions: [Permission.AUDIT_VIEW],
-  },
-];
-
-// Role colors for badges
-export const ROLE_COLOR: Record<string, string> = {
-  SUPER_ADMIN_PDHS: '#dc2626',
-  SUPER_ADMIN_RDHS: '#ea580c',
-  SUPER_ADMIN_INSTITUTE: '#d97706',
-  ADMIN_PDHS: '#7c3aed',
-  ADMIN_RDHS: '#6d28d9',
-  ADMIN_INSTITUTE: '#5b21b6',
-  VIEWER_PDHS: '#0284c7',
-  VIEWER_RDHS: '#0369a1',
-  VIEWER_INSTITUTE: '#075985',
-  BIOMEDICAL_TECHNICIAN: '#059669',
-  STORE_KEEPER: '#16a34a',
-  PROCUREMENT_OFFICER: '#0d9488',
-  INSTITUTION_USER: '#6b7280',
-};
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-users',
@@ -199,7 +96,10 @@ export class UsersComponent implements OnInit {
   private confirm = inject(ConfirmationService);
   private fb = inject(FormBuilder);
 
-  groups$ = this.permissionService.getMeta();
+  // Permission/role metadata from the backend — single source, fetched once
+  readonly meta = toSignal<PermissionMeta | null>(this.permissionService.getMeta(), {
+    initialValue: null,
+  });
   // ── State ─────────────────────────────────────────────────────────
   users = signal<UserDto[]>([]);
   districts = signal<District[]>([]);
@@ -288,23 +188,25 @@ export class UsersComponent implements OnInit {
   // ── Form ─────────────────────────────────────────────────────────
   createForm!: FormGroup;
 
-  // Options
+  // Options (labels/colors single-sourced from backend policy files)
   readonly roleOptions = Object.values(RoleType).map((r) => ({
-    label: r.replace(/_/g, ' '),
+    label: ROLE_META[r].label,
     value: r,
   }));
-  readonly scopeOptions = [
-    { label: 'PDHS (System-wide)', value: ScopeType.PDHS },
-    { label: 'RDHS (District)', value: ScopeType.RDHS },
-    { label: 'Institute', value: ScopeType.INSTITUTE },
-  ];
+  readonly scopeOptions = Object.values(ScopeType).map((s) => ({
+    label: SCOPE_META[s].label,
+    value: s,
+  }));
   readonly activeOptions = [
     { label: 'All Users', value: null },
     { label: 'Active Only', value: 'true' },
     { label: 'Inactive Only', value: 'false' },
   ];
-  readonly permGroups = PERMISSION_GROUPS;
-  readonly allPermissions = Object.values(Permission);
+
+  // Default permissions for a role (from backend role-permissions.ts)
+  roleDefaults(role: string): string[] {
+    return this.meta()?.roleDefaults?.[role] ?? [];
+  }
 
   // Role options filtered to scope
   filteredRoleOptions = computed(() => {
@@ -656,7 +558,7 @@ export class UsersComponent implements OnInit {
   }
 
   getRoleColor(role: string) {
-    return ROLE_COLOR[role] ?? '#6b7280';
+    return ROLE_META[role as RoleType]?.color ?? '#6b7280';
   }
 
   districtName(id: string | null) {

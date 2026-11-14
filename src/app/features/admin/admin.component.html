@@ -1,6 +1,6 @@
 <div class="admin-panel p-4">
   <h2>Admin Panel</h2>
-  
+
   <p-tabs value="users">
     <p-tablist>
       <p-tab value="users">Users</p-tab>
@@ -15,7 +15,7 @@
         <!-- Render the existing users component -->
         <app-users></app-users>
       </p-tabpanel>
-      
+
       <p-tabpanel value="institutions">
         <p-table [value]="institutions">
           <ng-template pTemplate="header">
@@ -36,7 +36,7 @@
           </ng-template>
         </p-table>
       </p-tabpanel>
-      
+
       <p-tabpanel value="districts">
         <p-table [value]="districts">
           <ng-template pTemplate="header">
@@ -53,11 +53,11 @@
           </ng-template>
         </p-table>
       </p-tabpanel>
-      
+
       <p-tabpanel value="audit">
         <app-audit></app-audit>
       </p-tabpanel>
-      
+
       <p-tabpanel value="suppliers">
         <p-table [value]="suppliers">
           <ng-template pTemplate="header">

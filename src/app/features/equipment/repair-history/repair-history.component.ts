@@ -66,11 +66,7 @@ export class RepairHistoryComponent implements OnInit, OnChanges {
     this.entries.set([]);
 
     this.queryService
-      .getEquipmentRepairHistory(
-        this.equipmentId,
-        this.currentPage(),
-        this.pageSize()
-      )
+      .getEquipmentRepairHistory(this.equipmentId, this.currentPage(), this.pageSize())
       .subscribe({
         next: (result) => {
           this.total.set(result.total);
@@ -85,17 +81,15 @@ export class RepairHistoryComponent implements OnInit, OnChanges {
           const woRequests = result.items.map((req) =>
             this.queryService.getWorkOrder(req.id).pipe(
               map((woResult) => woResult ?? undefined),
-              catchError(() => of(undefined))
-            )
+              catchError(() => of(undefined)),
+            ),
           );
 
           forkJoin(woRequests).subscribe((workOrders) => {
-            const combined: RepairHistoryEntry[] = result.items.map(
-              (req, i) => ({
-                repairRequest: req,
-                workOrder: workOrders[i],
-              })
-            );
+            const combined: RepairHistoryEntry[] = result.items.map((req, i) => ({
+              repairRequest: req,
+              workOrder: workOrders[i],
+            }));
             this.entries.set(combined);
             this.loading.set(false);
           });
@@ -164,21 +158,31 @@ export class RepairHistoryComponent implements OnInit, OnChanges {
 
   getStatusIcon(status: WorkOrderStatus | string): string {
     switch (status) {
-      case 'Submitted': return 'pi-inbox';
-      case 'Acknowledged': return 'pi-eye';
-      case 'Diagnosed': return 'pi-search';
-      case 'In Repair': return 'pi-wrench';
-      case 'Completed': return 'pi-check-circle';
-      case 'Verified & Closed': return 'pi-lock';
-      default: return 'pi-circle';
+      case 'Submitted':
+        return 'pi-inbox';
+      case 'Acknowledged':
+        return 'pi-eye';
+      case 'Diagnosed':
+        return 'pi-search';
+      case 'In Repair':
+        return 'pi-wrench';
+      case 'Completed':
+        return 'pi-check-circle';
+      case 'Verified & Closed':
+        return 'pi-lock';
+      default:
+        return 'pi-circle';
     }
   }
 
   getPriorityIcon(p: RepairPriority | string): string {
     switch (p) {
-      case 'Emergency': return 'pi-exclamation-circle';
-      case 'Urgent': return 'pi-exclamation-triangle';
-      default: return 'pi-info-circle';
+      case 'Emergency':
+        return 'pi-exclamation-circle';
+      case 'Urgent':
+        return 'pi-exclamation-triangle';
+      default:
+        return 'pi-info-circle';
     }
   }
 

@@ -1,7 +1,11 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
-  FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators
+  FormsModule,
+  ReactiveFormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
 } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 
@@ -15,6 +19,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { AuthService } from '../../core/auth/auth.service';
 import { UserDto } from '../../core/models/biomed.interface';
 import { UserApiService } from '../../core/services/user-api.service';
+import { environment } from '../../../environments/environment';
 
 interface DevUserOption {
   label: string;
@@ -26,9 +31,15 @@ interface DevUserOption {
   selector: 'app-login',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, ReactiveFormsModule,
-    InputTextModule, PasswordModule, ButtonModule,
-    SelectModule, DividerModule, CheckboxModule,
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    InputTextModule,
+    PasswordModule,
+    ButtonModule,
+    SelectModule,
+    DividerModule,
+    CheckboxModule,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
@@ -51,7 +62,7 @@ export class LoginComponent implements OnInit {
    * environment.ts (used by default `ng build`) and this entire block
    * disappears from the compiled output, no manual deletion needed.
    */
-  readonly enableDevLogin = true//!environment.production;
+  readonly enableDevLogin = !environment.production || isDevMode();
 
   /** Fixed password used for ALL seeded dev/test accounts. */
   private readonly DEV_PASSWORD = 'pdhs@123';
@@ -60,8 +71,8 @@ export class LoginComponent implements OnInit {
   selectedDevUserId: string | null = null;
 
   devUserOptions = computed<DevUserOption[]>(() =>
-    this.devUsers().map(u => ({
-      label: `${u.fullName} — ${u.roles.map(r => r.role).join(', ')}`,
+    this.devUsers().map((u) => ({
+      label: `${u.fullName} — ${u.roles.map((r) => r.role).join(', ')}`,
       value: u.id,
       user: u,
     })),
@@ -76,7 +87,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit() {
     if (this.enableDevLogin) {
-      this.stateService.dev_getAllUsers().subscribe(list => this.devUsers.set(list.items));
+      this.stateService.dev_getAllUsers().subscribe((list) => this.devUsers.set(list.items));
     }
   }
 
@@ -109,7 +120,7 @@ export class LoginComponent implements OnInit {
    */
   onDevUserSelect(userId: string | null) {
     if (!userId) return;
-    const option = this.devUserOptions().find(o => o.value === userId);
+    const option = this.devUserOptions().find((o) => o.value === userId);
     if (!option) return;
 
     this.loginForm.patchValue({
@@ -120,7 +131,12 @@ export class LoginComponent implements OnInit {
   }
 
   getInitials(name: string): string {
-    return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase();
   }
 
   getAvatarBg(name: string): string {

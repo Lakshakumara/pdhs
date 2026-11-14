@@ -8,9 +8,9 @@ export const instituteRoutes: Routes = [
     component: InstituteComponent,
     canActivate: [AdminGuard],
     children: [
-      { path: '', component: InstituteComponent,canActivate: [AdminGuard] },
+      { path: '', component: InstituteComponent, canActivate: [AdminGuard] },
       { path: 'add', component: InstituteComponent, canActivate: [AdminGuard] },
-      { path: 'edit/:id', component: InstituteComponent, canActivate: [AdminGuard] }
-    ]
-  }
+      { path: 'edit/:id', component: InstituteComponent, canActivate: [AdminGuard] },
+    ],
+  },
 ];

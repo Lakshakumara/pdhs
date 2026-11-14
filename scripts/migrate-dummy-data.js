@@ -6,12 +6,12 @@ const config = {
   port: Number(process.env.PG_PORT || 5432),
   user: process.env.PG_USER || 'biomedical_user',
   password: process.env.PG_PASSWORD || 'biomedical123',
-  database: process.env.PG_DATABASE || 'biomedical'
+  database: process.env.PG_DATABASE || 'biomedical',
 };
 
 const adminConfig = {
   ...config,
-  database: 'postgres'
+  database: 'postgres',
 };
 
 const schemaName = 'pdhs';
@@ -19,10 +19,9 @@ const schemaName = 'pdhs';
 async function createDatabaseIfNeeded() {
   const adminPool = new Pool(adminConfig);
   try {
-    const result = await adminPool.query(
-      'SELECT 1 FROM pg_database WHERE datname = $1',
-      [config.database]
-    );
+    const result = await adminPool.query('SELECT 1 FROM pg_database WHERE datname = $1', [
+      config.database,
+    ]);
 
     if (result.rowCount === 0) {
       await adminPool.query(`CREATE DATABASE ${config.database}`);
@@ -61,7 +60,7 @@ async function migrateSeed() {
       procurementPlans: seed.procurementPlans,
       purchaseOrders: seed.purchaseOrders,
       grns: seed.grns,
-      auditLogs: seed.auditLogs
+      auditLogs: seed.auditLogs,
     };
 
     await pool.query(
@@ -70,7 +69,7 @@ async function migrateSeed() {
        ON CONFLICT (name) DO UPDATE SET
          payload = EXCLUDED.payload,
          updated_at = NOW()`,
-      ['biomed_seed', JSON.stringify(payload)]
+      ['biomed_seed', JSON.stringify(payload)],
     );
 
     const stats = await pool.query(`

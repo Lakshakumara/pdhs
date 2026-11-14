@@ -13,7 +13,7 @@ export interface LoginResponse {
 
 interface JwtPayload {
   sub?: string;
-  exp?: number;  // unix seconds
+  exp?: number; // unix seconds
   iat?: number;
   [key: string]: any;
 }
@@ -40,7 +40,7 @@ export class AuthService {
     private http: HttpClient,
     private router: Router,
     private userFacade: UserFacadeService,
-  ) { }
+  ) {}
 
   // ───────────────────────────────────────────────────────────────────────
   // LOGIN / LOGOUT
@@ -48,14 +48,14 @@ export class AuthService {
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http.post<LoginResponse>(`${this.baseUrl}/login`, { username, password }).pipe(
-      tap(response => {
+      tap((response) => {
         if (response.token && response.user) {
           localStorage.setItem(this.TOKEN_KEY, response.token);
           this.isLoggedIn.set(true);
           this.applySession(response.user);
         }
       }),
-      catchError(error => {
+      catchError((error) => {
         return throwError(() => error);
       }),
     );
@@ -121,7 +121,7 @@ export class AuthService {
       const json = decodeURIComponent(
         atob(base64)
           .split('')
-          .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+          .map((c) => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
           .join(''),
       );
       return JSON.parse(json);
@@ -172,7 +172,7 @@ export class AuthService {
 
     if (!this.restoreSession$) {
       this.restoreSession$ = this.http.get<UserDto>(this.ME_URL).pipe(
-        map(user => {
+        map((user) => {
           this.applySession(user);
           this.isLoggedIn.set(true);
           return true;
@@ -196,11 +196,12 @@ export class AuthService {
   // ───────────────────────────────────────────────────────────────────────
 
   private applySession(user: UserDto) {
-
-    const permissions = user.permissions.filter(p => {
-      return !p.expiresAt || new Date(p.expiresAt) > new Date()
-    }).map(p => p.permission) ?? [];
-
+    const permissions =
+      user.permissions
+        .filter((p) => {
+          return !p.expiresAt || new Date(p.expiresAt) > new Date();
+        })
+        .map((p) => p.permission) ?? [];
 
     const firstRole = user.roles?.[0];
 

@@ -10,14 +10,14 @@ export interface PermissionMeta {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PermissionService {
-  private http = inject(HttpClient)
+  private http = inject(HttpClient);
   private userFacade = inject(UserFacadeService);
-  private baseUrl = environment.apiUrl
+  private baseUrl = environment.apiUrl;
 
-  constructor() { }
+  constructor() {}
 
   has(permission: Permission): boolean {
     return this.userFacade.permissions()?.includes(permission) ?? false;

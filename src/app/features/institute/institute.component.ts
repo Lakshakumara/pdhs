@@ -18,10 +18,16 @@ import { Permission } from '../../core/constants/permissions';
   selector: 'app-institution',
   standalone: true,
   imports: [
-    CommonModule, ReactiveFormsModule, TableModule,
-    DialogModule, SelectModule, ButtonModule, InputTextModule, HasPermissionDirective
+    CommonModule,
+    ReactiveFormsModule,
+    TableModule,
+    DialogModule,
+    SelectModule,
+    ButtonModule,
+    InputTextModule,
+    HasPermissionDirective,
   ],
-  templateUrl: './institute.component.html'
+  templateUrl: './institute.component.html',
 })
 export class InstituteComponent implements OnInit {
   readonly permission = Permission;
@@ -45,21 +51,24 @@ export class InstituteComponent implements OnInit {
     { label: 'District General Hospital (DGH)', value: 'DGH' },
     { label: 'Base Hospital (BH)', value: 'BH' },
     { label: 'Divisional Hospital (DH)', value: 'DH' },
-    { label: 'Primary Medical Care Unit (PMCU)', value: 'PMCU' }
+    { label: 'Primary Medical Care Unit (PMCU)', value: 'PMCU' },
   ];
 
   institutionForm: FormGroup;
   first = 0;
   rows = 10;
 
-  constructor(private fb: FormBuilder, private queryService: QueryService) {
+  constructor(
+    private fb: FormBuilder,
+    private queryService: QueryService,
+  ) {
     this.institutionForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       type: ['', Validators.required],
       districtId: ['', Validators.required],
       email: ['', [Validators.email]],
       // Regex accepts Sri Lankan landline/mobile standards (e.g., 0452222222 or 0771234567)
-      tp: ['', [Validators.pattern(/^(?:0|94|\+94)?(?:[1-9][0-9]{8})$/)]]
+      tp: ['', [Validators.pattern(/^(?:0|94|\+94)?(?:[1-9][0-9]{8})$/)]],
     });
   }
 
@@ -73,8 +82,12 @@ export class InstituteComponent implements OnInit {
 
     forkJoin({
       districts: this.queryService.getDistricts(), // Assume this returns District backend array
-      grid: this.queryService.getInstitute
-        (page, this.rows, this.selectedType()??'', this.selectedDistrictId()??'',)
+      grid: this.queryService.getInstitute(
+        page,
+        this.rows,
+        this.selectedType() ?? '',
+        this.selectedDistrictId() ?? '',
+      ),
     })
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
@@ -82,7 +95,7 @@ export class InstituteComponent implements OnInit {
           this.districts.set(districts);
           this.institutions.set(grid.items);
           this.totalRecords.set(grid.total);
-        }
+        },
       });
   }
 
@@ -90,9 +103,10 @@ export class InstituteComponent implements OnInit {
     this.isLoading.set(true);
     const page = Math.floor(this.first / this.rows) + 1;
 
-    this.queryService.getInstitute(page, this.rows, this.selectedType() ??'', this.selectedDistrictId()??'',)
+    this.queryService
+      .getInstitute(page, this.rows, this.selectedType() ?? '', this.selectedDistrictId() ?? '')
       .pipe(finalize(() => this.isLoading.set(false)))
-      .subscribe(res => {
+      .subscribe((res) => {
         this.institutions.set(res.items);
         this.totalRecords.set(res.total);
       });
@@ -131,7 +145,7 @@ export class InstituteComponent implements OnInit {
       type: row.type,
       districtId: row.districtId,
       email: row.email,
-      tp: row.tp
+      tp: row.tp,
     });
     this.isDialogVisible.set(true);
   }

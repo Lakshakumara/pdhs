@@ -14,13 +14,28 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
   standalone: true,
   imports: [FormsModule, ButtonModule, TextareaModule],
   template: `
-    <textarea pTextarea rows="4" style="width: 100%" [(ngModel)]="note" [placeholder]="config.data?.placeholder"></textarea>
+    <textarea
+      pTextarea
+      rows="4"
+      style="width: 100%"
+      [(ngModel)]="note"
+      [placeholder]="config.data?.placeholder"
+    ></textarea>
     <div class="dialog-actions">
       <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="ref.close()" />
       <p-button label="Save" icon="pi pi-check" (onClick)="ref.close(note)" />
     </div>
   `,
-  styles: [`.dialog-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }`],
+  styles: [
+    `
+      .dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
+      }
+    `,
+  ],
 })
 export class SimpleNoteDialogComponent {
   readonly ref = inject(DynamicDialogRef);

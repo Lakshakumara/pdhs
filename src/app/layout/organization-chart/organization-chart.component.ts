@@ -11,62 +11,43 @@ import { CommonModule } from '@angular/common';
   templateUrl: './organization-chart.component.html',
   styleUrl: './organization-chart.component.css',
 })
-export class OrganizationChart implements OnInit{
+export class OrganizationChart implements OnInit {
   nodes = signal<TreeNode[]>([]);
-  constructor(private queryService: QueryService,)
-  {}
-  
+  constructor(private queryService: QueryService) {}
+
   ngOnInit() {
-
-  this.queryService.getOrganizationTree()
-    .subscribe(tree => {
-
-      this.nodes.set([
-        this.mapNode(tree)
-      ]);
-
+    this.queryService.getOrganizationTree().subscribe((tree) => {
+      this.nodes.set([this.mapNode(tree)]);
     });
-}
+  }
 
-private mapNode(
-  node: OrganizationTreeNode
-): TreeNode {
+  private mapNode(node: OrganizationTreeNode): TreeNode {
+    return {
+      label: node.name,
 
-  return {
+      type: node.type,
 
-    label: node.name,
+      data: {
+        institutionCount: node.institutionCount,
 
-    type: node.type,
+        assetCount: node.assetCount,
 
-    data: {
-      institutionCount:
-        node.institutionCount,
+        repairCount: node.repairCount,
+      },
 
-      assetCount:
-        node.assetCount,
+      expanded: true,
 
-      repairCount:
-        node.repairCount
-    },
+      children: node.children?.map((c) => this.mapNode(c)) ?? [],
+    };
+  }
 
-    expanded: true,
+  nodeSelected(event: any) {
+    const node = event.node;
 
-    children:
-      node.children?.map(
-        c => this.mapNode(c)
-      ) ?? []
-  };
-}
-
-nodeSelected(event: any) {
-
-  const node = event.node;
-
-  switch (node.type) {
-
-    case 'RDHS':
-console.log('navigate to RDHS')
-      /*this.router.navigate([
+    switch (node.type) {
+      case 'RDHS':
+        console.log('navigate to RDHS');
+        /*this.router.navigate([
         '/institutions'
       ], {
         queryParams: {
@@ -74,12 +55,11 @@ console.log('navigate to RDHS')
         }
       });*/
 
-      break;
+        break;
 
-    case 'CATEGORY':
-
-console.log('navigate to institutions')
-      /*this.router.navigate([
+      case 'CATEGORY':
+        console.log('navigate to institutions');
+        /*this.router.navigate([
         '/institutions'
       ], {
         queryParams: {
@@ -87,7 +67,7 @@ console.log('navigate to institutions')
         }
       });*/
 
-      break;
+        break;
+    }
   }
-}
 }

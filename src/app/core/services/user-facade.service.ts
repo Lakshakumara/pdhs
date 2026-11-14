@@ -1,13 +1,12 @@
-import { computed, Injectable, signal } from "@angular/core";
-import { UserDto, ActiveRole, UserSession } from "../models/biomed.interface";
-import { RoleType } from "../models/permission.types";
-import { UserApiService } from "./user-api.service";
-import { Permission } from "../constants/permissions";
+import { computed, Injectable, signal } from '@angular/core';
+import { UserDto, ActiveRole, UserSession } from '../models/biomed.interface';
+import { RoleType } from '../models/permission.types';
+import { UserApiService } from './user-api.service';
+import { Permission } from '../constants/permissions';
 
 @Injectable({ providedIn: 'root' })
 export class UserFacadeService {
-
-  constructor(private userApi: UserApiService) { }
+  constructor(private userApi: UserApiService) {}
 
   getUsers() {
     return this.userApi.getAllUsers();
@@ -35,11 +34,11 @@ export class UserFacadeService {
     this.currentSession.set({
       user,
       activeRole,
-      permission: permission
+      permission: permission,
     });
-    this.setPermissions(permission)
+    this.setPermissions(permission);
   }
-/*
+  /*
   setSessionById(userId: string) {
     this.userApi.getUserById(userId).subscribe(user => {
       const firstRole = user.roles[0];
@@ -59,6 +58,6 @@ export class UserFacadeService {
   }
 
   hasAnyRole(roles: RoleType[]): boolean {
-    return this.currentUser()?.roles.some(r => roles.includes(r.role)) ?? false;
+    return this.currentUser()?.roles.some((r) => roles.includes(r.role)) ?? false;
   }
 }

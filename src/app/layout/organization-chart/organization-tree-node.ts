@@ -1,5 +1,4 @@
 export interface OrganizationTreeNode {
-
   id: string;
 
   name: string;

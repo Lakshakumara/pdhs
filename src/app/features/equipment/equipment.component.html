@@ -1,21 +1,30 @@
 <div class="flex flex-col h-full min-h-0 space-y-6">
-
   <!-- Header / Action bar -->
-  <p-toolbar styleClass="flex-none rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm">
+  <p-toolbar
+    styleClass="flex-none rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm"
+  >
     <ng-template pTemplate="start">
       <div>
         <h2 class="text-xl font-bold text-zinc-950 dark:text-zinc-50">Biomedical Asset Registry</h2>
-        <p class="text-xs text-zinc-500 dark:text-zinc-400">View and manage provincial medical equipment allocations</p>
+        <p class="text-xs text-zinc-500 dark:text-zinc-400">
+          View and manage provincial medical equipment allocations
+        </p>
       </div>
     </ng-template>
     <ng-template pTemplate="end">
-      <p-button *appHasPermission="Permission.EQUIPMENT_CREATE" label="Register New Equipment" icon="pi pi-plus"
-        (onClick)="openAddModal()" />
+      <p-button
+        *appHasPermission="Permission.EQUIPMENT_CREATE"
+        label="Register New Equipment"
+        icon="pi pi-plus"
+        (onClick)="openAddModal()"
+      />
     </ng-template>
   </p-toolbar>
 
   <!-- Assets Table -->
-  <div class="flex-1 min-h-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+  <div
+    class="flex-1 min-h-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden"
+  >
     <p-table
       [value]="equipments()"
       [lazy]="true"
@@ -31,25 +40,51 @@
       [scrollable]="true"
       scrollHeight="flex"
       styleClass="p-datatable-sm h-full"
-      [tableStyle]="{ 'min-width': '60rem' }">
-
+      [tableStyle]="{ 'min-width': '60rem' }"
+    >
       <!-- Header filter row -->
       <ng-template pTemplate="caption">
         <div class="flex flex-col md:flex-row gap-3">
           <p-iconField iconPosition="left" class="flex-1">
             <p-inputIcon styleClass="pi pi-search" />
-            <input pInputText type="text" [(ngModel)]="searchTerm" (keyup.enter)="onFilterChange()"
-              placeholder="Search by name, manufacturer, serial number..." class="w-full" />
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="searchTerm"
+              (keyup.enter)="onFilterChange()"
+              placeholder="Search by name, manufacturer, serial number..."
+              class="w-full"
+            />
           </p-iconField>
 
-          <p-select [options]="categoryOptions" [(ngModel)]="selectedCategory" (onChange)="onFilterChange()"
-            placeholder="All Categories" [showClear]="true" styleClass="w-full md:w-48" />
+          <p-select
+            [options]="categoryOptions"
+            [(ngModel)]="selectedCategory"
+            (onChange)="onFilterChange()"
+            placeholder="All Categories"
+            [showClear]="true"
+            styleClass="w-full md:w-48"
+          />
 
-          <p-select [options]="institutions()" optionLabel="name" optionValue="id" [(ngModel)]="selectedInstitutionId"
-            (onChange)="onFilterChange()" placeholder="All Institutions" [showClear]="true" styleClass="w-full md:w-56" />
+          <p-select
+            [options]="institutions()"
+            optionLabel="name"
+            optionValue="id"
+            [(ngModel)]="selectedInstitutionId"
+            (onChange)="onFilterChange()"
+            placeholder="All Institutions"
+            [showClear]="true"
+            styleClass="w-full md:w-56"
+          />
 
-          <p-select [options]="statusOptions" [(ngModel)]="selectedStatus" (onChange)="onFilterChange()"
-            placeholder="All Statuses" [showClear]="true" styleClass="w-full md:w-48" />
+          <p-select
+            [options]="statusOptions"
+            [(ngModel)]="selectedStatus"
+            (onChange)="onFilterChange()"
+            placeholder="All Statuses"
+            [showClear]="true"
+            styleClass="w-full md:w-48"
+          />
         </div>
       </ng-template>
 
@@ -57,7 +92,9 @@
         <tr>
           <th pSortableColumn="name" class="text-xs">Equipment Name <p-sortIcon field="name" /></th>
           <th class="text-xs">Category</th>
-          <th pSortableColumn="serialNumber" class="text-xs">Serial No <p-sortIcon field="serialNumber" /></th>
+          <th pSortableColumn="serialNumber" class="text-xs">
+            Serial No <p-sortIcon field="serialNumber" />
+          </th>
           <th class="text-xs">Manufacturer</th>
           <th class="text-xs">Assigned Location</th>
           <th class="text-xs">Status</th>
@@ -69,41 +106,92 @@
         <tr class="text-xs">
           <td>
             <div class="font-bold text-zinc-900 dark:text-zinc-50">{{ eq.name }}</div>
-            <div class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">{{ eq.modelNumber }}</div>
+            <div class="text-[10px] text-zinc-400 dark:text-zinc-500 font-medium mt-0.5">
+              {{ eq.modelNumber }}
+            </div>
           </td>
           <td>
-            <span class="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold">
+            <span
+              class="px-2.5 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-semibold"
+            >
               {{ eq.category }}
             </span>
           </td>
-          <td class="font-mono text-zinc-600 dark:text-zinc-400 font-semibold">{{ eq.serialNumber }}</td>
+          <td class="font-mono text-zinc-600 dark:text-zinc-400 font-semibold">
+            {{ eq.serialNumber }}
+          </td>
           <td>{{ eq.manufacturer }}</td>
-          <td class="font-medium text-zinc-700 dark:text-zinc-300">{{ eq.assignedInstitution?.name }}</td>
+          <td class="font-medium text-zinc-700 dark:text-zinc-300">
+            {{ eq.assignedInstitution?.name }}
+          </td>
           <td>
-            <p-tag [value]="eq.status" [severity]="eq.status === 'Assigned' ? 'success' : eq.status === 'In Transit' ? 'info' : 'warn'"
-              styleClass="text-[10px]" />
+            <p-tag
+              [value]="eq.status"
+              [severity]="
+                eq.status === 'Assigned' ? 'success' : eq.status === 'In Transit' ? 'info' : 'warn'
+              "
+              styleClass="text-[10px]"
+            />
           </td>
           <td class="text-right space-x-1 whitespace-nowrap">
-            <p-button icon="pi pi-eye" [text]="true" severity="secondary" size="small"
-              (onClick)="openDetails(eq)" pTooltip="View Spare Parts & Contract Details" tooltipPosition="top" />
+            <p-button
+              icon="pi pi-eye"
+              [text]="true"
+              severity="secondary"
+              size="small"
+              (onClick)="openDetails(eq)"
+              pTooltip="View Spare Parts & Contract Details"
+              tooltipPosition="top"
+            />
 
-            <p-button icon="pi pi-history" [text]="true" severity="warn" size="small"
-              (onClick)="viewRepairHistory(eq)" pTooltip="View Repair History" tooltipPosition="top" />
+            <p-button
+              icon="pi pi-history"
+              [text]="true"
+              severity="warn"
+              size="small"
+              (onClick)="viewRepairHistory(eq)"
+              pTooltip="View Repair History"
+              tooltipPosition="top"
+            />
 
-            <p-button *appHasPermission="Permission.EQUIPMENT_UPDATE" icon="pi pi-pencil" [text]="true" severity="info" size="small"
-              (onClick)="updateEquipment(eq)" pTooltip="Update Equipment" tooltipPosition="top" />
+            <p-button
+              *appHasPermission="Permission.EQUIPMENT_UPDATE"
+              icon="pi pi-pencil"
+              [text]="true"
+              severity="info"
+              size="small"
+              (onClick)="updateEquipment(eq)"
+              pTooltip="Update Equipment"
+              tooltipPosition="top"
+            />
 
-            <p-button *appHasPermission="Permission.EQUIPMENT_DISPOSE" icon="pi pi-trash" [text]="true" severity="danger" size="small"
-              (onClick)="disposeEquipment(eq)" pTooltip="Dispose Equipment" tooltipPosition="top" />
+            <p-button
+              *appHasPermission="Permission.EQUIPMENT_DISPOSE"
+              icon="pi pi-trash"
+              [text]="true"
+              severity="danger"
+              size="small"
+              (onClick)="disposeEquipment(eq)"
+              pTooltip="Dispose Equipment"
+              tooltipPosition="top"
+            />
 
-            <p-button *ngIf="eq.status === 'PDHS Store'" label="Distribute" size="small" severity="success" [outlined]="true"
-              (onClick)="openAssignModal(eq)" pTooltip="Assign Device to Institution" tooltipPosition="top" />
+            <p-button
+              *ngIf="eq.status === 'PDHS Store'"
+              label="Distribute"
+              size="small"
+              severity="success"
+              [outlined]="true"
+              (onClick)="openAssignModal(eq)"
+              pTooltip="Assign Device to Institution"
+              tooltipPosition="top"
+            />
           </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="loadingbody">
-        <tr *ngFor="let i of [1,2,3,4,5]">
+        <tr *ngFor="let i of [1, 2, 3, 4, 5]">
           <td colspan="7" class="p-3"><p-skeleton height="1.25rem" /></td>
         </tr>
       </ng-template>
@@ -125,63 +213,96 @@
       [equipmentId]="repairHistoryEq.id"
       [equipmentName]="repairHistoryEq.name"
       [equipmentSerial]="repairHistoryEq.serialNumber"
-      (closed)="closeRepairHistory()">
+      (closed)="closeRepairHistory()"
+    >
     </app-repair-history>
   }
 
   <!-- DIALOG: EQUIPMENT DETAILS DRILL DOWN -->
-  <p-dialog header="Specification & Registry Details" [(visible)]="showDetailModal" [modal]="true"
-    [style]="{ width: '56rem' }" [breakpoints]="{ '960px': '90vw' }" (onHide)="closeDetails()">
-
+  <p-dialog
+    [maximizable]="true"
+    header="Specification & Registry Details"
+    [(visible)]="showDetailModal"
+    [modal]="true"
+    [style]="{ width: '56rem' }"
+    [breakpoints]="{ '960px': '90vw' }"
+    (onHide)="closeDetails()"
+  >
     <ng-container *ngIf="selectedEq as selectedEq">
-      <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50 -mt-2 mb-4">{{ selectedEq.name }}</h3>
+      <h3 class="font-bold text-lg text-zinc-900 dark:text-zinc-50 -mt-2 mb-4">
+        {{ selectedEq.name }}
+      </h3>
 
       <!-- Technical Specs Grid -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-700 mb-6">
+      <div
+        class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-50 dark:bg-zinc-800/40 p-4 rounded-xl border border-zinc-100 dark:border-zinc-700 mb-6"
+      >
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Manufacturer</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.manufacturer }} ({{ selectedEq.countryOfOrigin }})</p>
+          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.manufacturer }} ({{ selectedEq.countryOfOrigin }})
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Model / Batch</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.modelNumber }} / {{ selectedEq.batchNumber }}</p>
+          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.modelNumber }} / {{ selectedEq.batchNumber }}
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Serial Number</p>
-          <p class="text-xs font-semibold font-mono text-zinc-800 dark:text-zinc-200">{{ selectedEq.serialNumber }}</p>
+          <p class="text-xs font-semibold font-mono text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.serialNumber }}
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Assigned Location</p>
-          <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{{ selectedEq.assignedInstitution?.name }}</p>
+          <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+            {{ selectedEq.assignedInstitution?.name }}
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Tender Ref</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.tenderNumber }}</p>
+          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.tenderNumber }}
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Purchase Order</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.purchaseOrderNumber }}</p>
+          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.purchaseOrderNumber }}
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Supplier Name</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.supplierName }}</p>
+          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.supplierName }}
+          </p>
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Warranty</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{{ selectedEq.warrantyPeriodMonths }} Months
-            (Rec: {{ selectedEq.dateOfReceipt | date:'mediumDate' }})</p>
+          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+            {{ selectedEq.warrantyPeriodMonths }} Months (Rec:
+            {{ selectedEq.dateOfReceipt | date: 'mediumDate' }})
+          </p>
         </div>
       </div>
 
       <!-- Description -->
       <div *ngIf="selectedEq.description" class="mb-6">
-        <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Equipment Description</h4>
-        <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">{{ selectedEq.description }}</p>
+        <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">
+          Equipment Description
+        </h4>
+        <p class="text-xs text-zinc-700 dark:text-zinc-300 leading-relaxed">
+          {{ selectedEq.description }}
+        </p>
       </div>
 
       <!-- Child spareParts & Parts -->
       <div class="mb-6">
-        <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Spare parts / Sub-assemblies</h4>
+        <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">
+          Spare parts / Sub-assemblies
+        </h4>
         <p-table [value]="selectedEq.spareParts" styleClass="p-datatable-sm">
           <ng-template pTemplate="header">
             <tr>
@@ -198,9 +319,19 @@
               <td class="font-mono text-[10px] text-zinc-500">{{ comp.partNumber }}</td>
               <td class="font-mono">{{ comp.serialNumber || 'N/A' }}</td>
               <td>
-                <p-tag [value]="comp.sparePartType" [severity]="comp.sparePartType === 'Serialized' ? 'success' : 'warn'" styleClass="text-[9px]" />
+                <p-tag
+                  [value]="comp.sparePartType"
+                  [severity]="comp.sparePartType === 'Serialized' ? 'success' : 'warn'"
+                  styleClass="text-[9px]"
+                />
               </td>
-              <td class="text-zinc-500">{{ comp.expiryOrWarrantyDate ? (comp.expiryOrWarrantyDate | date:'mediumDate') : 'Same as parent' }}</td>
+              <td class="text-zinc-500">
+                {{
+                  comp.expiryOrWarrantyDate
+                    ? (comp.expiryOrWarrantyDate | date: 'mediumDate')
+                    : 'Same as parent'
+                }}
+              </td>
             </tr>
           </ng-template>
         </p-table>
@@ -208,49 +339,71 @@
 
       <!-- Service Agreement Details -->
       <div>
-        <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">Manufacturer Service Agreements (LTS)</h4>
-        <div class="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 rounded-xl space-y-4">
-
+        <h4 class="font-bold text-xs text-zinc-500 uppercase tracking-wider mb-2">
+          Manufacturer Service Agreements (LTS)
+        </h4>
+        <div
+          class="p-4 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100/50 dark:border-emerald-900/30 rounded-xl space-y-4"
+        >
           <ng-container *ngIf="selectedEq.servicePlan; else noPlan">
             <div class="flex justify-between items-start">
               <div class="space-y-1">
-                <p class="text-xs font-bold text-zinc-800 dark:text-zinc-100">Active Service Agreement Ref:
-                  <span class="font-mono text-emerald-600 dark:text-emerald-400">{{ selectedEq.servicePlan.agreementReference }}</span></p>
-                <p class="text-[10px] text-zinc-500 dark:text-zinc-400">Contract Expiration Date: {{ selectedEq.servicePlan.expiryDate | date:'longDate' }}</p>
+                <p class="text-xs font-bold text-zinc-800 dark:text-zinc-100">
+                  Active Service Agreement Ref:
+                  <span class="font-mono text-emerald-600 dark:text-emerald-400">{{
+                    selectedEq.servicePlan.agreementReference
+                  }}</span>
+                </p>
+                <p class="text-[10px] text-zinc-500 dark:text-zinc-400">
+                  Contract Expiration Date:
+                  {{ selectedEq.servicePlan.expiryDate | date: 'longDate' }}
+                </p>
               </div>
             </div>
 
             <!-- Yearly Service Plan Cost Breakdown -->
             <div class="mt-4" *ngIf="selectedEq.servicePlan.serviceCosts">
-              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Yearly Service Plan Cost Breakdown (LKR)</p>
-              <p-table [value]="[
+              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">
+                Yearly Service Plan Cost Breakdown (LKR)
+              </p>
+              <p-table
+                [value]="[
                   { label: 'Service Cost', costs: selectedEq.servicePlan.serviceCosts },
                   { label: 'Labour Cost', costs: selectedEq.servicePlan.labourCosts },
                   { label: 'Transport Cost', costs: selectedEq.servicePlan.transportCosts },
-                  { label: 'Other Cost', costs: selectedEq.servicePlan.otherCosts }
-                ]" styleClass="p-datatable-sm">
+                  { label: 'Other Cost', costs: selectedEq.servicePlan.otherCosts },
+                ]"
+                styleClass="p-datatable-sm"
+              >
                 <ng-template pTemplate="header">
                   <tr>
                     <th class="text-xs">Cost Category</th>
-                    <th class="text-xs text-center" *ngFor="let y of [1,2,3,4,5]">Year {{ y }}</th>
+                    <th class="text-xs text-center" *ngFor="let y of [1, 2, 3, 4, 5]">
+                      Year {{ y }}
+                    </th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-row>
                   <tr class="text-xs">
                     <td class="font-medium text-zinc-800 dark:text-zinc-200">{{ row.label }}</td>
-                    <td class="text-center" *ngFor="let y of [1,2,3,4,5]">{{ row.costs['year' + y] | number }}</td>
+                    <td class="text-center" *ngFor="let y of [1, 2, 3, 4, 5]">
+                      {{ row.costs['year' + y] | number }}
+                    </td>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="footer">
                   <tr class="font-bold">
                     <td class="text-xs text-zinc-900 dark:text-zinc-100">Total Contract Cost</td>
-                    <td class="text-xs text-center text-emerald-600 dark:text-emerald-400" *ngFor="let y of [1,2,3,4,5]">
-                      {{ (
+                    <td
+                      class="text-xs text-center text-emerald-600 dark:text-emerald-400"
+                      *ngFor="let y of [1, 2, 3, 4, 5]"
+                    >
+                      {{
                         (selectedEq.servicePlan.serviceCosts['year' + y] || 0) +
-                        (selectedEq.servicePlan.labourCosts['year' + y] || 0) +
-                        (selectedEq.servicePlan.transportCosts['year' + y] || 0) +
-                        (selectedEq.servicePlan.otherCosts['year' + y] || 0)
-                      ) | number }}
+                          (selectedEq.servicePlan.labourCosts['year' + y] || 0) +
+                          (selectedEq.servicePlan.transportCosts['year' + y] || 0) +
+                          (selectedEq.servicePlan.otherCosts['year' + y] || 0) | number
+                      }}
                     </td>
                   </tr>
                 </ng-template>
@@ -258,23 +411,43 @@
             </div>
 
             <!-- Spare Parts Pricing Matrix -->
-            <div class="mt-4" *ngIf="selectedEq.servicePlan.sparePartsCosts && selectedEq.servicePlan.sparePartsCosts.length > 0">
-              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">Estimated Spare Parts Pricing Matrix</p>
+            <div
+              class="mt-4"
+              *ngIf="
+                selectedEq.servicePlan.sparePartsCosts &&
+                selectedEq.servicePlan.sparePartsCosts.length > 0
+              "
+            >
+              <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wider mb-2">
+                Estimated Spare Parts Pricing Matrix
+              </p>
               <p-table [value]="selectedEq.servicePlan.sparePartsCosts" styleClass="p-datatable-sm">
                 <ng-template pTemplate="header">
                   <tr>
                     <th class="text-xs">Spare Part Name</th>
-                    <th class="text-xs text-center" *ngFor="let y of [1,2,3,4,5]">Year {{ y }}</th>
+                    <th class="text-xs text-center" *ngFor="let y of [1, 2, 3, 4, 5]">
+                      Year {{ y }}
+                    </th>
                   </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-part>
                   <tr class="text-xs">
                     <td class="font-medium text-zinc-800 dark:text-zinc-200">{{ part.name }}</td>
-                    <td class="text-center text-zinc-600 dark:text-zinc-400">{{ part.year1 | number }}</td>
-                    <td class="text-center text-zinc-600 dark:text-zinc-400">{{ part.year2 | number }}</td>
-                    <td class="text-center text-zinc-600 dark:text-zinc-400">{{ part.year3 | number }}</td>
-                    <td class="text-center text-zinc-600 dark:text-zinc-400">{{ part.year4 | number }}</td>
-                    <td class="text-center text-zinc-600 dark:text-zinc-400">{{ part.year5 | number }}</td>
+                    <td class="text-center text-zinc-600 dark:text-zinc-400">
+                      {{ part.year1 | number }}
+                    </td>
+                    <td class="text-center text-zinc-600 dark:text-zinc-400">
+                      {{ part.year2 | number }}
+                    </td>
+                    <td class="text-center text-zinc-600 dark:text-zinc-400">
+                      {{ part.year3 | number }}
+                    </td>
+                    <td class="text-center text-zinc-600 dark:text-zinc-400">
+                      {{ part.year4 | number }}
+                    </td>
+                    <td class="text-center text-zinc-600 dark:text-zinc-400">
+                      {{ part.year5 | number }}
+                    </td>
                   </tr>
                 </ng-template>
               </p-table>
@@ -283,8 +456,8 @@
 
           <ng-template #noPlan>
             <div class="text-center py-2 text-zinc-500 text-xs">
-              <i class="pi pi-info-circle mr-1 text-sm"></i> No manufacturer service agreement plan active for this
-              equipment (utilizing standard warranty cycle).
+              <i class="pi pi-info-circle mr-1 text-sm"></i> No manufacturer service agreement plan
+              active for this equipment (utilizing standard warranty cycle).
             </div>
           </ng-template>
         </div>
@@ -292,158 +465,342 @@
     </ng-container>
 
     <ng-template pTemplate="footer">
-      <p-button label="Close Spec View" severity="secondary" [outlined]="true" (onClick)="closeDetails()" />
+      <p-button
+        label="Close Spec View"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closeDetails()"
+      />
     </ng-template>
   </p-dialog>
 
   <!-- DIALOG: REGISTER / UPDATE ASSET -->
-  <p-dialog [header]="isEditMode ? 'Update Biomedical Equipment Asset' : 'Register Biomedical Equipment Asset'"
-    [(visible)]="showAddModal" [modal]="true" [style]="{ width: '56rem' }" [breakpoints]="{ '960px': '90vw' }"
-    (onHide)="closeAddModal()">
-
+  <p-dialog
+    [maximizable]="true"
+    [header]="
+      isEditMode ? 'Update Biomedical Equipment Asset' : 'Register Biomedical Equipment Asset'
+    "
+    [(visible)]="showAddModal"
+    [modal]="true"
+    [style]="{ width: '56rem' }"
+    [breakpoints]="{ '960px': '90vw' }"
+    (onHide)="closeAddModal()"
+  >
     <div class="space-y-6">
-
       <!-- Form grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Invoice Number</label>
-          <input pInputText type="text" [(ngModel)]="newEqInvoice" placeholder="e.g. INV-2026-4471" class="w-full" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Invoice Number</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqInvoice"
+            placeholder="e.g. INV-2026-4471"
+            class="w-full"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Date of Receive/Receipt</label
+          >
+          <p-datepicker
+            [(ngModel)]="newEqReceiptDate"
+            dateFormat="yy-mm-dd"
+            [showIcon]="true"
+            [fluid]="true"
+          />
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Equipment Name *</label>
-          <input pInputText type="text" [(ngModel)]="newEqName" placeholder="e.g. Philips ECG Machine" class="w-full" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Model Number *</label>
-          <input pInputText type="text" [(ngModel)]="newEqModel" placeholder="e.g. PageWriter TC30" class="w-full" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Category</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Category</label
+          >
           <p-select [(ngModel)]="newEqCat" [options]="categoryOptions" styleClass="w-full" />
         </div>
+
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Serial Number *</label>
-          <input pInputText type="text" [(ngModel)]="newEqSerial" placeholder="e.g. SN-TC30-9901A" class="w-full font-mono" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Equipment Name *</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqName"
+            placeholder="e.g. Philips ECG Machine"
+            class="w-full"
+          />
+        </div>
+<div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Manufacturer</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqMan"
+            placeholder="e.g. Philips Medical"
+            class="w-full"
+          />
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Manufacturer</label>
-          <input pInputText type="text" [(ngModel)]="newEqMan" placeholder="e.g. Philips Medical" class="w-full" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Country of Origin</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqCountry"
+            placeholder="e.g. USA"
+            class="w-full"
+          />
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Country of Origin</label>
-          <input pInputText type="text" [(ngModel)]="newEqCountry" placeholder="e.g. USA" class="w-full" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Supplier / Agent</label>
-          <input pInputText type="text" [(ngModel)]="newEqSupplier" placeholder="e.g. MediEquipment Pvt Ltd" class="w-full" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Tender Reference</label>
-          <input pInputText type="text" [(ngModel)]="newEqTender" placeholder="e.g. TND/2026/MED/201" class="w-full" />
-        </div>
-        <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Purchase Order</label>
-          <input pInputText type="text" [(ngModel)]="newEqPO" placeholder="e.g. PO-2026-9902A" class="w-full" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Model Number *</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqModel"
+            placeholder="e.g. PageWriter TC30"
+            class="w-full"
+          />
         </div>
         
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Date of Manufacture</label>
-          <p-datepicker [(ngModel)]="newEqMfgDate" dateFormat="yy-mm-dd" [showIcon]="true" [fluid]="true" />
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Serial Number *</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqSerial"
+            placeholder="e.g. SN-TC30-9901A"
+            class="w-full font-mono"
+          />
+        </div>
+       <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Date of Manufacture</label
+          >
+          <p-datepicker
+            [(ngModel)]="newEqMfgDate"
+            dateFormat="yy-mm-dd"
+            [showIcon]="true"
+            [fluid]="true"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Supplier / Agent</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqSupplier"
+            placeholder="e.g. MediEquipment Pvt Ltd"
+            class="w-full"
+          />
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Warranty Period (Months)</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Tender Reference</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqTender"
+            placeholder="e.g. TND/2026/MED/201"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Purchase Order</label
+          >
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="newEqPO"
+            placeholder="e.g. PO-2026-9902A"
+            class="w-full"
+          />
+        </div>
+
+        
+        <div>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Warranty Period (Months)</label
+          >
           <p-inputNumber [(ngModel)]="newEqWarranty" [min]="0" [fluid]="true" />
         </div>
         <div>
-          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Quantity Received</label>
+          <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+            >Quantity Received</label
+          >
           <p-inputNumber [(ngModel)]="newEqQty" [min]="1" [fluid]="true" />
         </div>
       </div>
 
       <!-- Description -->
       <div>
-        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Equipment Description</label>
-        <textarea pTextarea [(ngModel)]="newEqDesc" rows="3" class="w-full"
-          placeholder="Describe the physical parameters and general purpose of this item..."></textarea>
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+          >Equipment Description</label
+        >
+        <textarea
+          pTextarea
+          [(ngModel)]="newEqDesc"
+          rows="3"
+          class="w-full"
+          placeholder="Describe the physical parameters and general purpose of this item..."
+        ></textarea>
       </div>
 
       <!-- Service Plan / Contract -->
-      <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-emerald-50/20 dark:bg-zinc-900">
+      <div
+        class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-emerald-50/20 dark:bg-zinc-900"
+      >
         <div class="flex items-center justify-between mb-4">
-          <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">Manufacturer Service Plan</h4>
+          <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
+            Manufacturer Service Plan
+          </h4>
           <label class="flex items-center gap-2 cursor-pointer">
             <p-toggleswitch [(ngModel)]="includeServicePlan" />
-            <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">Include Service Plan Details</span>
+            <span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300"
+              >Include Service Plan Details</span
+            >
           </label>
         </div>
 
         <div *ngIf="includeServicePlan" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Agreement Ref</label>
-              <input pInputText type="text" [(ngModel)]="spRef" placeholder="e.g. SVC-001" class="w-full" />
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+                >Agreement Ref</label
+              >
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="spRef"
+                placeholder="e.g. SVC-001"
+                class="w-full"
+              />
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Expiry Date</label>
-              <p-datepicker [(ngModel)]="spExpiry" dateFormat="yy-mm-dd" [showIcon]="true" [fluid]="true" />
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+                >Expiry Date</label
+              >
+              <p-datepicker
+                [(ngModel)]="spExpiry"
+                dateFormat="yy-mm-dd"
+                [showIcon]="true"
+                [fluid]="true"
+              />
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Free Services</label>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+                >Free Services</label
+              >
               <p-inputNumber [(ngModel)]="spFreeServices" [min]="0" [fluid]="true" />
             </div>
             <div>
-              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Services Per Annum</label>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+                >Services Per Annum</label
+              >
               <p-inputNumber [(ngModel)]="spServicePerAnnum" [min]="0" [fluid]="true" />
             </div>
           </div>
 
           <!-- Cost Tables -->
-          <p-table [value]="[
+          <p-table
+            [value]="[
               { label: 'Service Cost', model: spServiceCosts },
               { label: 'Labour Cost', model: spLabourCosts },
               { label: 'Transport Cost', model: spTransportCosts },
-              { label: 'Other Cost', model: spOtherCosts }
-            ]" styleClass="p-datatable-sm">
+              { label: 'Other Cost', model: spOtherCosts },
+            ]"
+            styleClass="p-datatable-sm"
+          >
             <ng-template pTemplate="header">
               <tr>
                 <th class="text-xs">Cost Category (LKR)</th>
-                <th class="text-xs text-center" *ngFor="let y of [1,2,3,4,5]">Year {{ y }}</th>
+                <th class="text-xs text-center" *ngFor="let y of [1, 2, 3, 4, 5]">Year {{ y }}</th>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-row>
               <tr class="text-xs">
                 <td class="font-medium whitespace-nowrap">{{ row.label }}</td>
-                <td *ngFor="let y of [0,1,2,3,4]" class="min-w-[6.5rem]">
-                  <p-inputNumber [(ngModel)]="row.model[y]" [fluid]="true" inputStyleClass="text-xs p-1.5" />
+                <td *ngFor="let y of [0, 1, 2, 3, 4]" class="min-w-[6.5rem]">
+                  <p-inputNumber
+                    [(ngModel)]="row.model[y]"
+                    [fluid]="true"
+                    inputStyleClass="text-xs p-1.5"
+                  />
                 </td>
               </tr>
             </ng-template>
           </p-table>
 
           <!-- Add Est. Spare Parts costs sub-form -->
-          <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-emerald-900/10 mt-4">
-            <h5 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Add Estimated Spare Parts Costs</h5>
+          <div
+            class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-emerald-900/10 mt-4"
+          >
+            <h5
+              class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider"
+            >
+              Add Estimated Spare Parts Costs
+            </h5>
 
             <div class="grid grid-cols-1 md:grid-cols-9 gap-3 items-end mb-4">
               <div class="md:col-span-3">
-                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Spare Part Name</label>
-                <input pInputText type="text" [(ngModel)]="tempSparePartName" placeholder="Part Name" class="w-full" />
+                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1"
+                  >Spare Part Name</label
+                >
+                <input
+                  pInputText
+                  type="text"
+                  [(ngModel)]="tempSparePartName"
+                  placeholder="Part Name"
+                  class="w-full"
+                />
               </div>
-              <div *ngFor="let y of [1,2,3,4,5]">
-                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Year {{ y }} (LKR)</label>
-                <p-inputNumber [(ngModel)]="tempSparePartCosts[y-1]" [fluid]="true" inputStyleClass="text-xs" />
+              <div *ngFor="let y of [1, 2, 3, 4, 5]">
+                <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1"
+                  >Year {{ y }} (LKR)</label
+                >
+                <p-inputNumber
+                  [(ngModel)]="tempSparePartCosts[y - 1]"
+                  [fluid]="true"
+                  inputStyleClass="text-xs"
+                />
               </div>
               <div>
-                <label class="block text-[9px] font-bold text-transparent uppercase mb-1 select-none">Add</label>
-                <p-button icon="pi pi-plus" (onClick)="addSparePartCostToBuffer()" styleClass="w-full" />
+                <label
+                  class="block text-[9px] font-bold text-transparent uppercase mb-1 select-none"
+                  >Add</label
+                >
+                <p-button
+                  icon="pi pi-plus"
+                  (onClick)="addSparePartCostToBuffer()"
+                  styleClass="w-full"
+                />
               </div>
             </div>
 
-            <p-table *ngIf="sparePartsCostsBuffer.length > 0" [value]="sparePartsCostsBuffer" styleClass="p-datatable-sm">
+            <p-table
+              *ngIf="sparePartsCostsBuffer.length > 0"
+              [value]="sparePartsCostsBuffer"
+              styleClass="p-datatable-sm"
+            >
               <ng-template pTemplate="header">
                 <tr>
                   <th class="text-xs">Part Name</th>
-                  <th class="text-xs text-center" *ngFor="let y of [1,2,3,4,5]">Year {{ y }}</th>
+                  <th class="text-xs text-center" *ngFor="let y of [1, 2, 3, 4, 5]">
+                    Year {{ y }}
+                  </th>
                   <th class="text-xs text-right">Remove</th>
                 </tr>
               </ng-template>
@@ -456,7 +813,13 @@
                   <td class="text-center">{{ item.year4 | number }}</td>
                   <td class="text-center">{{ item.year5 | number }}</td>
                   <td class="text-right">
-                    <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (onClick)="removeSparePartCostFromBuffer(i)" />
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      size="small"
+                      (onClick)="removeSparePartCostFromBuffer(i)"
+                    />
                   </td>
                 </tr>
               </ng-template>
@@ -466,33 +829,73 @@
       </div>
 
       <!-- Add sub-spareParts sub-form -->
-      <div class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-900">
-        <h4 class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider">Add Spare Parts</h4>
+      <div
+        class="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-zinc-50/50 dark:bg-zinc-900"
+      >
+        <h4
+          class="font-bold text-xs text-zinc-600 dark:text-zinc-300 mb-3 uppercase tracking-wider"
+        >
+          Add Spare Parts
+        </h4>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end mb-4">
           <div class="md:col-span-4">
             <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part Name</label>
-            <input pInputText type="text" [(ngModel)]="tempPartName" placeholder="e.g. ECG Leads Cord" class="w-full" />
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="tempPartName"
+              placeholder="e.g. ECG Leads Cord"
+              class="w-full"
+            />
           </div>
           <div class="md:col-span-3">
-            <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part / Model Number</label>
-            <input pInputText type="text" [(ngModel)]="tempPartNumber" placeholder="e.g. PL-CORD-02" class="w-full" />
+            <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1"
+              >Part / Model Number</label
+            >
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="tempPartNumber"
+              placeholder="e.g. PL-CORD-02"
+              class="w-full"
+            />
           </div>
           <div class="md:col-span-2">
-            <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Serial Number (Optional)</label>
-            <input pInputText type="text" [(ngModel)]="tempPartSerialNumber" placeholder="e.g. B-998821" class="w-full font-mono" />
+            <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1"
+              >Serial Number (Optional)</label
+            >
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="tempPartSerialNumber"
+              placeholder="e.g. B-998821"
+              class="w-full font-mono"
+            />
           </div>
           <div class="md:col-span-2">
             <label class="block text-[9px] font-bold text-zinc-400 uppercase mb-1">Part Type</label>
-            <p-select [(ngModel)]="tempPartType" styleClass="w-full" [options]="[
+            <p-select
+              [(ngModel)]="tempPartType"
+              styleClass="w-full"
+              [options]="[
                 { label: 'Serialized', value: 'Serialized' },
                 { label: 'Consumable', value: 'Consumable' },
-                { label: 'Minor/Non-tracked', value: 'Minor/Non-tracked' }
-              ]" />
+                { label: 'Minor/Non-tracked', value: 'Minor/Non-tracked' },
+              ]"
+            />
           </div>
           <div class="md:col-span-1">
-            <label class="block text-[9px] font-bold text-transparent uppercase mb-1 select-none">+</label>
-            <p-button icon="pi pi-plus" (onClick)="addPartsToBuffer()" styleClass="w-full" pTooltip="Add Part" tooltipPosition="top" />
+            <label class="block text-[9px] font-bold text-transparent uppercase mb-1 select-none"
+              >+</label
+            >
+            <p-button
+              icon="pi pi-plus"
+              (onClick)="addPartsToBuffer()"
+              styleClass="w-full"
+              pTooltip="Add Part"
+              tooltipPosition="top"
+            />
           </div>
         </div>
 
@@ -513,42 +916,71 @@
               <td class="font-mono">{{ item.serialNumber || 'N/A' }}</td>
               <td>{{ item.sparePartType }}</td>
               <td class="text-right">
-                <p-button icon="pi pi-trash" severity="danger" [text]="true" size="small" (onClick)="removesparePartFromBuffer(i)" />
+                <p-button
+                  icon="pi pi-trash"
+                  severity="danger"
+                  [text]="true"
+                  size="small"
+                  (onClick)="removesparePartFromBuffer(i)"
+                />
               </td>
             </tr>
           </ng-template>
         </p-table>
       </div>
-
     </div>
 
     <ng-template pTemplate="footer">
       <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closeAddModal()" />
-      <p-button [label]="isEditMode ? 'Update Equipment' : 'Register Equipment'" (onClick)="saveEquipment()" />
+      <p-button
+        [label]="isEditMode ? 'Update Equipment' : 'Register Equipment'"
+        (onClick)="saveEquipment()"
+      />
     </ng-template>
   </p-dialog>
 
   <!-- DIALOG: ASSIGN EQUIPMENT -->
-  <p-dialog header="Assign Equipment" [(visible)]="showAssignModal" [modal]="true" [style]="{ width: '28rem' }"
-    [breakpoints]="{ '640px': '95vw' }" [contentStyle]="{ 'overflow': 'visible' }" (onHide)="closeAssignModal()">
-
+  <p-dialog
+    [maximizable]="true"
+    header="Assign Equipment"
+    [(visible)]="showAssignModal"
+    [modal]="true"
+    [style]="{ width: '28rem' }"
+    [breakpoints]="{ '640px': '95vw' }"
+    [contentStyle]="{ overflow: 'visible' }"
+    (onHide)="closeAssignModal()"
+  >
     <ng-container *ngIf="selectedEq as selectedEq">
       <p class="text-xs text-zinc-500 leading-relaxed mb-4">
-        You are distributing <strong>{{ selectedEq.name }}</strong> (Serial: <span class="font-mono">{{ selectedEq.serialNumber }}</span>)
-        out of the PDHS Biomedical store to a regional healthcare institution.
+        You are distributing <strong>{{ selectedEq.name }}</strong> (Serial:
+        <span class="font-mono">{{ selectedEq.serialNumber }}</span
+        >) out of the PDHS Biomedical store to a regional healthcare institution.
       </p>
 
       <div>
-        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1">Target Healthcare Institution</label>
-        <p-autocomplete [(ngModel)]="assignDestInstitution" [suggestions]="institutionSuggestions()"
-          (completeMethod)="searchInstitutions($event)" [forceSelection]="true" [fluid]="true" [dropdown]="true"
-          optionLabel="name" placeholder="Search by institution name..." [minLength]="1">
-
+        <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
+          >Target Healthcare Institution</label
+        >
+        <p-autocomplete
+          [(ngModel)]="assignDestInstitution"
+          [suggestions]="institutionSuggestions()"
+          (completeMethod)="searchInstitutions($event)"
+          [forceSelection]="true"
+          [fluid]="true"
+          [dropdown]="true"
+          optionLabel="name"
+          placeholder="Search by institution name..."
+          [minLength]="1"
+        >
           <!-- dropdown suggestion row: name + type, matching the inventory autocomplete pattern -->
           <ng-template let-inst pTemplate="item">
             <div class="flex items-center justify-between w-full p-1">
-              <span class="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">{{ inst.name }}</span>
-              <span class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 shrink-0 ml-2">
+              <span class="font-medium text-sm text-zinc-900 dark:text-zinc-100 truncate">{{
+                inst.name
+              }}</span>
+              <span
+                class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-600 dark:text-zinc-300 shrink-0 ml-2"
+              >
                 {{ inst.type }}
               </span>
             </div>
@@ -563,16 +995,22 @@
           </ng-template>
 
           <ng-template pTemplate="empty">
-            <div class="p-2 text-xs text-zinc-500">No institutions found. Try a different name.</div>
+            <div class="p-2 text-xs text-zinc-500">
+              No institutions found. Try a different name.
+            </div>
           </ng-template>
         </p-autocomplete>
       </div>
     </ng-container>
 
     <ng-template pTemplate="footer">
-      <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="closeAssignModal()" />
+      <p-button
+        label="Cancel"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="closeAssignModal()"
+      />
       <p-button label="Confirm & Dispatch" (onClick)="submitAssignment()" />
     </ng-template>
   </p-dialog>
-
 </div>

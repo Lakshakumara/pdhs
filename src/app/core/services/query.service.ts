@@ -1,21 +1,30 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { District, Equipment, Institution, InventoryItem, PagedResult, RepairRequest, WorkOrder, AuditLog } from '../models/biomed.interface';
+import {
+  District,
+  Equipment,
+  Institution,
+  InventoryItem,
+  PagedResult,
+  RepairRequest,
+  WorkOrder,
+  AuditLog,
+  Supplier,
+} from '../models/biomed.interface';
 import { UserFacadeService } from './user-facade.service';
 import { OrganizationTreeNode } from '../../layout/organization-chart/organization-tree-node';
 import { environment } from '../../../environments/environment';
-
 
 @Injectable({
   providedIn: 'root',
 })
 export class QueryService {
-  
-  private baseUrl = environment.apiUrl
+  private baseUrl = environment.apiUrl;
 
   constructor(
     public userApi: UserFacadeService,
-    private http: HttpClient) { }
+    private http: HttpClient,
+  ) {}
 
   getUrgentRepairs() {
     return this.http.get<any>(`${this.baseUrl}/dashboard/urgent-repairs`);
@@ -28,18 +37,11 @@ export class QueryService {
   }
 
   getDistricts() {
-    return this.http.get<District[]>(`${this.baseUrl}/districts`,);
+    return this.http.get<District[]>(`${this.baseUrl}/districts`);
   }
 
-  getInstitute(
-    page: number,
-    size: number,
-    search?: string,
-    districtId?: string,) {
-
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+  getInstitute(page: number, size: number, search?: string, districtId?: string) {
+    let params = new HttpParams().set('page', page).set('size', size);
 
     if (search) {
       params = params.set('search', search);
@@ -57,35 +59,25 @@ export class QueryService {
     search?: string,
     category?: string,
     status?: string,
-    assignedInstitutionId?: string) {
-
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+    assignedInstitutionId?: string,
+  ) {
+    let params = new HttpParams().set('page', page).set('size', size);
 
     if (search) {
-      params =
-        params.set('search', search);
+      params = params.set('search', search);
     }
 
     if (status) {
-      params =
-        params.set('status', status);
+      params = params.set('status', status);
     }
     if (category) {
-      params =
-        params.set('category', category);
+      params = params.set('category', category);
     }
 
     if (assignedInstitutionId) {
-      params =
-        params.set(
-          'assignedInstitutionId',
-          assignedInstitutionId
-        );
+      params = params.set('assignedInstitutionId', assignedInstitutionId);
     }
-    return this.http.get<PagedResult<Equipment>>(`${this.baseUrl}/equipment`,
-      { params });
+    return this.http.get<PagedResult<Equipment>>(`${this.baseUrl}/equipment`, { params });
   }
 
   getRepairRequest(
@@ -93,31 +85,25 @@ export class QueryService {
     size: number,
     search?: string,
     priority?: string,
-    status?: string,) {
-
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+    status?: string,
+  ) {
+    let params = new HttpParams().set('page', page).set('size', size);
 
     if (search) {
-      params =
-        params.set('search', search);
+      params = params.set('search', search);
     }
 
     if (status) {
-      params =
-        params.set('workOrder.status', status);
+      params = params.set('workOrder.status', status);
     }
     if (priority) {
-      params =
-        params.set('priority', priority);
+      params = params.set('priority', priority);
     }
-    return this.http.get<PagedResult<RepairRequest>>(`${this.baseUrl}/repair-requests`,
-      { params });
+    return this.http.get<PagedResult<RepairRequest>>(`${this.baseUrl}/repair-requests`, { params });
   }
 
-  getWorkOrder(repairRequestId?: string,) {
-    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${repairRequestId}`,);
+  getWorkOrder(repairRequestId?: string) {
+    return this.http.get<WorkOrder>(`${this.baseUrl}/work-order/${repairRequestId}`);
   }
 
   getWorkOrders(
@@ -125,60 +111,40 @@ export class QueryService {
     size: number,
     search?: string,
     repairRequestId?: string,
-    status?: string,) {
-
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+    status?: string,
+  ) {
+    let params = new HttpParams().set('page', page).set('size', size);
 
     if (search) {
-      params =
-        params.set('search', search);
+      params = params.set('search', search);
     }
 
     if (status) {
-      params =
-        params.set('status', status);
+      params = params.set('status', status);
     }
     if (repairRequestId) {
-      params =
-        params.set('repairRequestId', repairRequestId);
+      params = params.set('repairRequestId', repairRequestId);
     }
-    return this.http.get<PagedResult<WorkOrder>>(`${this.baseUrl}/work-order`,
-      { params });
+    return this.http.get<PagedResult<WorkOrder>>(`${this.baseUrl}/work-order`, { params });
   }
-  getInventorytem(page: number,
-    size: number,
-    search?: string,
-    name?: string,
-    category?: string,) {
-
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+  getInventoryItems(page: number, size: number, search?: string, name?: string, category?: string) {
+    let params = new HttpParams().set('page', page).set('size', size);
 
     if (search) {
-      params =
-        params.set('search', search);
+      params = params.set('search', search);
     }
 
     if (name) {
-      params =
-        params.set('name', name);
+      params = params.set('name', name);
     }
     if (category) {
-      params =
-        params.set('category', category);
+      params = params.set('category', category);
     }
-    return this.http.get<PagedResult<InventoryItem>>(`${this.baseUrl}/inventory-items`,
-      { params });
+    return this.http.get<PagedResult<InventoryItem>>(`${this.baseUrl}/inventory-items`, { params });
   }
 
   getOrganizationTree() {
-
-    return this.http.get<OrganizationTreeNode>(
-      `${this.baseUrl}/dashboard/organization-tree`
-    );
+    return this.http.get<OrganizationTreeNode>(`${this.baseUrl}/dashboard/organization-tree`);
   }
 
   /**
@@ -190,7 +156,7 @@ export class QueryService {
     equipmentId: string,
     page: number = 1,
     size: number = 10,
-    status?: string
+    status?: string,
   ) {
     let params = new HttpParams()
       .set('equipmentId', equipmentId)
@@ -200,41 +166,28 @@ export class QueryService {
     if (status) {
       params = params.set('status', status);
     }
-    return this.http.get<PagedResult<RepairRequest>>(
-      `${this.baseUrl}/repair-history`,
-      { params }
-    );
+    return this.http.get<PagedResult<RepairRequest>>(`${this.baseUrl}/repair-history`, { params });
   }
-  getSuppliers(
-    page: number,
-    size: number,
-    rating?: number | null,
-    search?: string,) {
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+  getSuppliers(page: number, size: number, rating?: number | null, search?: string) {
+    let params = new HttpParams().set('page', page).set('size', size);
     if (rating) {
       params = params.set('rating', rating);
     }
     if (search) {
-      params =
-        params.set('search', search);
+      params = params.set('search', search);
     }
-    return this.http.get<PagedResult<any>>(
-      `${this.baseUrl}/supplier`,
-      { params }
-    );
+    return this.http.get<PagedResult<Supplier>>(`${this.baseUrl}/supplier`, { params });
   }
 
-
-  getAuditLogs(page: number, size: number, search: string,
+  getAuditLogs(
+    page: number,
+    size: number,
+    search: string,
     selectedAction: string,
     from: string | undefined,
-    to: string | undefined) {
-
-    let params = new HttpParams()
-      .set('page', page)
-      .set('size', size);
+    to: string | undefined,
+  ) {
+    let params = new HttpParams().set('page', page).set('size', size);
 
     if (search) {
       params = params.set('search', search);
@@ -250,7 +203,6 @@ export class QueryService {
     if (to) {
       params = params.set('to', to);
     }
-    return this.http.get<PagedResult<AuditLog>>(`${this.baseUrl}/audit`,
-      { params });
+    return this.http.get<PagedResult<AuditLog>>(`${this.baseUrl}/audit`, { params });
   }
 }

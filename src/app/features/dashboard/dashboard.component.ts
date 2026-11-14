@@ -1,23 +1,19 @@
 import { Component, effect, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import {
-  RepairRequest,
-  InventoryItem,
-  Institution,
-} from '../../core/models/biomed.interface';
+import { RepairRequest, InventoryItem, Institution } from '../../core/models/biomed.interface';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
 import { ScopeType } from '../../core/models/permission.types';
 import { HasScopeDirective } from '../../core/directives/scope-directive';
-import { HasPermissionDirective } from "../../core/directives/permission-directive";
+import { HasPermissionDirective } from '../../core/directives/permission-directive';
 import { Permission } from '../../core/constants/permissions';
 
 @Component({
   selector: 'app-dashboard',
   imports: [CommonModule, RouterLink, HasScopeDirective, HasPermissionDirective],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrl: './dashboard.component.css',
 })
 export class DashboardComponent implements OnInit {
   public scopeType = ScopeType;
@@ -31,29 +27,30 @@ export class DashboardComponent implements OnInit {
   public allInventory: InventoryItem[] = [];*/
 
   // Filtered/Computed Metrics
-  readonly totalAssets = signal(0)
-  readonly activeRepairs = signal(0)
-  readonly pendingRequests = signal(0)
-  readonly lowStockAlerts = signal(0)
-  readonly totalProcurementSpend = signal(0)
+  readonly totalAssets = signal(0);
+  readonly activeRepairs = signal(0);
+  readonly pendingRequests = signal(0);
+  readonly lowStockAlerts = signal(0);
+  readonly totalProcurementSpend = signal(0);
 
   // Visual widgets lists
   public urgentRepairs: RepairRequest[] = [];
   public lowStockItems: InventoryItem[] = [];
   public categoryDistribution: { category: string; count: number; percent: number }[] = [];
 
-  constructor(public userFacade: UserFacadeService,
-    private service: QueryService) { 
-      effect((onCleanup:any)=>{
-        this.loadDashboard();
-      })
-    }
+  constructor(
+    public userFacade: UserFacadeService,
+    private service: QueryService,
+  ) {
+    effect((onCleanup: any) => {
+      this.loadDashboard();
+    });
+  }
 
   ngOnInit() {
     //this.loadDashboard();
     //this.currentUser = this.userFacade.currentUser;
     //this.calculateMetrics();
-
     /* this.stateService.currentUserDto$.subscribe(u => {
        this.currentUser = u;
        this.calculateMetrics();
@@ -61,7 +58,6 @@ export class DashboardComponent implements OnInit {
     /*this.stateService.institutions$.subscribe(list => {
       this.institutions = list;
     });*/
-
     /*this.stateService.equipment$.subscribe(list => {
       this.allEquipment = list;
       this.calculateMetrics();
@@ -97,36 +93,28 @@ export class DashboardComponent implements OnInit {
   GET /dashboard/recent-work-orders
    */
   private loadDashboard() {
+    this.service.getSummary().subscribe((summary) => {
+      this.totalAssets.set(summary.totalAssets);
 
-    this.service.getSummary()
-      .subscribe(summary => {
+      this.activeRepairs.set(summary.activeRepairs);
 
-        this.totalAssets.set(summary.totalAssets);
+      this.pendingRequests.set(summary.pendingRequests);
 
-        this.activeRepairs.set(summary.activeRepairs);
+      this.lowStockAlerts.set(summary.lowStockAlerts);
+    });
+    this.service.getCategoryDistribution().subscribe((summary) => {
+      this.categoryDistribution = summary;
+    });
 
-        this.pendingRequests.set(summary.pendingRequests);
-
-        this.lowStockAlerts.set(summary.lowStockAlerts);
-
-      });
-    this.service.getCategoryDistribution()
-      .subscribe(summary => {
-        this.categoryDistribution =
-          summary;
-      });
-
-    this.service.getUrgentRepairs()
-      .subscribe(summary => {
-        this.urgentRepairs = summary.urgentRepairs;
-      });
+    this.service.getUrgentRepairs().subscribe((summary) => {
+      this.urgentRepairs = summary.urgentRepairs;
+    });
   }
-  
 
   // Get name of institution from ID
   public getInstitutionName(id?: string): string {
     if (!id) return 'Unassigned';
-    return this.institutions.find(i => i.id === id)?.name || id;
+    return this.institutions.find((i) => i.id === id)?.name || id;
   }
 }
 /*

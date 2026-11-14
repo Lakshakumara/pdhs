@@ -1,13 +1,16 @@
 <div class="space-y-6">
-
   <!-- Header -->
   <div>
     <h2 class="text-xl font-bold text-zinc-950 dark:text-zinc-50">Immutable Audit Trail</h2>
-    <p class="text-xs text-zinc-500 dark:text-zinc-400">Security event log tracking all system modifications for government accountability compliance</p>
+    <p class="text-xs text-zinc-500 dark:text-zinc-400">
+      Security event log tracking all system modifications for government accountability compliance
+    </p>
   </div>
 
   <!-- Audit Table -->
-  <div class="flex flex-col h-[calc(100vh-12rem)] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
+  <div
+    class="flex flex-col h-[calc(100vh-12rem)] bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden"
+  >
     <p-table
       [value]="logs()"
       [lazy]="true"
@@ -18,46 +21,83 @@
       [totalRecords]="total()"
       [rowsPerPageOptions]="[20, 50, 100]"
       [showCurrentPageReport]="true"
-       [scrollable]="true" scrollHeight="flex"
+      [scrollable]="true"
+      scrollHeight="flex"
       currentPageReportTemplate="{first} to {last} of {totalRecords} log entries"
       dataKey="id"
       styleClass="p-datatable-sm"
-      [tableStyle]="{ 'min-width': '60rem' }">
-
+      [tableStyle]="{ 'min-width': '60rem' }"
+    >
       <!-- Filter toolbar -->
       <ng-template pTemplate="caption">
         <div class="flex flex-col gap-3">
           <div class="flex flex-col md:flex-row gap-3">
             <p-iconField iconPosition="left" class="flex-1">
               <p-inputIcon styleClass="pi pi-search" />
-              <input pInputText type="text" [(ngModel)]="searchTerm" (keyup.enter)="onFilterChange()"
-                placeholder="Search logs by user, entity, record ID or description..." class="w-full" />
+              <input
+                pInputText
+                type="text"
+                [(ngModel)]="searchTerm"
+                (keyup.enter)="onFilterChange()"
+                placeholder="Search logs by user, entity, record ID or description..."
+                class="w-full"
+              />
             </p-iconField>
 
-            <p-select [options]="actionOptions" [(ngModel)]="selectedAction" (onChange)="onFilterChange()"
-              placeholder="All Transactions" [showClear]="true" styleClass="w-full md:w-56" />
+            <p-select
+              [options]="actionOptions"
+              [(ngModel)]="selectedAction"
+              (onChange)="onFilterChange()"
+              placeholder="All Transactions"
+              [showClear]="true"
+              styleClass="w-full md:w-56"
+            />
 
-            <p-select [options]="datePresetOptions" [(ngModel)]="datePreset" (onChange)="onDatePresetChange()"
-              optionLabel="label" optionValue="value" styleClass="w-full md:w-48" />
+            <p-select
+              [options]="datePresetOptions"
+              [(ngModel)]="datePreset"
+              (onChange)="onDatePresetChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-full md:w-48"
+            />
           </div>
 
           <!-- Custom range pickers, only shown when 'Custom Range' is selected -->
           <div *ngIf="datePreset === 'custom'" class="flex flex-col md:flex-row gap-3 items-center">
             <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">From</span>
-            <p-datepicker [(ngModel)]="customFromDate" (onSelect)="onCustomDateChange()" dateFormat="yy-mm-dd"
-              [showIcon]="true" [maxDate]="customToDate ?? undefined" placeholder="Start date" styleClass="w-full md:w-44" />
+            <p-datepicker
+              [(ngModel)]="customFromDate"
+              (onSelect)="onCustomDateChange()"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              [maxDate]="customToDate ?? undefined"
+              placeholder="Start date"
+              styleClass="w-full md:w-44"
+            />
             <span class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">To</span>
-            <p-datepicker [(ngModel)]="customToDate" (onSelect)="onCustomDateChange()" dateFormat="yy-mm-dd"
-              [showIcon]="true" [minDate]="customFromDate ?? undefined" placeholder="End date" styleClass="w-full md:w-44" />
+            <p-datepicker
+              [(ngModel)]="customToDate"
+              (onSelect)="onCustomDateChange()"
+              dateFormat="yy-mm-dd"
+              [showIcon]="true"
+              [minDate]="customFromDate ?? undefined"
+              placeholder="End date"
+              styleClass="w-full md:w-44"
+            />
           </div>
         </div>
       </ng-template>
 
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="timestamp" class="text-xs">Timestamp <p-sortIcon field="timestamp" /></th>
+          <th pSortableColumn="timestamp" class="text-xs">
+            Timestamp <p-sortIcon field="timestamp" />
+          </th>
           <th class="text-xs">Actor</th>
-          <th pSortableColumn="action" class="text-xs">Action Type <p-sortIcon field="action" /></th>
+          <th pSortableColumn="action" class="text-xs">
+            Action Type <p-sortIcon field="action" />
+          </th>
           <th class="text-xs">Entity Context</th>
           <th class="text-xs">Description</th>
         </tr>
@@ -65,20 +105,32 @@
 
       <ng-template pTemplate="body" let-l>
         <tr class="text-xs">
-          <td class="font-mono text-zinc-500 whitespace-nowrap">{{ l.timestamp | date:'yyyy-MM-dd HH:mm:ss' }}</td>
-
-          <td>
-            <div class="font-bold text-zinc-900 dark:text-zinc-50">{{ l.userName }}</div>
-            <div class="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase mt-0.5">{{ l.userRole }}</div>
+          <td class="font-mono text-zinc-500 whitespace-nowrap">
+            {{ l.timestamp | date: 'yyyy-MM-dd HH:mm:ss' }}
           </td>
 
           <td>
-            <p-tag [value]="l.action" [severity]="getActionSeverity(l.action)" styleClass="text-[9px] uppercase tracking-wider" />
+            <div class="font-bold text-zinc-900 dark:text-zinc-50">{{ l.userName }}</div>
+            <div
+              class="text-[10px] text-zinc-400 dark:text-zinc-500 font-semibold uppercase mt-0.5"
+            >
+              {{ l.userRole }}
+            </div>
+          </td>
+
+          <td>
+            <p-tag
+              [value]="l.action"
+              [severity]="getActionSeverity(l.action)"
+              styleClass="text-[9px] uppercase tracking-wider"
+            />
           </td>
 
           <td>
             <div class="font-medium text-zinc-800 dark:text-zinc-200">{{ l.entityName }}</div>
-            <div class="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">ID: {{ l.recordId }}</div>
+            <div class="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 font-semibold mt-0.5">
+              ID: {{ l.recordId }}
+            </div>
           </td>
 
           <td class="font-medium text-zinc-700 dark:text-zinc-300 max-w-md">{{ l.description }}</td>
@@ -86,7 +138,7 @@
       </ng-template>
 
       <ng-template pTemplate="loadingbody">
-        <tr *ngFor="let i of [1,2,3,4,5,6,7,8]">
+        <tr *ngFor="let i of [1, 2, 3, 4, 5, 6, 7, 8]">
           <td colspan="5" class="p-3"><p-skeleton height="1.25rem" /></td>
         </tr>
       </ng-template>
@@ -101,5 +153,4 @@
       </ng-template>
     </p-table>
   </div>
-
 </div>

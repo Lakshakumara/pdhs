@@ -12,9 +12,7 @@ import { userSessionInterceptor } from './core/interceptors/user-session.interce
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideHttpClient(
-      withInterceptors([userSessionInterceptor, errorInterceptor])
-    ),
+    provideHttpClient(withInterceptors([userSessionInterceptor, errorInterceptor])),
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideAnimationsAsync(),
@@ -23,10 +21,10 @@ export const appConfig: ApplicationConfig = {
         preset: Aura,
         options: {
           darkModeSelector: '.dark',
-          cssLayer: false
-        }
-      }
+          cssLayer: false,
+        },
+      },
     }),
     MessageService,
-  ]
+  ],
 };

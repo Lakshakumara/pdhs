@@ -22,16 +22,24 @@ type DateRangePreset = 'today' | '7d' | '30d' | 'thisMonth' | 'custom' | '';
 @Component({
   selector: 'app-audit',
   imports: [
-    CommonModule, FormsModule,
-    TableModule, TagModule, InputTextModule, SelectModule,
-    IconFieldModule, InputIconModule, ToolbarModule, SkeletonModule,
-    DatePickerModule, ButtonModule, TooltipModule
+    CommonModule,
+    FormsModule,
+    TableModule,
+    TagModule,
+    InputTextModule,
+    SelectModule,
+    IconFieldModule,
+    InputIconModule,
+    ToolbarModule,
+    SkeletonModule,
+    DatePickerModule,
+    ButtonModule,
+    TooltipModule,
   ],
   templateUrl: './audit.component.html',
-  styleUrl: './audit.component.css'
+  styleUrl: './audit.component.css',
 })
 export class AuditComponent implements OnInit {
-
   readonly logs = signal<AuditLog[]>([]);
   readonly loading = signal(true);
 
@@ -66,7 +74,8 @@ export class AuditComponent implements OnInit {
 
   constructor(
     public userFacade: UserFacadeService,
-    private queryService: QueryService) { }
+    private queryService: QueryService,
+  ) {}
 
   ngOnInit() {
     // Initial load happens via the table's first onLazyLoad emission.
@@ -92,21 +101,16 @@ export class AuditComponent implements OnInit {
 
     const { from, to } = this.resolveDateRange();
 
-    this.queryService.getAuditLogs(
-      page,
-      rows,
-      this.searchTerm,
-      this.selectedAction,
-      from,
-      to,
-    ).subscribe({
-      next: result => {
-        this.logs.set(result.items);
-        this.total.set(result.total);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
+    this.queryService
+      .getAuditLogs(page, rows, this.searchTerm, this.selectedAction, from, to)
+      .subscribe({
+        next: (result) => {
+          this.logs.set(result.items);
+          this.total.set(result.total);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
   }
 
   public onFilterChange() {
@@ -131,7 +135,8 @@ export class AuditComponent implements OnInit {
   private resolveDateRange(): { from?: string; to?: string } {
     const now = new Date();
     const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    const endOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+    const endOfDay = (d: Date) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
 
     switch (this.datePreset) {
       case 'today':
@@ -168,12 +173,18 @@ export class AuditComponent implements OnInit {
   // since severity colors are theme-aware, unlike hardcoded Tailwind classes.
   public getActionSeverity(action: string): 'success' | 'info' | 'danger' | 'warn' | 'secondary' {
     switch (action) {
-      case 'CREATE': return 'success';
-      case 'UPDATE': return 'info';
-      case 'DELETE': return 'danger';
-      case 'ASSIGN': return 'warn';
-      case 'STATUS_CHANGE': return 'secondary';
-      default: return 'secondary';
+      case 'CREATE':
+        return 'success';
+      case 'UPDATE':
+        return 'info';
+      case 'DELETE':
+        return 'danger';
+      case 'ASSIGN':
+        return 'warn';
+      case 'STATUS_CHANGE':
+        return 'secondary';
+      default:
+        return 'secondary';
     }
   }
 }

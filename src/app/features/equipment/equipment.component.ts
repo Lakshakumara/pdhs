@@ -2,7 +2,12 @@ import { Component, effect, OnInit, signal } from '@angular/core';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Institution, EquipmentCategory, Equipment, EquipmentSpareParts } from '../../core/models/biomed.interface';
+import {
+  Institution,
+  EquipmentCategory,
+  Equipment,
+  EquipmentSpareParts,
+} from '../../core/models/biomed.interface';
 import { QueryService } from '../../core/services/query.service';
 import { PermissionService } from '../../core/auth/permission.service';
 import { NotificationService } from '../../core/services/notification.service';
@@ -32,11 +37,27 @@ import { Permission } from '../../core/constants/permissions';
 @Component({
   selector: 'app-equipment',
   imports: [
-    CommonModule, FormsModule, HasPermissionDirective, RepairHistoryComponent,
-    TableModule, DialogModule, TagModule, ButtonModule, InputTextModule,
-    SelectModule, IconFieldModule, InputIconModule, TextareaModule,
-    InputNumberModule, CheckboxModule, ToolbarModule, Skeleton,
-    DatePickerModule, ToggleSwitchModule, TooltipModule, AutoComplete
+    CommonModule,
+    FormsModule,
+    HasPermissionDirective,
+    RepairHistoryComponent,
+    TableModule,
+    DialogModule,
+    TagModule,
+    ButtonModule,
+    InputTextModule,
+    SelectModule,
+    IconFieldModule,
+    InputIconModule,
+    TextareaModule,
+    InputNumberModule,
+    CheckboxModule,
+    ToolbarModule,
+    Skeleton,
+    DatePickerModule,
+    ToggleSwitchModule,
+    TooltipModule,
+    AutoComplete,
   ],
   templateUrl: './equipment.component.html',
   styleUrl: './equipment.component.css',
@@ -101,8 +122,8 @@ export class EquipmentComponent implements OnInit {
   public newEqSerial = '';
   public newEqBatch = '';
   public newEqQty = 1;
-  public newEqMfgDate = null;
-  public newEqReceiptDate = null;
+  public newEqMfgDate: Date | null = null;
+  public newEqReceiptDate: Date | null = null;
   public newEqWarranty = 12;
   // Spare parts adding buffer
   public partsBuffer: Omit<EquipmentSpareParts, 'id'>[] = [];
@@ -143,20 +164,20 @@ export class EquipmentComponent implements OnInit {
     public userApi: UserFacadeService,
     public queryService: QueryService,
     private upsertService: UpsertService,
-    private notify: NotificationService) {
+    private notify: NotificationService,
+  ) {
     effect(() => {
       this.getInstitute();
-    })
+    });
   }
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   getInstitute() {
     if (this.userApi.currentSession() == null) {
       return;
     }
-    this.queryService.getInstitute(1, 100).subscribe(result => {
+    this.queryService.getInstitute(1, 100).subscribe((result) => {
       this.institutions.set(result.items);
     });
   }
@@ -165,8 +186,10 @@ export class EquipmentComponent implements OnInit {
   // Avoids ever loading the full ~2000-row institution table into the DOM.
   // Excludes PDHS/RDHS offices since equipment is assigned to hospitals/clinics, not provincial offices.
   public searchInstitutions(event: { query: string }) {
-    this.queryService.getInstitute(1, 20, event.query).subscribe(result => {
-      const assignable = result.items.filter(i => i.type !== 'PDHS Office' && i.type !== 'RDHS Office');
+    this.queryService.getInstitute(1, 20, event.query).subscribe((result) => {
+      const assignable = result.items.filter(
+        (i) => i.type !== 'PDHS Office' && i.type !== 'RDHS Office',
+      );
       this.institutionSuggestions.set(assignable);
     });
   }
@@ -186,21 +209,23 @@ export class EquipmentComponent implements OnInit {
     this.currentPage.set(page);
     this.pageSize.set(rows);
 
-    this.queryService.getEquipment(
-      page,
-      rows,
-      this.searchTerm,
-      this.selectedCategory,
-      this.selectedStatus,
-      this.selectedInstitutionId
-    ).subscribe({
-      next: result => {
-        this.equipments.set(result.items);
-        this.total.set(result.total);
-        this.loading.set(false);
-      },
-      error: () => this.loading.set(false)
-    });
+    this.queryService
+      .getEquipment(
+        page,
+        rows,
+        this.searchTerm,
+        this.selectedCategory,
+        this.selectedStatus,
+        this.selectedInstitutionId,
+      )
+      .subscribe({
+        next: (result) => {
+          this.equipments.set(result.items);
+          this.total.set(result.total);
+          this.loading.set(false);
+        },
+        error: () => this.loading.set(false),
+      });
   }
 
   // Called from the header filter inputs (search box, category/institution/status dropdowns)
@@ -249,7 +274,8 @@ export class EquipmentComponent implements OnInit {
 
     const inst = this.assignDestInstitution;
 
-    this.upsertService.assignEquipment(this.assignEqId, inst.id, 'Institution', 1, inst.name)
+    this.upsertService
+      .assignEquipment(this.assignEqId, inst.id, 'Institution', 1, inst.name)
       .subscribe({
         next: () => {
           this.getEquipment();
@@ -258,9 +284,7 @@ export class EquipmentComponent implements OnInit {
           this.assignDestInstitution = null;
           this.notify.success('Equipment Assigned to', inst.name);
         },
-        error: err => {
-          this.notify.error('Failed to Assigned equipment', err.message);
-        }
+        error: () => {},
       });
   }
 
@@ -288,7 +312,7 @@ export class EquipmentComponent implements OnInit {
       partNumber: this.tempPartNumber,
       serialNumber: this.tempPartSerialNumber || undefined,
       quantity: 1,
-      sparePartType: this.tempPartType
+      sparePartType: this.tempPartType,
     });
     this.tempPartName = '';
     this.tempPartNumber = '';
@@ -308,7 +332,7 @@ export class EquipmentComponent implements OnInit {
       year2: this.tempSparePartCosts[1] || 0,
       year3: this.tempSparePartCosts[2] || 0,
       year4: this.tempSparePartCosts[3] || 0,
-      year5: this.tempSparePartCosts[4] || 0
+      year5: this.tempSparePartCosts[4] || 0,
     });
     this.tempSparePartName = '';
     this.tempSparePartCosts = [0, 0, 0, 0, 0];
@@ -326,7 +350,7 @@ export class EquipmentComponent implements OnInit {
 
     const parts: EquipmentSpareParts[] = this.partsBuffer.map((c, i) => ({
       ...c,
-      id: `eqc_${Date.now()}_${i}`
+      id: `eqc_${Date.now()}_${i}`,
     }));
 
     const eqData: Omit<Equipment, 'id'> = {
@@ -347,7 +371,7 @@ export class EquipmentComponent implements OnInit {
       dateOfReceipt: this.newEqReceiptDate || null,
       warrantyPeriodMonths: this.newEqWarranty,
       spareParts: parts,
-      status: 'PDHS Store'
+      status: 'PDHS Store',
     };
 
     if (this.includeServicePlan) {
@@ -364,41 +388,35 @@ export class EquipmentComponent implements OnInit {
         labourCosts: yearObj(this.spLabourCosts),
         transportCosts: yearObj(this.spTransportCosts),
         otherCosts: yearObj(this.spOtherCosts),
-        sparePartsCosts: this.sparePartsCostsBuffer
+        sparePartsCosts: this.sparePartsCostsBuffer,
       };
     }
 
     if (this.isEditMode) {
       const eq = {
         id: this.editingEquipmentId ?? '',
-        ...eqData
+        ...eqData,
       };
 
-      this.upsertService.updateEquipment(eq)
-        .subscribe({
-          next: result => {
-            this.getEquipment();
-            this.showAddModal = false;
-            this.isEditMode = false;
-            this.editingEquipmentId = null;
-            this.notify.success('Equipment Updated', result.name);
-          },
-          error: err => {
-            this.notify.error('Failed to save equipment', err.message);
-          }
-        });
+      this.upsertService.updateEquipment(eq).subscribe({
+        next: (result) => {
+          this.getEquipment();
+          this.showAddModal = false;
+          this.isEditMode = false;
+          this.editingEquipmentId = null;
+          this.notify.success('Equipment Updated', result.name);
+        },
+        error: () => {},
+      });
     } else {
-      this.upsertService.upsertEquipment(eqData)
-        .subscribe({
-          next: result => {
-            this.getEquipment();
-            this.showAddModal = false;
-            this.notify.success('Equipment saved', result.name);
-          },
-          error: err => {
-            this.notify.error('Failed to save equipment', err.message);
-          }
-        });
+      this.upsertService.upsertEquipment(eqData).subscribe({
+        next: (result) => {
+          this.getEquipment();
+          this.showAddModal = false;
+          this.notify.success('Equipment saved', result.name);
+        },
+        error: () => {},
+      });
     }
   }
 
@@ -439,6 +457,7 @@ export class EquipmentComponent implements OnInit {
   }
 
   public updateEquipment(eq: Equipment) {
+    console.log('public updateEquipment(eq: Equipment)', eq)
     this.isEditMode = true;
     this.editingEquipmentId = eq.id;
     this.newEqInvoice = eq.invoiceNumber ?? '';
@@ -456,9 +475,9 @@ export class EquipmentComponent implements OnInit {
     this.newEqBatch = eq.batchNumber ?? '';
 
     this.newEqQty = eq.quantityReceived ?? 1;
-
-    this.newEqMfgDate = eq.dateOfManufacture as any;
-    this.newEqReceiptDate = eq.dateOfReceipt as any;
+    this.newEqMfgDate = eq.dateOfManufacture ? new Date(eq.dateOfManufacture) : null;
+    this.newEqReceiptDate = eq.dateOfReceipt ? new Date(eq.dateOfReceipt) : null;
+  
 
     this.newEqWarranty = eq.warrantyPeriodMonths ?? 12;
 
@@ -469,10 +488,9 @@ export class EquipmentComponent implements OnInit {
 
       this.spRef = eq.servicePlan.agreementReference ?? '';
 
-      this.spExpiry =
-        eq.servicePlan.expiryDate
-          ? String(eq.servicePlan.expiryDate).substring(0, 10)
-          : null;
+      this.spExpiry = eq.servicePlan.expiryDate
+        ? String(eq.servicePlan.expiryDate).substring(0, 10)
+        : null;
 
       this.spFreeServices = eq.servicePlan.noOfFreeService ?? 0;
       this.spServicePerAnnum = eq.servicePlan.servicePerAnnum ?? 0;
@@ -482,7 +500,7 @@ export class EquipmentComponent implements OnInit {
         eq.servicePlan.serviceCosts?.year2 ?? 0,
         eq.servicePlan.serviceCosts?.year3 ?? 0,
         eq.servicePlan.serviceCosts?.year4 ?? 0,
-        eq.servicePlan.serviceCosts?.year5 ?? 0
+        eq.servicePlan.serviceCosts?.year5 ?? 0,
       ];
 
       this.spLabourCosts = [
@@ -490,7 +508,7 @@ export class EquipmentComponent implements OnInit {
         eq.servicePlan.labourCosts?.year2 ?? 0,
         eq.servicePlan.labourCosts?.year3 ?? 0,
         eq.servicePlan.labourCosts?.year4 ?? 0,
-        eq.servicePlan.labourCosts?.year5 ?? 0
+        eq.servicePlan.labourCosts?.year5 ?? 0,
       ];
 
       this.spTransportCosts = [
@@ -498,7 +516,7 @@ export class EquipmentComponent implements OnInit {
         eq.servicePlan.transportCosts?.year2 ?? 0,
         eq.servicePlan.transportCosts?.year3 ?? 0,
         eq.servicePlan.transportCosts?.year4 ?? 0,
-        eq.servicePlan.transportCosts?.year5 ?? 0
+        eq.servicePlan.transportCosts?.year5 ?? 0,
       ];
 
       this.spOtherCosts = [
@@ -506,7 +524,7 @@ export class EquipmentComponent implements OnInit {
         eq.servicePlan.otherCosts?.year2 ?? 0,
         eq.servicePlan.otherCosts?.year3 ?? 0,
         eq.servicePlan.otherCosts?.year4 ?? 0,
-        eq.servicePlan.otherCosts?.year5 ?? 0
+        eq.servicePlan.otherCosts?.year5 ?? 0,
       ];
 
       this.sparePartsCostsBuffer = [...(eq.servicePlan.sparePartsCosts ?? [])];
@@ -526,7 +544,7 @@ export class EquipmentComponent implements OnInit {
   public viewRepairHistory(eq: Equipment) {
     this.repairHistoryEq = eq;
     this.showRepairHistoryPanel = true;
-    console.log('repair history for',eq.name, eq.id)
+    console.log('repair history for', eq.name, eq.id);
   }
 
   public closeRepairHistory() {

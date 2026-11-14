@@ -1,10 +1,4 @@
-import {
-  Directive,
-  Input,
-  TemplateRef,
-  ViewContainerRef,
-  effect,
-} from '@angular/core';
+import { Directive, Input, TemplateRef, ViewContainerRef, effect } from '@angular/core';
 import { UserFacadeService } from '../services/user-facade.service';
 import { ScopeType } from '../models/permission.types';
 
@@ -13,13 +7,12 @@ import { ScopeType } from '../models/permission.types';
   standalone: true,
 })
 export class HasScopeDirective {
-
   private scopes: ScopeType[] = [];
 
   constructor(
     private tpl: TemplateRef<any>,
     private vcr: ViewContainerRef,
-    private userFacade: UserFacadeService
+    private userFacade: UserFacadeService,
   ) {
     effect(() => this.updateView());
   }
@@ -33,8 +26,7 @@ export class HasScopeDirective {
   private updateView(): void {
     this.vcr.clear();
 
-    const currentScope =
-      this.userFacade.currentSession()?.activeRole.scopeType;
+    const currentScope = this.userFacade.currentSession()?.activeRole.scopeType;
 
     if (!currentScope) {
       return;

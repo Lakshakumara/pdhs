@@ -1,40 +1,70 @@
 <div class="space-y-6">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+  <!-- Top bar -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4"
+  >
     <div>
       <h2 class="text-xl font-bold text-zinc-900 dark:text-zinc-50">Supplier Registry</h2>
-      <p class="text-xs text-zinc-500">Track vendors, analyze fulfillment ratings, and manage supply items</p>
+      <p class="text-xs text-zinc-500">
+        Track vendors, manage contact points, analyze ratings, and associate supply items
+      </p>
     </div>
-    <button 
-      *appHasPermission="permission.PROCUREMENT_VIEW"
+    <button
+      *appHasPermission="[permission.SUPPLIER_CREATE, permission.PROCUREMENT_CREATE]"
       (click)="openCreate()"
-      class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2">
+      class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2"
+    >
       <i class="pi pi-plus text-xs"></i> Register Supplier
     </button>
   </div>
 
+  <!-- Search & Filter Controls -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-center">
-      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">Global Query Search</span>
+    <div
+      class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 flex flex-col justify-center"
+    >
+      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
+        >Search Suppliers</span
+      >
       <div class="relative">
         <i class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm"></i>
-        <input pInputText (input)="onSearch($event)" placeholder="Search supplier or item scope..." class="w-full pl-9" />
+        <input
+          pInputText
+          (input)="onSearch($event)"
+          placeholder="Search by name, contact, email, phone..."
+          class="w-full pl-9"
+        />
       </div>
     </div>
 
-    <div class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800">
-      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2">Filter by Performance Tier</span>
+    <div
+      class="md:col-span-2 bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800"
+    >
+      <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
+        >Filter by Performance Tier</span
+      >
       <div class="flex flex-wrap gap-2">
-        <button 
+        <button
           (click)="filterByRating(null)"
-          [class]="!selectedRating() ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200'"
-          class="text-xs px-3 py-1.5 rounded-lg font-medium transition">
+          [class]="
+            !selectedRating()
+              ? 'bg-emerald-600 text-white font-semibold'
+              : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+          "
+          class="text-xs px-3 py-1.5 rounded-lg font-medium transition"
+        >
           All Ratings
         </button>
         @for (r of [5, 4, 3, 2, 1]; track r) {
-          <button 
+          <button
             (click)="filterByRating(r)"
-            [class]="selectedRating() === r ? 'bg-emerald-500 text-white' : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200'"
-            class="text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5">
+            [class]="
+              selectedRating() === r
+                ? 'bg-emerald-600 text-white font-semibold'
+                : 'bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300'
+            "
+            class="text-xs px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5"
+          >
             {{ r }} <i class="pi pi-star-fill text-[10px] text-amber-500"></i>
           </button>
         }
@@ -42,45 +72,110 @@
     </div>
   </div>
 
-  <div class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-    <p-table 
-      [value]="suppliers()" 
+  <!-- Table Card -->
+  <div
+    class="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 shadow-sm overflow-hidden"
+  >
+    <p-table
+      [value]="suppliers()"
       [lazy]="true"
-      [paginator]="true" 
-      [rows]="rows" 
+      [paginator]="true"
+      [rows]="rows"
       [first]="first"
-      [totalRecords]="totalRecords()" 
+      [totalRecords]="totalRecords()"
       [loading]="isLoading()"
-      (onPageChange)="onPageChange($event)"
+      (onLazyLoad)="onLazyLoad($event)"
       [rowsPerPageOptions]="[10, 20, 50]"
-      styleClass="p-datatable-normal">
-      
+      styleClass="p-datatable-normal"
+    >
       <ng-template pTemplate="header">
-        <tr class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 text-left text-xs uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
-          <th class="p-4">Vendor Name</th>
-          <th class="p-4">Contact Person</th>
-          <th class="p-4">Coordinates</th>
+        <tr
+          class="bg-zinc-50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 text-left text-xs uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800"
+        >
+          <th class="p-4">Vendor & ID</th>
+          <th class="p-4">Business Contact</th>
+          <th class="p-4">Representative</th>
           <th class="p-4">Supplied Items</th>
           <th class="p-4">Performance Rating</th>
-          <th class="p-4 w-24" *appHasPermission="permission.PROCUREMENT_VIEW">Actions</th>
+          <th
+            class="p-4 w-28 text-center"
+            *appHasPermission="[
+              permission.SUPPLIER_UPDATE,
+              permission.PROCUREMENT_CREATE,
+              permission.SUPPLIER_DELETE,
+            ]"
+          >
+            Actions
+          </th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-sup>
-        <tr class="border-b border-zinc-100 dark:border-zinc-800/60 text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition">
+        <tr
+          class="border-b border-zinc-100 dark:border-zinc-800/60 text-sm hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition"
+        >
+          <!-- Vendor Name & ID -->
           <td class="p-4 font-semibold text-zinc-900 dark:text-zinc-100">
             <div>{{ sup.name }}</div>
-            <div class="text-[11px] text-zinc-400 font-normal mt-0.5 italic">{{ sup.remarks || '' }}</div>
+            <div class="text-[11px] text-zinc-400 font-mono mt-0.5">{{ sup.id }}</div>
+            @if (sup.remarks) {
+              <div class="text-[11px] text-zinc-400 font-normal mt-0.5 italic">
+                {{ sup.remarks }}
+              </div>
+            }
           </td>
-          <td class="p-4 text-zinc-700 dark:text-zinc-300">{{ sup.contactPerson || '-' }}</td>
-          <td class="p-4 space-y-0.5 text-xs">
-            @if (sup.email) { <div class="text-zinc-500"><i class="pi pi-envelope mr-1 text-[10px]"></i>{{ sup.email }}</div> }
-            @if (sup.phone) { <div class="text-zinc-500"><i class="pi pi-phone mr-1 text-[10px]"></i>{{ sup.phone }}</div> }
+
+          <!-- Business Contact (Phone, Email, WhatsApp) -->
+          <td class="p-4 space-y-1 text-xs">
+            @if (sup.email) {
+              <div class="text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
+                <i class="pi pi-envelope text-[11px] text-zinc-400"></i>
+                <a [href]="'mailto:' + sup.email" class="hover:underline">{{ sup.email }}</a>
+              </div>
+            }
+            @if (sup.phone) {
+              <div class="text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
+                <i class="pi pi-phone text-[11px] text-zinc-400"></i>
+                <span>{{ sup.phone }}</span>
+              </div>
+            }
+            @if (sup.whatsApp) {
+              <div
+                class="text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 font-medium"
+              >
+                <i class="pi pi-whatsapp text-[12px]"></i>
+                <span>{{ sup.whatsApp }}</span>
+              </div>
+            }
+            @if (!sup.email && !sup.phone && !sup.whatsApp) {
+              <span class="text-zinc-400 text-xs italic">No contact details</span>
+            }
           </td>
+
+          <!-- Contact Person & their phone/email -->
+          <td class="p-4 space-y-1 text-xs">
+            <div class="font-medium text-zinc-800 dark:text-zinc-200">
+              {{ sup.contactPerson || '-' }}
+            </div>
+            @if (sup.contactPhone) {
+              <div class="text-zinc-500 dark:text-zinc-400 flex items-center gap-1 text-[11px]">
+                <i class="pi pi-phone text-[10px]"></i> {{ sup.contactPhone }}
+              </div>
+            }
+            @if (sup.contactEmail) {
+              <div class="text-zinc-500 dark:text-zinc-400 flex items-center gap-1 text-[11px]">
+                <i class="pi pi-envelope text-[10px]"></i> {{ sup.contactEmail }}
+              </div>
+            }
+          </td>
+
+          <!-- Supplied Items -->
           <td class="p-4">
             <div class="flex flex-wrap gap-1 max-w-xs">
               @for (item of sup.supplyItem; track item.id) {
-                <span class="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[11px] px-1.5 py-0.5 rounded">
+                <span
+                  class="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-[11px] px-2 py-0.5 rounded-md font-medium border border-zinc-200 dark:border-zinc-700"
+                >
                   {{ item.name }}
                 </span>
               } @empty {
@@ -88,13 +183,65 @@
               }
             </div>
           </td>
+
+          <!-- Rating & Notes -->
           <td class="p-4">
-            <p-rating [(ngModel)]="ratingValue" [readonly]="true"  styleClass="text-amber-500"></p-rating>
+            <div class="space-y-1">
+              <p-rating
+                [ngModel]="sup.rating"
+                [readonly]="true"
+                styleClass="text-amber-500"
+              ></p-rating>
+              @if (sup.performanceNotes) {
+                <p
+                  class="text-[11px] text-zinc-500 dark:text-zinc-400 line-clamp-2 max-w-xs"
+                  [pTooltip]="sup.performanceNotes"
+                  tooltipPosition="top"
+                >
+                  {{ sup.performanceNotes }}
+                </p>
+              }
+            </div>
           </td>
-          <td class="p-4" *appHasPermission="permission.PROCUREMENT_VIEW">
-            <button (click)="openEdit(sup)" class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 p-2 rounded-lg transition">
-              <i class="pi pi-pencil"></i>
-            </button>
+
+          <!-- Actions -->
+          <td
+            class="p-4 text-center"
+            *appHasPermission="[
+              permission.SUPPLIER_UPDATE,
+              permission.PROCUREMENT_CREATE,
+              permission.SUPPLIER_DELETE,
+            ]"
+          >
+            <div class="flex items-center justify-center gap-1">
+              <button
+                *appHasPermission="[permission.SUPPLIER_UPDATE, permission.PROCUREMENT_CREATE]"
+                (click)="openEdit(sup)"
+                pTooltip="Edit Supplier"
+                tooltipPosition="top"
+                class="text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 p-2 rounded-lg transition"
+              >
+                <i class="pi pi-pencil"></i>
+              </button>
+              <button
+                *appHasPermission="permission.SUPPLIER_DELETE"
+                (click)="deleteSupplier(sup)"
+                pTooltip="Deactivate Supplier"
+                tooltipPosition="top"
+                class="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 p-2 rounded-lg transition"
+              >
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="p-8 text-center text-zinc-400 text-sm">
+            <i class="pi pi-building text-3xl mb-2 block"></i>
+            No active supplier records found matching your filters.
           </td>
         </tr>
       </ng-template>
@@ -102,72 +249,188 @@
   </div>
 </div>
 
-<p-dialog 
-  [header]="isNewMode() ? 'Register New Supplier' : 'Update Supplier Portfolio'" 
-  [(visible)]="isDialogVisible" 
-  [modal]="true" 
+<!-- Modal Dialog for Register / Edit Supplier -->
+<p-dialog
+  [header]="isNewMode() ? 'Register New Supplier' : 'Update Supplier Portfolio'"
+  [(visible)]="isDialogVisible"
+  [modal]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '480px' }"
-  styleClass="dark:bg-zinc-900 dark:text-zinc-100 border dark:border-zinc-800 rounded-2xl shadow-xl">
-  
+  [style]="{ width: '560px', maxWidth: '95vw' }"
+  styleClass="dark:bg-zinc-900 dark:text-zinc-100 border dark:border-zinc-800 rounded-2xl shadow-xl"
+>
   <form [formGroup]="supplierForm" (ngSubmit)="save()" class="flex flex-col gap-4 mt-2">
+    <!-- Corporate / Business Info -->
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Legal Business Name</label>
-      <input pInputText formControlName="name" placeholder="e.g. State Pharmaceuticals Corporation" class="w-full" />
+      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider"
+        >Legal Business Name *</label
+      >
+      <input
+        pInputText
+        formControlName="name"
+        placeholder="e.g. State Pharmaceuticals Corporation"
+        class="w-full"
+      />
       @if (supplierForm.get('name')?.touched && supplierForm.get('name')?.invalid) {
-        <small class="text-red-500 text-xs">A valid corporate name is required (Min 3 characters).</small>
+        <small class="text-red-500 text-xs"
+          >Corporate business name is required (minimum 3 characters).</small
+        >
       }
     </div>
 
-    <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Point of Contact / Representative</label>
-      <input pInputText formControlName="contactPerson" placeholder="e.g. Mr. Sunil Perera" class="w-full" />
-    </div>
-
-    <div class="grid grid-cols-2 gap-3">
+    <!-- Business Contacts -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Business Email</label>
-        <input pInputText formControlName="email" type="email" placeholder="vendor@domain.lk" class="w-full" />
-        @if (supplierForm.get('email')?.touched && supplierForm.get('email')?.invalid) {
-          <small class="text-red-500 text-xs">Invalid email format.</small>
-        }
-      </div>
-
-      <div class="flex flex-col gap-1.5">
-        <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Phone Number</label>
-        <input pInputText formControlName="phone" placeholder="0112345678" class="w-full" />
+        <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400">Business Phone</label>
+        <input
+          pInputText
+          formControlName="phone"
+          placeholder="e.g. +94 11 2345678"
+          class="w-full"
+        />
         @if (supplierForm.get('phone')?.touched && supplierForm.get('phone')?.invalid) {
-          <small class="text-red-500 text-xs">Must be a valid 9-digit sequence.</small>
+          <small class="text-red-500 text-xs">Valid phone number format required.</small>
+        }
+      </div>
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400">Business Email</label>
+        <input
+          pInputText
+          formControlName="email"
+          type="email"
+          placeholder="e.g. contact@domain.lk"
+          class="w-full"
+        />
+        @if (supplierForm.get('email')?.touched && supplierForm.get('email')?.invalid) {
+          <small class="text-red-500 text-xs">Valid email format required.</small>
         }
       </div>
     </div>
 
     <div class="flex flex-col gap-1.5">
-  <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Associated Supply Items (Linked to Inventory)</label>
-  
-  <div class="w-full max-h-40 overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-950/40 p-2.5 space-y-2">
-    @for (item of inventoryItems(); track item.id) {
-      <label class="flex items-start gap-3 px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer transition select-none">
-        <input 
-          type="checkbox" 
-          [checked]="supplierForm.get('supplyItemIds')?.value?.includes(item.id)"
-          (change)="onItemCheckboxChange(item.id, $event)" 
-          class="mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-emerald-600 focus:ring-emerald-500 h-4 w-4 bg-white dark:bg-zinc-900" />
-        
-        <div class="flex flex-col">
-          <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{{ item.name }}</span>
-          <span class="text-[10px] text-zinc-400 font-medium tracking-wide uppercase mt-0.5">{{ item.category }}</span>
-        </div>
-      </label>
-    } @empty {
-      <div class="text-xs text-zinc-400 italic text-center py-4">No master inventory registry records found</div>
-    }
-  </div>
-</div>
+      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400"
+        >WhatsApp Hotline / Number</label
+      >
+      <div class="relative">
+        <i
+          class="pi pi-whatsapp absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 text-sm"
+        ></i>
+        <input
+          pInputText
+          formControlName="whatsApp"
+          placeholder="+94 77 1234567"
+          class="w-full pl-9"
+        />
+      </div>
+      @if (supplierForm.get('whatsApp')?.touched && supplierForm.get('whatsApp')?.invalid) {
+        <small class="text-red-500 text-xs">Valid phone number required for WhatsApp.</small>
+      }
+    </div>
 
-    <div class="flex flex-col gap-1.5 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800/80">
-      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400">Fulfillment Performance Tier</label>
+    <!-- Representative / Contact Person Section -->
+    <div
+      class="p-3 bg-zinc-50 dark:bg-zinc-800/40 rounded-xl border border-zinc-200 dark:border-zinc-700 space-y-3"
+    >
+      <span
+        class="text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block"
+        >Point of Contact / Representative</span
+      >
+
+      <div class="flex flex-col gap-1.5">
+        <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400"
+          >Representative Name</label
+        >
+        <input
+          pInputText
+          formControlName="contactPerson"
+          placeholder="e.g. Mr. Sunil Perera"
+          class="w-full"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400"
+            >Contact Person Phone</label
+          >
+          <input
+            pInputText
+            formControlName="contactPhone"
+            placeholder="+94 71 2345678"
+            class="w-full"
+          />
+          @if (
+            supplierForm.get('contactPhone')?.touched && supplierForm.get('contactPhone')?.invalid
+          ) {
+            <small class="text-red-500 text-xs">Valid phone number required.</small>
+          }
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-zinc-500 dark:text-zinc-400"
+            >Contact Person Email</label
+          >
+          <input
+            pInputText
+            formControlName="contactEmail"
+            type="email"
+            placeholder="sunil@domain.lk"
+            class="w-full"
+          />
+          @if (
+            supplierForm.get('contactEmail')?.touched && supplierForm.get('contactEmail')?.invalid
+          ) {
+            <small class="text-red-500 text-xs">Valid email required.</small>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Linked Supply Items checklist -->
+    <div class="flex flex-col gap-1.5">
+      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-wider">
+        Associated Supply Items (Linked to Inventory)
+      </label>
+
+      <div
+        class="w-full max-h-40 overflow-y-auto border border-zinc-200 dark:border-zinc-800 rounded-xl bg-zinc-50/50 dark:bg-zinc-950/40 p-2.5 space-y-1.5"
+      >
+        @for (item of inventoryItems(); track item.id) {
+          <label
+            class="flex items-start gap-3 px-2 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/60 cursor-pointer transition select-none"
+          >
+            <input
+              type="checkbox"
+              [checked]="supplierForm.get('supplyItemIds')?.value?.includes(item.id)"
+              (change)="onItemCheckboxChange(item.id, $event)"
+              class="mt-0.5 rounded border-zinc-300 dark:border-zinc-700 text-emerald-600 focus:ring-emerald-500 h-4 w-4 bg-white dark:bg-zinc-900"
+            />
+
+            <div class="flex flex-col">
+              <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 leading-tight">{{
+                item.name
+              }}</span>
+              <span class="text-[10px] text-zinc-400 font-medium tracking-wide uppercase mt-0.5">{{
+                item.category
+              }}</span>
+            </div>
+          </label>
+        } @empty {
+          <div class="text-xs text-zinc-400 italic text-center py-4">
+            No master inventory registry records found
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Rating & Evaluation -->
+    <div
+      class="flex flex-col gap-1.5 bg-zinc-50 dark:bg-zinc-800/40 p-3 rounded-xl border border-zinc-200 dark:border-zinc-700"
+    >
+      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400"
+        >Fulfillment Performance Tier</label
+      >
       <div class="flex items-center gap-3 mt-1">
         <p-rating formControlName="rating" styleClass="text-amber-500 text-xl"></p-rating>
         <span class="text-xs text-zinc-400">(1-5 Stars or unrated)</span>
@@ -175,21 +438,45 @@
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Performance & Delivery Evaluation Notes</label>
-      <input pInputText formControlName="performanceNotes" placeholder="e.g. Delivers critical biomedical reagents on time" class="w-full" />
+      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400"
+        >Performance & Delivery Evaluation Notes</label
+      >
+      <input
+        pInputText
+        formControlName="performanceNotes"
+        placeholder="e.g. Delivers critical reagents and CT tubes on schedule"
+        class="w-full"
+      />
     </div>
 
     <div class="flex flex-col gap-1.5">
-      <label class="text-xs font-bold text-zinc-500 dark:text-zinc-400">Internal Remarks / Tags</label>
-      <input pInputText formControlName="remarks" placeholder="Primary supplier for Rathnapura district" class="w-full" />
+      <label class="text-xs font-bold text-zinc-600 dark:text-zinc-400"
+        >Internal Remarks / Location Notes</label
+      >
+      <input
+        pInputText
+        formControlName="remarks"
+        placeholder="e.g. Primary warranty repair dealer for Central Province"
+        class="w-full"
+      />
     </div>
 
-    <div class="flex justify-end gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-4 mt-2">
-      <button type="button" (click)="isDialogVisible.set(false)" class="px-4 py-2 text-sm border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition font-medium">
+    <!-- Form Footer Buttons -->
+    <div class="flex justify-end gap-2 border-t border-zinc-200 dark:border-zinc-800 pt-4 mt-2">
+      <button
+        type="button"
+        (click)="isDialogVisible.set(false)"
+        class="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition font-medium"
+      >
         Cancel
       </button>
-      <button type="submit" class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition font-medium shadow-sm">
-        Confirm Changes
+      <button
+        type="submit"
+        [disabled]="isLoading()"
+        class="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition font-medium shadow-sm flex items-center gap-2"
+      >
+        <i *ngIf="isLoading()" class="pi pi-spin pi-spinner text-xs"></i>
+        <span>{{ isNewMode() ? 'Register Supplier' : 'Save Changes' }}</span>
       </button>
     </div>
   </form>

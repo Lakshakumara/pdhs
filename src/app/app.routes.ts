@@ -3,7 +3,6 @@ import { authGuard } from './core/guards/auth.guard';
 import { ShellComponent } from './layout/shell.component';
 
 export const routes: Routes = [
-
   // ─────────────────────────────────────────────────────────────────────
   // PUBLIC: Login page
   // Rendered standalone — NO sidebar/header. This sits outside the
@@ -12,7 +11,7 @@ export const routes: Routes = [
   // ─────────────────────────────────────────────────────────────────────
   {
     path: 'login',
-    loadComponent: () => import('./auth/login/login.component').then(m => m.LoginComponent),
+    loadComponent: () => import('./auth/login/login.component').then((m) => m.LoginComponent),
   },
 
   // ─────────────────────────────────────────────────────────────────────
@@ -27,7 +26,7 @@ export const routes: Routes = [
   // ─────────────────────────────────────────────────────────────────────
   {
     path: '',
-    loadComponent: () => import('./layout/shell.component').then(m => m.ShellComponent),
+    loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     canActivate: [authGuard],
     children: [
       // Default landing page once inside the shell
@@ -35,55 +34,69 @@ export const routes: Routes = [
 
       {
         path: 'dashboard',
-        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
         path: 'institute',
-        loadComponent: () => import('./features/institute/institute.component').then(m => m.InstituteComponent),
+        loadComponent: () =>
+          import('./features/institute/institute.component').then((m) => m.InstituteComponent),
       },
       {
         path: 'inventory',
-        loadComponent: () => import('./features/inventory/inventory.component').then(m => m.InventoryComponent),
+        loadComponent: () =>
+          import('./features/inventory/inventory.component').then((m) => m.InventoryComponent),
       },
       {
         path: 'equipment',
-        loadComponent: () => import('./features/equipment/equipment.component').then(m => m.EquipmentComponent),
+        loadComponent: () =>
+          import('./features/equipment/equipment.component').then((m) => m.EquipmentComponent),
       },
       {
         path: 'repairs',
-        loadComponent: () => import('./features/repairs/repairs.component').then(m => m.RepairsComponent),
+        loadComponent: () =>
+          import('./features/repairs/repairs.component').then((m) => m.RepairsComponent),
       },
       {
         path: 'supplier',
-        loadComponent: () => import('./features/supplier/supplier.component').then(m => m.SupplierComponent),
+        loadComponent: () =>
+          import('./features/supplier/supplier.component').then((m) => m.SupplierComponent),
       },
       {
         path: 'procurement',
-        loadComponent: () => import('./features/procurement/procurement.component').then(m => m.ProcurementComponent),
+        loadComponent: () =>
+          import('./features/procurement/procurement.component').then(
+            (m) => m.ProcurementComponent,
+          ),
       },
       {
         path: 'audit',
-        loadComponent: () => import('./features/audit/audit.component').then(m => m.AuditComponent),
+        loadComponent: () =>
+          import('./features/audit/audit.component').then((m) => m.AuditComponent),
       },
       {
         path: 'institute',
-        loadChildren: () => import('./features/institute/institute.routes').then(m => m.instituteRoutes),
+        loadChildren: () =>
+          import('./features/institute/institute.routes').then((m) => m.instituteRoutes),
       },
       {
         path: 'usermanagement',
-        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent),
+        loadComponent: () =>
+          import('./features/users/users.component').then((m) => m.UsersComponent),
       },
       {
         path: 'admin',
-        loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent),
+        loadComponent: () =>
+          import('./features/admin/admin.component').then((m) => m.AdminComponent),
       },
       {
         path: 'admin/users',
-        loadComponent: () => import('./features/users/users.component').then(m => m.UsersComponent),
+        loadComponent: () =>
+          import('./features/users/users.component').then((m) => m.UsersComponent),
       },
       {
         path: 'test',
-        loadComponent: () => import('./features/test/test.component').then(m => m.Test),
+        loadComponent: () => import('./features/test/test.component').then((m) => m.Test),
       },
     ],
   },

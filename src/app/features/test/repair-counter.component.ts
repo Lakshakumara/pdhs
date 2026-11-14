@@ -22,7 +22,15 @@ import { TagModule } from 'primeng/tag';
       <p-button icon="pi pi-minus" size="small" text (onClick)="decrement()" />
     </div>
   `,
-  styles: [`.counter { display: flex; align-items: center; gap: 0.5rem; }`],
+  styles: [
+    `
+      .counter {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+    `,
+  ],
 })
 export class RepairCounterComponent {
   // required signal input — TypeScript + Angular both enforce the parent passes it

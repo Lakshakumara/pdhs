@@ -11,7 +11,7 @@ import { TableModule } from 'primeng/table';
   standalone: true,
   imports: [CommonModule, TabsModule, UsersComponent, AuditComponent, TableModule],
   templateUrl: './admin.component.html',
-  styleUrl: './admin.component.css'
+  styleUrl: './admin.component.css',
 })
 export class AdminComponent {
   institutions = [{ id: '1', name: 'General Hospital', type: 'Hospital', districtId: 'D1' }];

@@ -1,5 +1,5 @@
-import { Permission } from "../constants/permissions";
-import { ScopeType, RoleType } from "./permission.types";
+import { Permission } from '../constants/permissions';
+import { ScopeType, RoleType } from './permission.types';
 
 export interface District {
   id: string;
@@ -128,8 +128,8 @@ export interface Equipment {
   serialNumber: string;
   batchNumber: string;
   quantityReceived: number;
-  dateOfManufacture: string | null;
-  dateOfReceipt: string | null;
+  dateOfManufacture: Date | null;
+  dateOfReceipt: Date | null;
   expiryDate?: string | null;
   warrantyPeriodMonths: number;
   servicePlan?: ServicePlan;
@@ -160,6 +160,11 @@ export type WorkOrderStatus =
   | 'AWAITING_PARTS'
   | 'IN_REPAIR'
   | 'COMPLETED'
+  | 'AWAITING_FEEDBACK'
+  | 'PAYMENT_PENDING'
+  | 'MS_APPROVAL'
+  | 'RDHS_APPROVAL'
+  | 'PDHS_APPROVAL'
   | 'VERIFIED_CLOSED'
   | 'ESCALATED_TO_VENDOR'
   | 'VENDOR_IN_PROGRESS'
@@ -169,10 +174,9 @@ export type RepairTrack = 'INTERNAL' | 'VENDOR';
 export type RepairBasis = 'WARRANTY' | 'PAID';
 export type HandoverType = 'FIELD_VISIT' | 'EQUIPMENT_SENT';
 
-
 export interface WorkOrder {
   id: string;
-  repairTrack?: RepairTrack;          // defaults to 'INTERNAL' on the backend
+  repairTrack?: RepairTrack; // defaults to 'INTERNAL' on the backend
   repairRequestId: string;
   assignedTechnicianId?: string;
   assignedTechnicianName?: string;
@@ -185,7 +189,21 @@ export interface WorkOrder {
   completedDate?: string;
   inspectedSpareParts?: InspectedSparePart[];
   partsUsed?: PartUsedDetail[];
-  vendorRepair?: VendorRepair;        // populated only when repairTrack === 'VENDOR'
+  vendorRepair?: VendorRepair; // populated only when repairTrack === 'VENDOR'
+  // Post-repair chain comments (feedback → payment → MS → RDHS → PDHD)
+  feedbackComment?: string;
+  paymentComment?: string;
+  msApprovalComment?: string;
+  rdhsApprovalComment?: string;
+  pdhsApprovalComment?: string;
+}
+
+// Response shape of the post-repair chain endpoints
+// (feedback / payment / approve) — { workOrderId, status, updated }.
+export interface WorkOrderChainResult {
+  workOrderId: string;
+  status: string;
+  updated?: WorkOrder;
 }
 
 // Mirrors the VendorRepair Prisma model — one-to-one with WorkOrder.
@@ -292,11 +310,19 @@ export interface RepairHistoryEntry {
 export interface Supplier {
   id: string;
   name: string;
-  contactPerson: string;
-  phone: string;
-  email: string;
-  performanceNotes: string;
-  rating: number; // 1-5 stars
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  whatsApp?: string;
+  performanceNotes?: string;
+  rating?: number | null; // 1-5 stars
+  supplyItem?: Array<{ id: string; name: string }>;
+  remarks?: string;
+  isDeleted?: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 }
 
 export interface ProcurementPlan {
@@ -359,7 +385,6 @@ export interface AuditLog {
 }
 
 export interface PagedResult<T> {
-
   items: T[];
 
   page: number;

@@ -1,5 +1,7 @@
 export enum ScopeType {
-  PDHS = 'PDHS', RDHS = 'RDHS', INSTITUTE = 'INSTITUTE',
+  PDHS = 'PDHS',
+  RDHS = 'RDHS',
+  INSTITUTE = 'INSTITUTE',
 }
 export enum RoleType {
   SUPER_ADMIN_PDHS = 'SUPER_ADMIN_PDHS',
@@ -14,24 +16,28 @@ export enum RoleType {
   STORE_KEEPER = 'STORE_KEEPER',
   BIOMEDICAL_TECHNICIAN = 'BIOMEDICAL_TECHNICIAN',
   PROCUREMENT_OFFICER = 'PROCUREMENT_OFFICER',
-  INSTITUTION_USER = 'INSTITUTION_USER'
+  INSTITUTION_USER = 'INSTITUTION_USER',
 }
 
 export const SCOPE_ROLES: Record<ScopeType, RoleType[]> = {
   [ScopeType.PDHS]: [
-    RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS, RoleType.VIEWER_PDHS,
-    RoleType.BIOMEDICAL_TECHNICIAN, RoleType.PROCUREMENT_OFFICER, RoleType.STORE_KEEPER,
+    RoleType.SUPER_ADMIN_PDHS,
+    RoleType.ADMIN_PDHS,
+    RoleType.VIEWER_PDHS,
+    RoleType.BIOMEDICAL_TECHNICIAN,
+    RoleType.PROCUREMENT_OFFICER,
+    RoleType.STORE_KEEPER,
   ],
-  [ScopeType.RDHS]: [
-    RoleType.SUPER_ADMIN_RDHS, RoleType.ADMIN_RDHS, RoleType.VIEWER_RDHS,
-  ],
+  [ScopeType.RDHS]: [RoleType.SUPER_ADMIN_RDHS, RoleType.ADMIN_RDHS, RoleType.VIEWER_RDHS],
   [ScopeType.INSTITUTE]: [
-    RoleType.SUPER_ADMIN_INSTITUTE, RoleType.ADMIN_INSTITUTE,
-    RoleType.INSTITUTION_USER, RoleType.VIEWER_INSTITUTE,
+    RoleType.SUPER_ADMIN_INSTITUTE,
+    RoleType.ADMIN_INSTITUTE,
+    RoleType.INSTITUTION_USER,
+    RoleType.VIEWER_INSTITUTE,
   ],
 };
 
-/*export enum Permission {
+/*export enum Permission {  
 
   INSTITUTE_VIEW = 'INSTITUTE_VIEW',
   INSTITUTE_CREATE = 'INSTITUTE_CREATE',

@@ -1,83 +1,45 @@
-import {
-    HttpErrorResponse,
-    HttpInterceptorFn
-} from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
 
-export const errorInterceptor:
-    HttpInterceptorFn = (req, next) => {
+export const errorInterceptor: HttpInterceptorFn = (req, next) => {
+  const notify = inject(NotificationService);
 
-        const notify =
-            inject(NotificationService);
+  return next(req).pipe(
+    catchError((error: HttpErrorResponse) => {
+      switch (error.status) {
+        case 400:
+          notify.error('Validation Error', error.error?.message ?? 'Invalid request');
 
-        return next(req).pipe(
+          break;
 
-            catchError(
-                (error: HttpErrorResponse) => {
+        case 401:
+          notify.error('Unauthorized', 'Please login again');
 
-                    switch (error.status) {
+          break;
 
-                        case 400:
+        case 403:
+          notify.error('Access Denied', 'You do not have permission');
 
-                            notify.error(
-                                'Validation Error',
-                                error.error?.message ??
-                                'Invalid request'
-                            );
+          break;
 
-                            break;
+        case 404:
+          notify.error('Not Found', 'Requested resource not found');
 
-                        case 401:
+          break;
 
-                            notify.error(
-                                'Unauthorized',
-                                'Please login again'
-                            );
+        case 500:
+          notify.error('Server Error', 'Internal server error');
 
-                            break;
+          break;
 
-                        case 403:
+        default:
+          notify.error('Error', error.message);
+      }
 
-                            notify.error(
-                                'Access Denied',
-                                'You do not have permission'
-                            );
-
-                            break;
-
-                        case 404:
-
-                            notify.error(
-                                'Not Found',
-                                'Requested resource not found'
-                            );
-
-                            break;
-
-                        case 500:
-
-                            notify.error(
-                                'Server Error',
-                                'Internal server error'
-                            );
-
-                            break;
-
-                        default:
-
-                            notify.error(
-                                'Error',
-                                error.message
-                            );
-                    }
-
-                    return throwError(
-                        () => error
-                    );
-                }
-            )
-        );
-    };
+      return throwError(() => error);
+    }),
+  );
+};

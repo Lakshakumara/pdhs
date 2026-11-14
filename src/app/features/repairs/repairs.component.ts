@@ -7,8 +7,14 @@ import { QueryService } from '../../core/services/query.service';
 import { UpsertService } from '../../core/services/upsert.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
-  RepairRequest, WorkOrder, Equipment, InventoryItem,
-  RepairPriority, WorkOrderStatus, PartUsedDetail, InspectedSparePart
+  RepairRequest,
+  WorkOrder,
+  Equipment,
+  InventoryItem,
+  RepairPriority,
+  WorkOrderStatus,
+  PartUsedDetail,
+  InspectedSparePart,
 } from '../../core/models/biomed.interface';
 import { RoleType } from '../../core/models/permission.types';
 import { HasPermissionDirective } from '../../core/directives/permission-directive';
@@ -34,12 +40,39 @@ import { DividerModule } from 'primeng/divider';
 import { equalsIgnoreCase } from '../../core/utils/helper';
 import { Permission } from '../../core/constants/permissions';
 // ─────────────────────────────────────────────────────────────────────
-// Internal track statuses — shown in step-through stepper
-// Vendor track statuses — shown as a single badge only
+// Internal track timeline — repair phase, then the post-repair chain:
+// feedback → payment → MS → RDHS → PDHD (auto-close)
+// Vendor track timeline — company does the repair phase, then the
+// same post-repair chain
 // ─────────────────────────────────────────────────────────────────────
 const INTERNAL_STEPS: WorkOrderStatus[] = [
-  'SUBMITTED', 'ACKNOWLEDGED', 'DIAGNOSED',
-  'AWAITING_PARTS', 'IN_REPAIR', 'COMPLETED', 'VERIFIED_CLOSED'
+  'SUBMITTED',
+  'ACKNOWLEDGED',
+  'DIAGNOSED',
+  'AWAITING_PARTS',
+  'IN_REPAIR',
+  'COMPLETED',
+  'AWAITING_FEEDBACK',
+  'PAYMENT_PENDING',
+  'MS_APPROVAL',
+  'RDHS_APPROVAL',
+  'PDHS_APPROVAL',
+  'VERIFIED_CLOSED',
+];
+
+const VENDOR_STEPS: WorkOrderStatus[] = [
+  'SUBMITTED',
+  'ACKNOWLEDGED',
+  'DIAGNOSED',
+  'ESCALATED_TO_VENDOR',
+  'VENDOR_IN_PROGRESS',
+  'VENDOR_COMPLETED',
+  'AWAITING_FEEDBACK',
+  'PAYMENT_PENDING',
+  'MS_APPROVAL',
+  'RDHS_APPROVAL',
+  'PDHS_APPROVAL',
+  'VERIFIED_CLOSED',
 ];
 
 const STEP_LABELS: Record<string, string> = {
@@ -49,23 +82,54 @@ const STEP_LABELS: Record<string, string> = {
   AWAITING_PARTS: 'Awaiting Parts',
   IN_REPAIR: 'In Repair',
   COMPLETED: 'Completed',
+  ESCALATED_TO_VENDOR: 'Escalated',
+  VENDOR_IN_PROGRESS: 'Company Repair',
+  VENDOR_COMPLETED: 'Company Done',
+  AWAITING_FEEDBACK: 'User Review',
+  PAYMENT_PENDING: 'Payment',
+  MS_APPROVAL: 'MS Approval',
+  RDHS_APPROVAL: 'RDHS Approval',
+  PDHS_APPROVAL: 'PDHD Approval',
   VERIFIED_CLOSED: 'Closed',
 };
+
+// Statuses in which the end-user repair review can be submitted
+// (COMPLETED/VENDOR_COMPLETED = legacy records from before the chain)
+const REVIEWABLE_STATUSES = ['AWAITING_FEEDBACK', 'COMPLETED', 'VENDOR_COMPLETED'];
+
+function stepsForTrack(track?: string): WorkOrderStatus[] {
+  return track === 'VENDOR' ? VENDOR_STEPS : INTERNAL_STEPS;
+}
 
 @Component({
   selector: 'app-repairs',
   imports: [
-    CommonModule, FormsModule, HasPermissionDirective, AutoCompleteModule,
-    TableModule, DialogModule, TagModule, ButtonModule, InputTextModule,
-    SelectModule, IconFieldModule, InputIconModule, TextareaModule,
-    InputNumberModule, CheckboxModule, ToolbarModule, SkeletonModule,
-    DatePickerModule, ToggleSwitchModule, TooltipModule, DividerModule
+    CommonModule,
+    FormsModule,
+    HasPermissionDirective,
+    AutoCompleteModule,
+    TableModule,
+    DialogModule,
+    TagModule,
+    ButtonModule,
+    InputTextModule,
+    SelectModule,
+    IconFieldModule,
+    InputIconModule,
+    TextareaModule,
+    InputNumberModule,
+    CheckboxModule,
+    ToolbarModule,
+    SkeletonModule,
+    DatePickerModule,
+    ToggleSwitchModule,
+    TooltipModule,
+    DividerModule,
   ],
   templateUrl: './repairs.component.html',
-  styleUrl: './repairs.component.css'
+  styleUrl: './repairs.component.css',
 })
 export class RepairsComponent implements OnInit {
-
   readonly permission = Permission;
 
   readonly repairRequests = signal<RepairRequest[]>([]);
@@ -92,7 +156,7 @@ export class RepairsComponent implements OnInit {
   public readonly priorityOptions = [
     { label: 'Emergency', value: 'Emergency' },
     { label: 'Urgent', value: 'Urgent' },
-    { label: 'Routine', value: 'Routine' }
+    { label: 'Routine', value: 'Routine' },
   ];
 
   public readonly statusOptions = [
@@ -109,15 +173,34 @@ export class RepairsComponent implements OnInit {
     { label: 'Escalated to Company', value: 'ESCALATED_TO_VENDOR' },
     { label: 'Company In Progress', value: 'VENDOR_IN_PROGRESS' },
     { label: 'Company Completed', value: 'VENDOR_COMPLETED' },
+    // Post-repair chain
+    { label: 'Awaiting User Review', value: 'AWAITING_FEEDBACK' },
+    { label: 'Payment Pending', value: 'PAYMENT_PENDING' },
+    { label: 'Awaiting MS Approval', value: 'MS_APPROVAL' },
+    { label: 'Awaiting RDHS Approval', value: 'RDHS_APPROVAL' },
+    { label: 'Awaiting PDHD Approval', value: 'PDHS_APPROVAL' },
   ];
 
   public readonly internalSteps = INTERNAL_STEPS;
+
+  public stepsForTrack(track?: string): WorkOrderStatus[] {
+    return stepsForTrack(track);
+  }
 
   // ── Modal visibility ────────────────────────────────────────────────
   public showDetailModal = false;
   public showRequestModal = false;
   public showTechnicianModal = false;
-  public showReviewModal = false;        // Officer review + triage decision
+  public showReviewModal = false; // Officer review + triage decision
+
+  // ── Post-repair chain dialogs (feedback → payment → MS/RDHS/PDHD) ──
+  public showFeedbackModal = false;
+  public showPaymentModal = false;
+  public showApprovalModal = false;
+  public feedbackApproved = true;
+  public feedbackComment = '';
+  public postComment = '';
+  public approvalStage: 'MS' | 'RDHS' | 'PDHS' = 'MS';
 
   // ── Selected state ──────────────────────────────────────────────────
   readonly selectedReq = signal<RepairRequest | null>(null);
@@ -154,19 +237,20 @@ export class RepairsComponent implements OnInit {
 
   public readonly repairBasisOptions = [
     { label: 'Warranty Claim (Supplier Obligated)', value: 'WARRANTY' },
-    { label: 'Paid Repair (Third-Party)', value: 'PAID' }
+    //{ label: 'Paid Repair (Third-Party)', value: 'PAID' }
   ];
 
   public readonly handoverTypeOptions = [
     { label: 'Field Visit (Vendor comes on-site)', value: 'FIELD_VISIT' },
-    { label: 'Equipment Sent to Workshop', value: 'EQUIPMENT_SENT' }
+    { label: 'Equipment Sent to Workshop', value: 'EQUIPMENT_SENT' },
   ];
 
   constructor(
     private queryService: QueryService,
     private upsertService: UpsertService,
     private notify: NotificationService,
-    private userFacade: UserFacadeService) { }
+    private userFacade: UserFacadeService,
+  ) {}
 
   ngOnInit() {
     this.getEquipment();
@@ -174,14 +258,16 @@ export class RepairsComponent implements OnInit {
   }
   getInventoryItem() {
     if (!this.userFacade.currentSession()) return;
-    this.queryService.getInventorytem(1, 20, '', '', '')
-      .subscribe(result => this.inventoryItems.set(result.items));
+    this.queryService
+      .getInventoryItems(1, 20, '', '', '')
+      .subscribe((result) => this.inventoryItems.set(result.items));
   }
 
   getEquipment() {
     if (!this.userFacade.currentSession()) return;
-    this.queryService.getEquipment(1, 100, '', '', '', '')
-      .subscribe(result => this.equipments.set(result.items));
+    this.queryService
+      .getEquipment(1, 100, '', '', '', '')
+      .subscribe((result) => this.equipments.set(result.items));
   }
 
   // ── p-table lazy load ───────────────────────────────────────────────
@@ -196,26 +282,33 @@ export class RepairsComponent implements OnInit {
     this.sortField = (event.sortField as string) || '';
     this.sortOrder = event.sortOrder ?? 1;
 
-    this.queryService.getRepairRequest(page, rows, this.searchTerm, this.selectedPriority, this.selectedStatus)
+    this.queryService
+      .getRepairRequest(page, rows, this.searchTerm, this.selectedPriority, this.selectedStatus)
       .subscribe({
-        next: result => {
-          console.log('result', result)
+        next: (result) => {
+          console.log('result', result);
           this.repairRequests.set(result.items);
           this.total.set(result.total);
           this.loading.set(false);
         },
-        error: () => this.loading.set(false)
+        error: () => this.loading.set(false),
       });
   }
 
   public onFilterChange() {
     this.currentPage.set(1);
-    this.onLazyLoad({ first: 0, rows: this.pageSize(), sortField: this.sortField, sortOrder: this.sortOrder });
+    this.onLazyLoad({
+      first: 0,
+      rows: this.pageSize(),
+      sortField: this.sortField,
+      sortOrder: this.sortOrder,
+    });
   }
 
   public filterItems(event: AutoCompleteCompleteEvent) {
-    this.queryService.getInventorytem(this.currentPage(), this.pageSize(), event.query, '', '')
-      .subscribe(result => this.inventoryItems.set(result.items));
+    this.queryService
+      .getInventoryItems(this.currentPage(), this.pageSize(), event.query, '', '')
+      .subscribe((result) => this.inventoryItems.set(result.items));
   }
 
   // ── Status helpers ──────────────────────────────────────────────────
@@ -223,8 +316,12 @@ export class RepairsComponent implements OnInit {
     return ['ESCALATED_TO_VENDOR', 'VENDOR_IN_PROGRESS', 'VENDOR_COMPLETED'].includes(status);
   }
 
-  public isStepComplete(step: WorkOrderStatus, current: WorkOrderStatus): boolean {
-    return INTERNAL_STEPS.indexOf(step) <= INTERNAL_STEPS.indexOf(current);
+  public isStepComplete(step: WorkOrderStatus, current: WorkOrderStatus, track?: string): boolean {
+    const steps = stepsForTrack(track);
+    const curIdx = steps.findIndex((s) => equalsIgnoreCase(s, current));
+    const stepIdx = steps.findIndex((s) => equalsIgnoreCase(s, step));
+    if (curIdx === -1 || stepIdx === -1) return false;
+    return stepIdx <= curIdx;
   }
 
   // Returns true when the "Review & Decide" button should be shown.
@@ -239,24 +336,47 @@ export class RepairsComponent implements OnInit {
     return equalsIgnoreCase(req.workOrder?.status, 'SUBMITTED') && req.priority === 'Emergency';
   }
 
-  public getStatusSeverity(status: string): 'warn' | 'info' | 'secondary' | 'contrast' | 'success' | 'danger' {
+  public getStatusSeverity(
+    status: string,
+  ): 'warn' | 'info' | 'secondary' | 'contrast' | 'success' | 'danger' {
     switch (status) {
-      case 'SUBMITTED': return 'warn';
-      case 'ACKNOWLEDGED': return 'info';
-      case 'DIAGNOSED': return 'contrast';
-      case 'AWAITING_PARTS': return 'warn';
-      case 'IN_REPAIR': return 'info';
-      case 'ESCALATED_TO_VENDOR': return 'contrast';
-      case 'VENDOR_IN_PROGRESS': return 'info';
-      case 'VENDOR_COMPLETED': return 'success';
-      case 'COMPLETED': return 'success';
-      case 'VERIFIED_CLOSED': return 'secondary';
-      default: return 'secondary';
+      case 'SUBMITTED':
+        return 'warn';
+      case 'ACKNOWLEDGED':
+        return 'info';
+      case 'DIAGNOSED':
+        return 'contrast';
+      case 'AWAITING_PARTS':
+        return 'warn';
+      case 'IN_REPAIR':
+        return 'info';
+      case 'ESCALATED_TO_VENDOR':
+        return 'contrast';
+      case 'VENDOR_IN_PROGRESS':
+        return 'info';
+      case 'VENDOR_COMPLETED':
+        return 'success';
+      case 'COMPLETED':
+        return 'success';
+      case 'AWAITING_FEEDBACK':
+        return 'warn';
+      case 'PAYMENT_PENDING':
+        return 'warn';
+      case 'MS_APPROVAL':
+        return 'info';
+      case 'RDHS_APPROVAL':
+        return 'info';
+      case 'PDHS_APPROVAL':
+        return 'contrast';
+      case 'VERIFIED_CLOSED':
+        return 'secondary';
+      default:
+        return 'secondary';
     }
   }
 
   public getStatusLabel(status: string): string {
-    const found = this.statusOptions.find(o => o.value === status);
+    const found = this.statusOptions.find((o) => equalsIgnoreCase(o.value, status));
     return found?.label ?? status;
   }
 
@@ -267,9 +387,12 @@ export class RepairsComponent implements OnInit {
 
   public getPrioritySeverity(p: RepairPriority): 'danger' | 'warn' | 'secondary' {
     switch (p) {
-      case 'Emergency': return 'danger';
-      case 'Urgent': return 'warn';
-      default: return 'secondary';
+      case 'Emergency':
+        return 'danger';
+      case 'Urgent':
+        return 'warn';
+      default:
+        return 'secondary';
     }
   }
 
@@ -294,11 +417,13 @@ export class RepairsComponent implements OnInit {
     this.selectedEqSparePartList = [];
   }
 
-  public closeRequestModal() { this.showRequestModal = false; }
+  public closeRequestModal() {
+    this.showRequestModal = false;
+  }
 
   public onEqChange() {
     this.reqCompId = '';
-    const eq = this.equipments().find(e => e.id === this.reqEqId);
+    const eq = this.equipments().find((e) => e.id === this.reqEqId);
     this.selectedEqSparePartList = eq?.spareParts ?? [];
   }
 
@@ -307,23 +432,32 @@ export class RepairsComponent implements OnInit {
       this.notify.error('Please select an equipment and describe the fault.', '');
       return;
     }
-    const eq = this.equipments().find(e => e.id === this.reqEqId);
+    const eq = this.equipments().find((e) => e.id === this.reqEqId);
     if (!eq?.assignedInstitutionId) {
       this.notify.error('Equipment not assigned to any institution', '');
       return;
     }
     const userId = this.userFacade.currentUser()?.id;
-    if (!userId) { this.notify.error('Session expired', ''); return; }
+    if (!userId) {
+      this.notify.error('Session expired', '');
+      return;
+    }
 
-    this.upsertService.submitRepairRequest(this.reqEqId, this.reqCompId || undefined,
-      this.reqFaultDesc, this.reqPriority, userId)
+    this.upsertService
+      .submitRepairRequest(
+        this.reqEqId,
+        this.reqCompId || undefined,
+        this.reqFaultDesc,
+        this.reqPriority,
+        userId,
+      )
       .subscribe({
-        next: result => {
+        next: (result) => {
           this.onFilterChange();
           this.showRequestModal = false;
           this.notify.success('Repair request submitted', result.repairRequest.equipmentName);
         },
-        error: err => this.notify.error('Failed to submit', err.message)
+        error: () => {},
       });
   }
 
@@ -355,15 +489,14 @@ export class RepairsComponent implements OnInit {
       assignedTechnicianName: this.userFacade.currentUser()?.fullName,
     };
 
-    this.upsertService.updateWorkOrderStatus(wo.id, 'ACKNOWLEDGED', payload)
-      .subscribe({
-        next: () => {
-          this.notify.success('Assigned to PDHS team', 'Work order acknowledged');
-          this.closeReviewModal();
-          this.onFilterChange();
-        },
-        error: err => this.notify.error('Failed to assign', err.message)
-      });
+    this.upsertService.updateWorkOrderStatus(wo.id, 'ACKNOWLEDGED', payload).subscribe({
+      next: () => {
+        this.notify.success('Assigned to PDHS team', 'Work order acknowledged');
+        this.closeReviewModal();
+        this.onFilterChange();
+      },
+      error: () => {},
+    });
   }
 
   // Officer confirms: escalate to company/vendor
@@ -394,15 +527,14 @@ export class RepairsComponent implements OnInit {
       courierRef: this.courierRef || undefined,
     };
 
-    this.upsertService.escalateToVendor(wo.id, dto)
-      .subscribe({
-        next: () => {
-          this.notify.success('Escalated to company', this.vendorName);
-          this.closeReviewModal();
-          this.onFilterChange();
-        },
-        error: err => this.notify.error('Failed to escalate', err.message)
-      });
+    this.upsertService.escalateToVendor(wo.id, dto).subscribe({
+      next: () => {
+        this.notify.success('Escalated to company', this.vendorName);
+        this.closeReviewModal();
+        this.onFilterChange();
+      },
+      error: () => {},
+    });
   }
 
   private resetCompanyForm() {
@@ -418,28 +550,28 @@ export class RepairsComponent implements OnInit {
   // ── Technician Workbench modal ──────────────────────────────────────
   public openTechnicianModal(req: RepairRequest) {
     this.selectedReq.set(req);
-    console.log('openTechnicianModal', req)
-    this.queryService.getWorkOrder(req.id).subscribe(wo => {
-      console.log('wo', wo)
+    this.queryService.getWorkOrder(req.id).subscribe((wo) => {
       this.workOrder.set(wo);
       if (!wo) return;
       this.diagnosisNotes = wo?.diagnosisNotes || '';
       this.techInspectedSpareParts = wo.inspectedSpareParts?.length
         ? [...wo.inspectedSpareParts]
-        : (req as any).equipment?.spareParts?.map((c: any) =>
-          ({ sparePartId: c.id, sparePartName: c.name, inspected: false, conditionNotes: '' })) ?? [];
-  
+        : ((req as any).equipment?.spareParts?.map((c: any) => ({
+            sparePartId: c.id,
+            sparePartName: c.name,
+            inspected: false,
+            conditionNotes: '',
+          })) ?? []);
+
       this.techPartsUsed = (wo.partsUsed || []).map((p: any) => ({
         id: p.id,
         inventoryItemId: p.inventoryItemId,
         inventoryItemName: p.inventoryItem?.name || p.inventoryItemName,
         quantity: Number(p.quantity), // Prisma Decimal maps to string/number
         unitCost: p.unitCost ?? p.inventoryItem?.costPerUnit ?? 0,
-        status: p.status || 'BUFFERED'   // 👈 Fallback to BUFFERED if not set
+        status: p.status || 'BUFFERED', // 👈 Fallback to BUFFERED if not set
       }));
 
-
-      console.log('techPartsUsed', this.techPartsUsed)
       this.tempItem = null;
       this.tempPartQty = 1;
       this.showTechnicianModal = true;
@@ -458,7 +590,7 @@ export class RepairsComponent implements OnInit {
       this.notify.error('Insufficient stock', `Available: ${this.tempItem.currentStock} units`);
       return;
     }
-    const existing = this.techPartsUsed.find(p => p.inventoryItemId === this.tempItem?.id);
+    const existing = this.techPartsUsed.find((p) => p.inventoryItemId === this.tempItem?.id);
     if (existing) {
       existing.quantity += this.tempPartQty;
     } else {
@@ -486,14 +618,13 @@ export class RepairsComponent implements OnInit {
       assignedTechnicianId: this.userFacade.currentUser()?.id,
       assignedTechnicianName: this.userFacade.currentUser()?.fullName,
     };
-    this.upsertService.updateWorkOrderStatus(wo.id, 'ACKNOWLEDGED', payload)
-      .subscribe({
-        next: () => {
-          this.notify.success('Emergency job accepted', req.equipmentName ?? '');
-          this.onFilterChange();
-        },
-        error: err => this.notify.error('Failed', err.message)
-      });
+    this.upsertService.updateWorkOrderStatus(wo.id, 'ACKNOWLEDGED', payload).subscribe({
+      next: () => {
+        this.notify.success('Emergency job accepted', req.equipmentName ?? '');
+        this.onFilterChange();
+      },
+      error: () => {},
+    });
   }
 
   // Step-through transitions for internal track
@@ -506,7 +637,7 @@ export class RepairsComponent implements OnInit {
       assignedTechnicianId: this.userFacade.currentUser()?.id,
       assignedTechnicianName: this.userFacade.currentUser()?.fullName,
     };
-    console.log('pay load 1', payload)
+    console.log('pay load 1', payload);
     switch (step) {
       case 'Diagnose':
         if (!this.diagnosisNotes.trim()) {
@@ -532,31 +663,157 @@ export class RepairsComponent implements OnInit {
         nextStatus = 'COMPLETED';
         payload.diagnosisNotes = this.diagnosisNotes;
         payload.inspectedSpareParts = this.techInspectedSpareParts;
-        payload.partsUsed = this.techPartsUsed.map(p => ({
+        payload.partsUsed = this.techPartsUsed.map((p) => ({
           ...p,
-          status: 'CONSUMED'
+          status: 'CONSUMED',
         }));
         break;
     }
-    this.upsertService.updateWorkOrderStatus(wo.id, nextStatus, payload)
-      .subscribe({
-        next: result => {
-          this.notify.success('Status updated', result.status);
-          this.closeTechnicianModal();
-          this.onFilterChange();
-        },
-        error: err => this.notify.error('Failed to update', err.message)
-      });
+    this.upsertService.updateWorkOrderStatus(wo.id, nextStatus, payload).subscribe({
+      next: (result) => {
+        this.notify.success('Status updated', this.getStatusLabel(result.status));
+        this.closeTechnicianModal();
+        this.onFilterChange();
+      },
+      error: () => {},
+    });
   }
 
   // Supervisor verify and close — works for both tracks
   public verifyAndCloseWorkOrder(woId: string) {
     if (!confirm('Verify this repair and permanently close the work order?')) return;
-    this.upsertService.updateWorkOrderStatus(woId, 'VERIFIED_CLOSED', {})
+    this.upsertService.updateWorkOrderStatus(woId, 'VERIFIED_CLOSED', {}).subscribe({
+      next: () => {
+        this.onFilterChange();
+        this.closeDetails();
+      },
+      error: () => {},
+    });
+  }
+
+  // ── Post-repair chain (feedback → payment → MS → RDHS → PDHD) ──────
+  public canReviewFeedback(wo?: WorkOrder | null): boolean {
+    return !!wo && REVIEWABLE_STATUSES.includes(wo.status);
+  }
+
+  public isPaymentPending(wo?: WorkOrder | null): boolean {
+    return wo?.status === 'PAYMENT_PENDING';
+  }
+
+  public approvalStageFor(wo?: WorkOrder | null): 'MS' | 'RDHS' | 'PDHS' | null {
+    switch (wo?.status) {
+      case 'MS_APPROVAL':
+        return 'MS';
+      case 'RDHS_APPROVAL':
+        return 'RDHS';
+      case 'PDHS_APPROVAL':
+        return 'PDHS';
+      default:
+        return null;
+    }
+  }
+
+  public openFeedbackModal() {
+    this.feedbackApproved = true;
+    this.feedbackComment = '';
+    this.showFeedbackModal = true;
+  }
+
+  public submitFeedback() {
+    const wo = this.selectedReq()?.workOrder;
+    if (!wo) return;
+    if (!this.feedbackApproved && !this.feedbackComment.trim()) {
+      this.notify.error('Please describe what is still wrong.', '');
+      return;
+    }
+    this.upsertService
+      .submitRepairFeedback(wo.id, this.feedbackApproved, this.feedbackComment.trim() || undefined)
       .subscribe({
-        next: () => { this.onFilterChange(); this.closeDetails(); },
-        error: err => this.notify.error('Failed to close', err.message)
+        next: (result) => {
+          this.notify.success(
+            this.feedbackApproved ? 'Repair accepted — moving to payment' : 'Sent back for rework',
+            '',
+          );
+          this.showFeedbackModal = false;
+          this.applyChainResult(result);
+        },
+        error: () => {},
       });
+  }
+
+  public openPaymentModal() {
+    this.postComment = '';
+    this.showPaymentModal = true;
+  }
+
+  public submitPayment() {
+    const wo = this.selectedReq()?.workOrder;
+    if (!wo) return;
+    if (!this.postComment.trim()) {
+      this.notify.error('Please enter a payment reference or remark.', '');
+      return;
+    }
+    this.upsertService.recordRepairPayment(wo.id, this.postComment.trim()).subscribe({
+      next: (result) => {
+        this.notify.success('Payment recorded', 'Awaiting MS approval');
+        this.showPaymentModal = false;
+        this.applyChainResult(result);
+      },
+      error: () => {},
+    });
+  }
+
+  public openApprovalModal(stage: 'MS' | 'RDHS' | 'PDHS') {
+    this.approvalStage = stage;
+    this.postComment = '';
+    this.showApprovalModal = true;
+  }
+
+  public approvalFlowHint(): string {
+    switch (this.approvalStage) {
+      case 'MS':
+        return 'Next: RDHS approval.';
+      case 'RDHS':
+        return 'Next: PDHD approval.';
+      default:
+        return 'This final approval verifies & closes the work order.';
+    }
+  }
+
+  public submitApproval() {
+    const wo = this.selectedReq()?.workOrder;
+    if (!wo) return;
+    this.upsertService
+      .approveRepairStage(wo.id, this.approvalStage, this.postComment.trim() || undefined)
+      .subscribe({
+        next: (result) => {
+          this.notify.success(
+            `${this.approvalStage} approval recorded`,
+            result.status === 'VERIFIED_CLOSED'
+              ? 'Work order verified & closed'
+              : 'Next approval pending',
+          );
+          this.showApprovalModal = false;
+          this.applyChainResult(result);
+        },
+        error: () => {},
+      });
+  }
+
+  // Keep the open details modal in sync after a chain action + refresh list.
+  private applyChainResult(result: { status: string; updated?: any }) {
+    const req = this.selectedReq();
+    if (req?.workOrder) {
+      this.selectedReq.set({
+        ...req,
+        workOrder: {
+          ...req.workOrder,
+          ...(result.updated ?? {}),
+          status: result.status as WorkOrderStatus,
+        },
+      });
+    }
+    this.onFilterChange();
   }
 
   // Role helpers
@@ -582,6 +839,4 @@ export class RepairsComponent implements OnInit {
     if (!part) return 0;
     return part[`year${year}`] ?? 0;
   }
-
 }
-

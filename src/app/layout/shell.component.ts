@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { UserFacadeService } from '../core/services/user-facade.service';
 import { AuthService } from '../core/auth/auth.service';
 import { HasPermissionDirective } from '../core/directives/permission-directive';
-import { RoleType } from "../core/models/permission.types";
+import { RoleType } from '../core/models/permission.types';
 import { Permission } from '../core/constants/permissions';
 
 /**
@@ -29,13 +29,7 @@ import { Permission } from '../core/constants/permissions';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [
-    HasPermissionDirective,
-    CommonModule,
-    RouterOutlet,
-    RouterLink,
-    RouterLinkActive,
-  ],
+  imports: [HasPermissionDirective, CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css',
 })
@@ -47,7 +41,7 @@ export class ShellComponent implements OnInit {
   constructor(
     public userFacade: UserFacadeService,
     private authService: AuthService,
-  ) { }
+  ) {}
 
   ngOnInit() {
     if (
@@ -85,7 +79,6 @@ export class ShellComponent implements OnInit {
     if (!this.userFacade.currentUser()) return false;
 
     switch (module) {
-      
       case 'audit':
       case 'admin':
         return this.userFacade.hasAnyRole([RoleType.SUPER_ADMIN_PDHS, RoleType.ADMIN_PDHS]);

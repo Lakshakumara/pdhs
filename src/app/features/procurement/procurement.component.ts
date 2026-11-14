@@ -9,9 +9,9 @@ import {
   InventoryItem,
   Supplier,
   WorkOrder,
-  PurchaseOrderItem
+  PurchaseOrderItem,
 } from '../../core/models/biomed.interface';
-import { RoleType } from "../../core/models/permission.types";
+import { RoleType } from '../../core/models/permission.types';
 import { UserFacadeService } from '../../core/services/user-facade.service';
 import { QueryService } from '../../core/services/query.service';
 
@@ -19,16 +19,14 @@ import { QueryService } from '../../core/services/query.service';
   selector: 'app-procurement',
   imports: [CommonModule, FormsModule],
   templateUrl: './procurement.component.html',
-  styleUrl: './procurement.component.css'
+  styleUrl: './procurement.component.css',
 })
 export class ProcurementComponent implements OnInit {
-
   // Pagination properties
   readonly totalPages = signal(1);
   readonly total = signal(0);
   readonly currentPage = signal(1);
   readonly pageSize = signal(10);
-
 
   // Filter properties
   public searchTerm = signal('');
@@ -65,32 +63,35 @@ export class ProcurementComponent implements OnInit {
   public tempItemCost = 0;
   public tempItemCat: 'new equipment' | 'spare part' | 'consumable' | 'service' = 'spare part';
 
-  constructor(private userFacade: UserFacadeService,
+  constructor(
+    private userFacade: UserFacadeService,
     private queryService: QueryService,
-    private stateService: BiomedStateService) { }
+    private stateService: BiomedStateService,
+  ) {}
 
   ngOnInit() {
+    this.queryService
+      .getInventoryItems(
+        this.currentPage(),
+        this.pageSize(),
+        this.searchTerm(),
+        this.selectedCategory(),
+      )
+      .subscribe((result) => {
+        console.log('inventory items', result.items);
+        this.inventoryItems.set(result.items);
+        this.total.set(result.total);
+      });
 
-    this.queryService.getInventorytem(
-      this.currentPage(),
-      this.pageSize(),
-      this.searchTerm(),
-      this.selectedCategory(),
-    ).subscribe(result => {
-      console.log('inventory items', result.items)
-      this.inventoryItems.set(result.items);
-      this.total.set(result.total);
-    });
-
-    this.stateService.procurementPlans$.subscribe(list => {
+    this.stateService.procurementPlans$.subscribe((list) => {
       this.plans = list;
     });
 
-    this.stateService.purchaseOrders$.subscribe(list => {
+    this.stateService.purchaseOrders$.subscribe((list) => {
       this.purchaseOrders = list;
     });
 
-    this.stateService.grns$.subscribe(list => {
+    this.stateService.grns$.subscribe((list) => {
       this.grns = list;
     });
 
@@ -98,12 +99,12 @@ export class ProcurementComponent implements OnInit {
       this.inventoryItems = list;
     });*/
 
-    this.stateService.suppliers$.subscribe(list => {
+    this.stateService.suppliers$.subscribe((list) => {
       this.suppliers = list;
     });
 
-    this.stateService.workOrders$.subscribe(list => {
-      this.activeWorkOrders = list.filter(wo => wo.status !== 'VERIFIED_CLOSED');
+    this.stateService.workOrders$.subscribe((list) => {
+      this.activeWorkOrders = list.filter((wo) => wo.status !== 'VERIFIED_CLOSED');
     });
   }
 
@@ -129,7 +130,7 @@ export class ProcurementComponent implements OnInit {
       itemDescription: this.planDesc,
       estimatedQuantity: this.planQty,
       estimatedCost: this.planCost,
-      procurementMethod: this.planMethod
+      procurementMethod: this.planMethod,
     });
     this.showPlanModal = false;
   }
@@ -164,7 +165,7 @@ export class ProcurementComponent implements OnInit {
       description: this.tempItemDesc,
       quantity: this.tempItemQty,
       unitCost: this.tempItemCost,
-      category: this.tempItemCat
+      category: this.tempItemCat,
     });
 
     this.resetTempItem();
@@ -184,17 +185,20 @@ export class ProcurementComponent implements OnInit {
       return;
     }
 
-    const supplier = this.suppliers.find(s => s.id === this.poSupplierId);
+    const supplier = this.suppliers.find((s) => s.id === this.poSupplierId);
     if (!supplier) return;
 
-    const totalCost = this.poItemsBuffer.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+    const totalCost = this.poItemsBuffer.reduce(
+      (sum, item) => sum + item.quantity * item.unitCost,
+      0,
+    );
 
     this.stateService.createPurchaseOrder({
       supplierId: this.poSupplierId,
       supplierName: supplier.name,
       totalCost,
       items: this.poItemsBuffer,
-      linkedRepairWorkOrderId: this.poLinkedWorkOrderId || undefined
+      linkedRepairWorkOrderId: this.poLinkedWorkOrderId || undefined,
     });
 
     this.showPOModal = false;
@@ -211,7 +215,11 @@ export class ProcurementComponent implements OnInit {
 
   // Receive goods (GRN)
   public confirmGRN(poId: string) {
-    if (confirm('Verify delivery and record Goods Received Note? This will automatically update the spare parts store inventory and register any new hardware equipment in the PDHS master catalog.')) {
+    if (
+      confirm(
+        'Verify delivery and record Goods Received Note? This will automatically update the spare parts store inventory and register any new hardware equipment in the PDHS master catalog.',
+      )
+    ) {
       this.stateService.receiveGoods(poId);
     }
   }

@@ -6,7 +6,7 @@ export type AuthStrategy = 'ANY' | 'ALL';
 
 @Directive({
   selector: '[appHasPermission]',
-  standalone: true
+  standalone: true,
 })
 /**
  * Usage:
@@ -34,7 +34,7 @@ export class HasPermissionDirective {
   constructor(
     private tpl: TemplateRef<any>,
     private vcr: ViewContainerRef,
-    private userFacade: UserFacadeService
+    private userFacade: UserFacadeService,
   ) {
     effect(() => {
       this.vcr.clear();
@@ -45,9 +45,10 @@ export class HasPermissionDirective {
 
       if (required.length === 0) return;
 
-      const hasAccess = currentStrategy === 'ALL'
-        ? required.every(p => userPermissions.includes(p))
-        : required.some(p => userPermissions.includes(p));
+      const hasAccess =
+        currentStrategy === 'ALL'
+          ? required.every((p) => userPermissions.includes(p))
+          : required.some((p) => userPermissions.includes(p));
 
       if (hasAccess) {
         this.vcr.createEmbeddedView(this.tpl);

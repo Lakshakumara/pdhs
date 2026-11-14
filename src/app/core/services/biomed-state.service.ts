@@ -18,11 +18,11 @@ import {
   AuditLog,
   WorkOrderStatus,
   RepairPriority,
-  UserDto
+  UserDto,
 } from '../models/biomed.interface';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class BiomedStateService {
   private baseUrl = 'http://10.20.16.5:3000/biomedical-state'; // Adjust if needed, or use environment variable
@@ -95,16 +95,18 @@ export class BiomedStateService {
 
   // Districts
   private fetchDistricts(): void {
-    this.http.get<District[]>(`${this.baseUrl}/districts`)
+    this.http
+      .get<District[]>(`${this.baseUrl}/districts`)
       .pipe(catchError(this.handleError))
-      .subscribe(districts => this.districtsSubject.next(districts));
+      .subscribe((districts) => this.districtsSubject.next(districts));
   }
 
   // Institutions
   private fetchInstitutions(): void {
-    this.http.get<Institution[]>(`${this.baseUrl}/institutions`)
+    this.http
+      .get<Institution[]>(`${this.baseUrl}/institutions`)
       .pipe(catchError(this.handleError))
-      .subscribe(institutions => this.institutionsSubject.next(institutions));
+      .subscribe((institutions) => this.institutionsSubject.next(institutions));
   }
 
   // Users
@@ -123,83 +125,98 @@ export class BiomedStateService {
 
   // Assignments
   private fetchAssignments(): void {
-    this.http.get<EquipmentAssignment[]>(`${this.baseUrl}/assignments`)
+    this.http
+      .get<EquipmentAssignment[]>(`${this.baseUrl}/assignments`)
       .pipe(catchError(this.handleError))
-      .subscribe(assignments => this.assignmentsSubject.next(assignments));
+      .subscribe((assignments) => this.assignmentsSubject.next(assignments));
   }
 
   // Repair Requests
   private fetchRepairRequests(): void {
-    this.http.get<RepairRequest[]>(`${this.baseUrl}/repair-requests`)
+    this.http
+      .get<RepairRequest[]>(`${this.baseUrl}/repair-requests`)
       .pipe(catchError(this.handleError))
-      .subscribe(repairRequests => this.repairRequestsSubject.next(repairRequests));
+      .subscribe((repairRequests) => this.repairRequestsSubject.next(repairRequests));
   }
 
   // Work Orders
   private fetchWorkOrders(): void {
-    this.http.get<WorkOrder[]>(`${this.baseUrl}/work-orders`)
+    this.http
+      .get<WorkOrder[]>(`${this.baseUrl}/work-orders`)
       .pipe(catchError(this.handleError))
-      .subscribe(workOrders => this.workOrdersSubject.next(workOrders));
+      .subscribe((workOrders) => this.workOrdersSubject.next(workOrders));
   }
 
   // Suppliers
   private fetchSuppliers(): void {
-    this.http.get<Supplier[]>(`${this.baseUrl}/suppliers`)
+    this.http
+      .get<Supplier[]>(`${this.baseUrl}/suppliers`)
       .pipe(catchError(this.handleError))
-      .subscribe(suppliers => this.suppliersSubject.next(suppliers));
+      .subscribe((suppliers) => this.suppliersSubject.next(suppliers));
   }
 
   // Inventory Items
   private fetchInventoryItems(): void {
-    this.http.get<InventoryItem[]>(`${this.baseUrl}/inventory-items`)
+    this.http
+      .get<InventoryItem[]>(`${this.baseUrl}/inventory-items`)
       .pipe(catchError(this.handleError))
-      .subscribe(inventoryItems => this.inventoryItemsSubject.next(inventoryItems));
+      .subscribe((inventoryItems) => this.inventoryItemsSubject.next(inventoryItems));
   }
 
   // Procurement Plans
   private fetchProcurementPlans(): void {
-    this.http.get<ProcurementPlan[]>(`${this.baseUrl}/procurement-plans`)
+    this.http
+      .get<ProcurementPlan[]>(`${this.baseUrl}/procurement-plans`)
       .pipe(catchError(this.handleError))
-      .subscribe(procurementPlans => this.procurementPlansSubject.next(procurementPlans));
+      .subscribe((procurementPlans) => this.procurementPlansSubject.next(procurementPlans));
   }
 
   // Purchase Orders
   private fetchPurchaseOrders(): void {
-    this.http.get<PurchaseOrder[]>(`${this.baseUrl}/purchase-orders`)
+    this.http
+      .get<PurchaseOrder[]>(`${this.baseUrl}/purchase-orders`)
       .pipe(catchError(this.handleError))
-      .subscribe(purchaseOrders => this.purchaseOrdersSubject.next(purchaseOrders));
+      .subscribe((purchaseOrders) => this.purchaseOrdersSubject.next(purchaseOrders));
   }
 
   // GRNs
   private fetchGrns(): void {
-    this.http.get<GoodsReceivedNote[]>(`${this.baseUrl}/grns`)
+    this.http
+      .get<GoodsReceivedNote[]>(`${this.baseUrl}/grns`)
       .pipe(catchError(this.handleError))
-      .subscribe(grns => this.grnsSubject.next(grns));
+      .subscribe((grns) => this.grnsSubject.next(grns));
   }
 
   // Audit Logs
   private fetchAuditLogs(): void {
-    this.http.get<AuditLog[]>(`${this.baseUrl}/audit-logs`)
+    this.http
+      .get<AuditLog[]>(`${this.baseUrl}/audit-logs`)
       .pipe(catchError(this.handleError))
-      .subscribe(auditLogs => this.auditLogsSubject.next(auditLogs));
+      .subscribe((auditLogs) => this.auditLogsSubject.next(auditLogs));
   }
 
   // System Audit Logger (simplified - just logs to console for now, backend handles audit)
-  public logAudit(action: 'CREATE' | 'UPDATE' | 'DELETE', entityName: string, recordId: string, description: string): void {
+  public logAudit(
+    action: 'CREATE' | 'UPDATE' | 'DELETE',
+    entityName: string,
+    recordId: string,
+    description: string,
+  ): void {
     // In a real app, you might send this to the backend via an endpoint.
     console.log('Audit Log:', { action, entityName, recordId, description });
     // Optionally, you could refetch audit logs after a delay to get the latest from backend.
     // setTimeout(() => this.fetchAuditLogs(), 1000);
   }
 
-
-
-
   // Work Order Workflow
-  public updateWorkOrderStatus(woId: string, nextStatus: WorkOrderStatus, payload?: Partial<WorkOrder>): Observable<WorkOrder> {
+  public updateWorkOrderStatus(
+    woId: string,
+    nextStatus: WorkOrderStatus,
+    payload?: Partial<WorkOrder>,
+  ): Observable<WorkOrder> {
     const body = { status: nextStatus, payload };
     return this.http.put<WorkOrder>(`${this.baseUrl}/work-orders/${woId}/status`, body).pipe(
-      tap(updatedWorkOrder => {
+      tap((updatedWorkOrder) => {
         this.fetchWorkOrders();
         // If completed, we might need to fetch inventory if parts were used
         if (nextStatus === 'COMPLETED') {
@@ -207,7 +224,7 @@ export class BiomedStateService {
         }
         this.logAudit('UPDATE', 'WorkOrder', woId, `Changed work order status to ${nextStatus}.`);
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
@@ -216,11 +233,16 @@ export class BiomedStateService {
     // This is now handled by the backend when work order is completed.
     // We might still want to optimistically update the inventory subject.
     const items = this.inventoryItemsSubject.value;
-    const item = items.find(i => i.id === itemId);
+    const item = items.find((i) => i.id === itemId);
     if (item) {
       item.currentStock = Math.max(0, item.currentStock - qty);
       this.inventoryItemsSubject.next(items);
-      this.logAudit('UPDATE', 'InventoryItem', itemId, `Deducted ${qty} of ${item.name} due to repair work order consumption.`);
+      this.logAudit(
+        'UPDATE',
+        'InventoryItem',
+        itemId,
+        `Deducted ${qty} of ${item.name} due to repair work order consumption.`,
+      );
     }
     // Also call backend to persist? Actually, backend does it on work order completion.
     // We could call an endpoint to deduct stock, but let's assume backend handles it via work order completion.
@@ -229,85 +251,129 @@ export class BiomedStateService {
 
   // Store Management
   public addInventoryStock(itemId: string, qty: number): Observable<InventoryItem> {
-    return this.http.post<InventoryItem>(`${this.baseUrl}/inventory-items/${itemId}/stock`, { quantity: qty }).pipe(
-      tap(updatedItem => {
-        this.fetchInventoryItems();
-        this.logAudit('UPDATE', 'InventoryItem', updatedItem.id, `Restocked ${qty} items of ${updatedItem.name}.`);
-      }),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<InventoryItem>(`${this.baseUrl}/inventory-items/${itemId}/stock`, { quantity: qty })
+      .pipe(
+        tap((updatedItem) => {
+          this.fetchInventoryItems();
+          this.logAudit(
+            'UPDATE',
+            'InventoryItem',
+            updatedItem.id,
+            `Restocked ${qty} items of ${updatedItem.name}.`,
+          );
+        }),
+        catchError(this.handleError),
+      );
   }
 
   // Procurement Workflow
   public addProcurementPlan(plan: Omit<ProcurementPlan, 'id'>): Observable<ProcurementPlan> {
     return this.http.post<ProcurementPlan>(`${this.baseUrl}/procurement-plans`, plan).pipe(
-      tap(newPlan => {
+      tap((newPlan) => {
         this.fetchProcurementPlans();
-        this.logAudit('CREATE', 'ProcurementPlan', newPlan.id, `Created annual procurement plan: ${newPlan.itemDescription}`);
+        this.logAudit(
+          'CREATE',
+          'ProcurementPlan',
+          newPlan.id,
+          `Created annual procurement plan: ${newPlan.itemDescription}`,
+        );
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
-  public createPurchaseOrder(po: Omit<PurchaseOrder, 'id' | 'poNumber' | 'approvalStatus' | 'orderDate'>): Observable<PurchaseOrder> {
+  public createPurchaseOrder(
+    po: Omit<PurchaseOrder, 'id' | 'poNumber' | 'approvalStatus' | 'orderDate'>,
+  ): Observable<PurchaseOrder> {
     return this.http.post<PurchaseOrder>(`${this.baseUrl}/purchase-orders`, po).pipe(
-      tap(newPo => {
+      tap((newPo) => {
         this.fetchPurchaseOrders();
-        this.logAudit('CREATE', 'PurchaseOrder', newPo.id, `Generated purchase order: ${newPo.poNumber}`);
+        this.logAudit(
+          'CREATE',
+          'PurchaseOrder',
+          newPo.id,
+          `Generated purchase order: ${newPo.poNumber}`,
+        );
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
   public updatePOStatus(poId: string, status: 'Approved' | 'Rejected'): Observable<PurchaseOrder> {
-    return this.http.put<PurchaseOrder>(`${this.baseUrl}/purchase-orders/${poId}/status`, { status }).pipe(
-      tap(updatedPo => {
-        this.fetchPurchaseOrders();
-        this.fetchGrns();
-        if (status === 'Approved') {
-          // When PO is approved, backend creates GRN and updates inventory/equipment
-          this.fetchInventoryItems();
-          //this.fetchEquipment();
-        }
-        this.logAudit('UPDATE', 'PurchaseOrder', poId, `Purchase order ${updatedPo.poNumber} was ${status.toLowerCase()}.`);
-      }),
-      catchError(this.handleError)
-    );
+    return this.http
+      .put<PurchaseOrder>(`${this.baseUrl}/purchase-orders/${poId}/status`, { status })
+      .pipe(
+        tap((updatedPo) => {
+          this.fetchPurchaseOrders();
+          this.fetchGrns();
+          if (status === 'Approved') {
+            // When PO is approved, backend creates GRN and updates inventory/equipment
+            this.fetchInventoryItems();
+            //this.fetchEquipment();
+          }
+          this.logAudit(
+            'UPDATE',
+            'PurchaseOrder',
+            poId,
+            `Purchase order ${updatedPo.poNumber} was ${status.toLowerCase()}.`,
+          );
+        }),
+        catchError(this.handleError),
+      );
   }
 
   // Goods Received Note
   public receiveGoods(poId: string): Observable<GoodsReceivedNote> {
-    return this.http.post<GoodsReceivedNote>(`${this.baseUrl}/purchase-orders/${poId}/receive`, {}).pipe(
-      tap(grn => {
-        this.fetchGrns();
-        this.fetchInventoryItems();
-        //this.fetchEquipment();
-        this.logAudit('CREATE', 'GoodsReceivedNote', grn.id, `Goods Received Note confirmed for PO: ${grn.poNumber}. Stock automatically updated.`);
-      }),
-      catchError(this.handleError)
-    );
+    return this.http
+      .post<GoodsReceivedNote>(`${this.baseUrl}/purchase-orders/${poId}/receive`, {})
+      .pipe(
+        tap((grn) => {
+          this.fetchGrns();
+          this.fetchInventoryItems();
+          //this.fetchEquipment();
+          this.logAudit(
+            'CREATE',
+            'GoodsReceivedNote',
+            grn.id,
+            `Goods Received Note confirmed for PO: ${grn.poNumber}. Stock automatically updated.`,
+          );
+        }),
+        catchError(this.handleError),
+      );
   }
-
 
   // Institutions CRUD
   public addInstitution(institution: Omit<Institution, 'id'>): Observable<Institution> {
     return this.http.post<Institution>(`${this.baseUrl}/institutions`, institution).pipe(
-      tap(newInst => {
+      tap((newInst) => {
         this.fetchInstitutions(); // refetch list
-        this.logAudit('CREATE', 'Institution', newInst.id, `Added new institution: ${newInst.name}`);
+        this.logAudit(
+          'CREATE',
+          'Institution',
+          newInst.id,
+          `Added new institution: ${newInst.name}`,
+        );
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
 
   public updateInstitution(institution: Institution): Observable<Institution> {
-    return this.http.put<Institution>(`${this.baseUrl}/institutions/${institution.id}`, institution).pipe(
-      tap(updatedInst => {
-        this.fetchInstitutions();
-        this.logAudit('UPDATE', 'Institution', updatedInst.id, `Updated institution: ${updatedInst.name}`);
-      }),
-      catchError(this.handleError)
-    );
+    return this.http
+      .put<Institution>(`${this.baseUrl}/institutions/${institution.id}`, institution)
+      .pipe(
+        tap((updatedInst) => {
+          this.fetchInstitutions();
+          this.logAudit(
+            'UPDATE',
+            'Institution',
+            updatedInst.id,
+            `Updated institution: ${updatedInst.name}`,
+          );
+        }),
+        catchError(this.handleError),
+      );
   }
 
   public deleteInstitution(id: string): Observable<void> {
@@ -316,10 +382,9 @@ export class BiomedStateService {
         this.fetchInstitutions();
         this.logAudit('DELETE', 'Institution', id, `Deleted institution with id: ${id}`);
       }),
-      catchError(this.handleError)
+      catchError(this.handleError),
     );
   }
-
 
   /*
     // Equipment Assign Workflow
@@ -351,5 +416,4 @@ export class BiomedStateService {
       );
     }
   */
-
 }

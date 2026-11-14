@@ -39,7 +39,7 @@ import { SimpleNoteDialogComponent } from './simple-note-dialog.component';
           [pt]="{
             root: { class: 'pt-demo-root' },
             label: { class: 'pt-demo-label' },
-            icon: { style: { color: 'gold' } }
+            icon: { style: { color: 'gold' } },
           }"
         />
         <p class="hint">Root/label/icon all get custom classes/styles directly — no ::ng-deep.</p>
@@ -51,19 +51,36 @@ import { SimpleNoteDialogComponent } from './simple-note-dialog.component';
       ============================================================= -->
       <section>
         <h4>3. DialogService (dynamic modal)</h4>
-        <p-button label="Open Dynamic Dialog" icon="pi pi-external-link" severity="secondary" (onClick)="openDialog()" />
+        <p-button
+          label="Open Dynamic Dialog"
+          icon="pi pi-external-link"
+          severity="secondary"
+          (onClick)="openDialog()"
+        />
       </section>
     </p-card>
   `,
   styles: [
     `
-      section { margin-bottom: 1.75rem; }
-      h4 { margin: 0 0 0.5rem; }
-      .hint { color: var(--p-text-muted-color); font-size: 0.85rem; margin-top: 0.4rem; }
+      section {
+        margin-bottom: 1.75rem;
+      }
+      h4 {
+        margin: 0 0 0.5rem;
+      }
+      .hint {
+        color: var(--p-text-muted-color);
+        font-size: 0.85rem;
+        margin-top: 0.4rem;
+      }
 
       /* pt-injected classes styled here like any normal CSS target */
-      :host ::ng-deep .pt-demo-root { border-radius: 999px; }
-      :host ::ng-deep .pt-demo-label { font-style: italic; }
+      :host ::ng-deep .pt-demo-root {
+        border-radius: 999px;
+      }
+      :host ::ng-deep .pt-demo-label {
+        font-style: italic;
+      }
     `,
   ],
 })

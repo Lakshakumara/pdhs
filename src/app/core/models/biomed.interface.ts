@@ -124,7 +124,9 @@ export interface Equipment {
   category: EquipmentCategory;
   manufacturer: string;
   countryOfOrigin: string;
+  supplierId?: string | null;
   supplierName: string;
+  supplier?: Supplier;
   tenderNumber: string;
   purchaseOrderNumber: string;
   modelNumber: string;

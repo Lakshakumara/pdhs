@@ -228,6 +228,36 @@
 
   <!-- MAIN WORKSPACE: flex column, height-locked, no overflow on itself -->
   <div class="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+    <!-- IMPERSONATION BANNER ("View As") — always visible while the
+         15-minute audited troubleshooting session is active -->
+    <div
+      *ngIf="authService.isImpersonating() && authService.impersonationMeta() as meta"
+      class="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 bg-amber-500 text-white px-6 py-2 z-30"
+    >
+      <div class="flex items-center gap-2.5 min-w-0">
+        <i class="pi pi-eye text-sm"></i>
+        <p class="text-xs font-bold truncate">
+          Viewing as
+          <span class="underline underline-offset-2">{{ meta.targetFullName }}</span>
+          <span class="font-normal opacity-80"
+            >(@{{ meta.targetUsername }} · {{ meta.targetRole.replace('_', ' ') }})</span
+          >
+        </p>
+        <span
+          class="hidden sm:inline-block text-[10px] font-mono bg-black/20 px-2 py-0.5 rounded"
+          [title]="'Impersonation token expires in ' + impersonationClock()"
+        >
+          <i class="pi pi-clock mr-1"></i>{{ impersonationClock() }}
+        </span>
+      </div>
+      <button
+        (click)="exitImpersonation()"
+        class="text-xs font-bold bg-white text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
+      >
+        <i class="pi pi-sign-out mr-1.5"></i>Exit View As
+      </button>
+    </div>
+
     <!-- TOP HEADER: fixed height, never scrolls away -->
     <header
       class="h-16 flex-shrink-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 px-6 flex items-center justify-between z-20 shadow-sm"

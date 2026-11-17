@@ -54,6 +54,8 @@ import { forkJoin, finalize } from 'rxjs';
 import { ScopeType } from '../../core/models/permission.types';
 import { PermissionService, PermissionMeta } from '../../core/auth/permission.service';
 import { Permission } from '../../core/constants/permissions';
+import { HasPermissionDirective } from '../../core/directives/permission-directive';
+import { AuthService } from '../../core/auth/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
@@ -86,6 +88,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     TabsModule,
     StepperModule,
     TextareaModule,
+    HasPermissionDirective,
   ],
   providers: [MessageService, ConfirmationService],
 })
@@ -95,6 +98,10 @@ export class UsersComponent implements OnInit {
   private msg = inject(MessageService);
   private confirm = inject(ConfirmationService);
   private fb = inject(FormBuilder);
+  private authService = inject(AuthService);
+
+  /** Exposed for *appHasPermission in the template. */
+  readonly permission = Permission;
 
   // Permission/role metadata from the backend — single source, fetched once
   readonly meta = toSignal<PermissionMeta | null>(this.permissionService.getMeta(), {
@@ -366,6 +373,41 @@ export class UsersComponent implements OnInit {
     this.userService.updateUserStatus(user.id, !user.active).subscribe({
       next: (u) => this.users.update((list) => list.map((x) => (x.id === user.id ? u : x))),
       error: () => this.toast('error', 'Failed to update status'),
+    });
+  }
+
+  // ── "View As" (impersonation) ──────────────────────────────────────
+  /**
+   * Starts an audited 15-minute session as the selected user so we can
+   * see exactly what they see (their scope + permissions) while
+   * troubleshooting. Backend requires AUTH_IMPERSONATE (SUPER_ADMIN_PDHS);
+   * the directive only hides the button — the API re-verifies.
+   */
+  viewAs(user: UserDto) {
+    this.confirm.confirm({
+      message: `Start a <strong>15-minute "View As"</strong> session as <strong>${user.fullName}</strong>?<br/><br/>Every action is audit-logged to your account, and you can exit at any time from the banner.`,
+      header: 'View As ' + user.fullName,
+      icon: 'pi pi-eye',
+      acceptButtonProps: { label: 'Start View As', severity: 'success' },
+      rejectButtonProps: { label: 'Cancel', severity: 'secondary', outlined: true },
+      accept: () => {
+        this.authService.impersonate(user.id).subscribe({
+          next: () => {
+            this.msg.add({
+              severity: 'success',
+              summary: 'Viewing as ' + user.fullName,
+              detail: 'Use the amber banner to exit.',
+            });
+          },
+          error: (err) => {
+            this.msg.add({
+              severity: 'error',
+              summary: 'Could not start View As',
+              detail: err?.error?.message ?? 'Permission denied',
+            });
+          },
+        });
+      },
     });
   }
 

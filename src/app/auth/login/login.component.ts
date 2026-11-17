@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, isDevMode } from '@angular/core';
+import { Component, signal, computed, inject, isDevMode } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -17,14 +17,14 @@ import { DividerModule } from 'primeng/divider';
 import { CheckboxModule } from 'primeng/checkbox';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { UserDto } from '../../core/models/biomed.interface';
-import { UserApiService } from '../../core/services/user-api.service';
 import { environment } from '../../../environments/environment';
 
 interface DevUserOption {
   label: string;
   value: string;
-  user: UserDto;
+  username: string;
+  fullName: string;
+  role: string;
 }
 
 @Component({
@@ -44,12 +44,11 @@ interface DevUserOption {
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private stateService = inject(UserApiService);
 
   loginForm: FormGroup;
   error = signal<string | null>(null);
@@ -64,31 +63,28 @@ export class LoginComponent implements OnInit {
    */
   readonly enableDevLogin = !environment.production || isDevMode();
 
-  /** Fixed password used for ALL seeded dev/test accounts. */
-  private readonly DEV_PASSWORD = 'pdhs@123';
-
-  devUsers = signal<UserDto[]>([]);
-  selectedDevUserId: string | null = null;
-
+  /**
+   * Personas come from environment.devPersonas (seed usernames only) —
+   * NO backend endpoint is involved, so there is nothing unauthenticated
+   * to lock down. Sign-in still goes through the real POST /auth/login.
+   */
   devUserOptions = computed<DevUserOption[]>(() =>
-    this.devUsers().map((u) => ({
-      label: `${u.fullName} — ${u.roles.map((r) => r.role).join(', ')}`,
-      value: u.id,
-      user: u,
+    (environment.devPersonas ?? []).map((p) => ({
+      label: `${p.fullName} — ${p.role}`,
+      value: p.username,
+      username: p.username,
+      fullName: p.fullName,
+      role: p.role,
     })),
   );
+
+  selectedDevUsername: string | null = null;
 
   constructor() {
     this.loginForm = this.fb.group({
       username: ['', Validators.required],
       password: ['', Validators.required],
     });
-  }
-
-  ngOnInit() {
-    if (this.enableDevLogin) {
-      this.stateService.dev_getAllUsers().subscribe((list) => this.devUsers.set(list.items));
-    }
   }
 
   onSubmit() {
@@ -116,16 +112,17 @@ export class LoginComponent implements OnInit {
 
   /**
    * Dev convenience: fills credentials for the selected seeded test
-   * account (fixed password 'pdhs@123') and signs in immediately.
+   * account (shared dev password) and signs in immediately through the
+   * normal login flow — no auth bypass anywhere.
    */
-  onDevUserSelect(userId: string | null) {
-    if (!userId) return;
-    const option = this.devUserOptions().find((o) => o.value === userId);
+  onDevUserSelect(username: string | null) {
+    if (!username) return;
+    const option = this.devUserOptions().find((o) => o.value === username);
     if (!option) return;
 
     this.loginForm.patchValue({
-      username: option.user.username,
-      password: this.DEV_PASSWORD,
+      username: option.username,
+      password: environment.devPassword,
     });
     this.onSubmit();
   }

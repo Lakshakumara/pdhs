@@ -40,13 +40,7 @@ export class QueryService {
     return this.http.get<District[]>(`${this.baseUrl}/districts`);
   }
 
-  getInstitute(
-    page: number,
-    size: number,
-    search?: string,
-    districtId?: string,
-    type?: string,
-  ) {
+  getInstitute(page: number, size: number, search?: string, districtId?: string, type?: string) {
     let params = new HttpParams().set('page', page).set('size', size);
 
     if (search && search.trim()) {
@@ -64,13 +58,7 @@ export class QueryService {
     return this.http.get<PagedResult<Institution>>(`${this.baseUrl}/institute`, { params });
   }
 
-  getInstitutions(
-    page: number,
-    size: number,
-    search?: string,
-    districtId?: string,
-    type?: string,
-  ) {
+  getInstitutions(page: number, size: number, search?: string, districtId?: string, type?: string) {
     return this.getInstitute(page, size, search, districtId, type);
   }
 
@@ -81,6 +69,7 @@ export class QueryService {
     category?: string,
     status?: string,
     assignedInstitutionId?: string,
+    supplierId?: string,
   ) {
     let params = new HttpParams().set('page', page).set('size', size);
 
@@ -98,6 +87,11 @@ export class QueryService {
     if (assignedInstitutionId) {
       params = params.set('assignedInstitutionId', assignedInstitutionId);
     }
+
+    if (supplierId) {
+      params = params.set('supplierId', supplierId);
+    }
+
     return this.http.get<PagedResult<Equipment>>(`${this.baseUrl}/equipment`, { params });
   }
 

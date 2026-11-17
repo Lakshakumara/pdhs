@@ -58,7 +58,7 @@ prisma/schema.prisma         # all models; migrations in prisma/migrations/
    3. Use it: `@RequirePermission(Permission.X)` on the route.
    4. `npm run build` — `gen:perms` runs automatically on `prebuild` and regenerates the FE files.
    5. `npm run sync:perms` — backfills the new default to existing users (new users get it at create/role-add time).
-   Never edit `src/auth/permission.enum.ts` (derived shim) or the FE files `core/constants/permissions.ts` / `core/models/permission.types.ts` (both AUTO-GENERATED).
+      Never edit `src/auth/permission.enum.ts` (derived shim) or the FE files `core/constants/permissions.ts` / `core/models/permission.types.ts` (both AUTO-GENERATED).
 4. **Scoping**: services start reads with `this.scopeService.scopeWhere(activeRole)` (PDHS=all, RDHS=district, INSTITUTE=institution). `activeRole` comes from `@ActiveRole()` (set by `ActiveRoleGuard` from `x-role`/`x-scope-type`/`x-scope-id` headers, validated against JWT).
 5. **IDs**: inject `IdService`, `this.idService.generate(ID_PREFIXES.X)` (`SUP` → supplier, etc.). Defined in `src/shared/id/id.service.ts`.
 6. **Module recipe** (copy `modules/repair` or `modules/inventory`):

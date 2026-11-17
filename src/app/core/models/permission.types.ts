@@ -34,6 +34,7 @@ export const SCOPE_ROLES: Record<ScopeType, RoleType[]> = {
     RoleType.SUPER_ADMIN_PDHS,
     RoleType.ADMIN_PDHS,
     RoleType.VIEWER_PDHS,
+    RoleType.STORE_KEEPER,
     RoleType.BIOMEDICAL_TECHNICIAN,
     RoleType.PROCUREMENT_OFFICER,
   ],
@@ -41,16 +42,12 @@ export const SCOPE_ROLES: Record<ScopeType, RoleType[]> = {
     RoleType.SUPER_ADMIN_RDHS,
     RoleType.ADMIN_RDHS,
     RoleType.VIEWER_RDHS,
-    RoleType.STORE_KEEPER,
-    RoleType.BIOMEDICAL_TECHNICIAN,
   ],
   [ScopeType.INSTITUTE]: [
     RoleType.SUPER_ADMIN_INSTITUTE,
     RoleType.ADMIN_INSTITUTE,
     RoleType.VIEWER_INSTITUTE,
     RoleType.INSTITUTION_USER,
-    RoleType.STORE_KEEPER,
-    RoleType.BIOMEDICAL_TECHNICIAN,
   ],
 };
 

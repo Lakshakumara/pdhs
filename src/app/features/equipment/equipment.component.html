@@ -85,6 +85,19 @@
             [showClear]="true"
             styleClass="w-full md:w-48"
           />
+
+          <p-select
+            [options]="suppliers()"
+            optionLabel="name"
+            optionValue="id"
+            [(ngModel)]="selectedSupplierId"
+            (onChange)="onFilterChange()"
+            placeholder="All Suppliers"
+            [showClear]="true"
+            [filter]="true"
+            filterBy="name"
+            styleClass="w-full md:w-52"
+          />
         </div>
       </ng-template>
 
@@ -120,7 +133,14 @@
           <td class="font-mono text-zinc-600 dark:text-zinc-400 font-semibold">
             {{ eq.serialNumber }}
           </td>
-          <td>{{ eq.manufacturer }}</td>
+          <td>
+            <div>{{ eq.manufacturer }}</div>
+            @if (eq.supplier?.name) {
+              <div class="text-[10px] text-blue-500 dark:text-blue-400 font-medium mt-0.5">
+                {{ eq.supplier.name }}
+              </div>
+            }
+          </td>
           <td class="font-medium text-zinc-700 dark:text-zinc-300">
             {{ eq.assignedInstitution?.name }}
           </td>
@@ -274,10 +294,33 @@
           </p>
         </div>
         <div>
-          <p class="text-[10px] uppercase font-bold text-zinc-400">Supplier Name</p>
-          <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-            {{ selectedEq.supplierName }}
-          </p>
+          <p class="text-[10px] uppercase font-bold text-zinc-400">Supplier</p>
+          @if (selectedEq.supplier) {
+            <div class="flex items-center gap-1.5">
+              <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                {{ selectedEq.supplier.name }}
+              </p>
+              @if (selectedEq.supplier.rating) {
+                <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-500">
+                  ★ {{ selectedEq.supplier.rating }}/5
+                </span>
+              }
+            </div>
+            @if (selectedEq.supplier.contactPerson) {
+              <p class="text-[10px] text-zinc-400 mt-0.5">
+                {{ selectedEq.supplier.contactPerson }}
+              </p>
+            }
+            @if (selectedEq.supplier.contactPhone || selectedEq.supplier.phone) {
+              <p class="text-[10px] text-zinc-400">
+                {{ selectedEq.supplier.contactPhone ?? selectedEq.supplier.phone }}
+              </p>
+            }
+          } @else {
+            <p class="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+              {{ selectedEq.supplierName || '—' }}
+            </p>
+          }
         </div>
         <div>
           <p class="text-[10px] uppercase font-bold text-zinc-400">Warranty</p>
@@ -597,13 +640,26 @@
           <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"
             >Supplier / Agent</label
           >
-          <input
-            pInputText
-            type="text"
-            [(ngModel)]="newEqSupplier"
-            placeholder="e.g. MediEquipment Pvt Ltd"
-            class="w-full"
-          />
+          <p-select
+            [(ngModel)]="selectedFormSupplierId"
+            [options]="suppliers()"
+            optionLabel="name"
+            optionValue="id"
+            [filter]="true"
+            filterBy="name"
+            placeholder="Select a supplier..."
+            [showClear]="true"
+            styleClass="w-full"
+          >
+            <ng-template pTemplate="item" let-sup>
+              <div class="flex items-center justify-between gap-2 w-full">
+                <span class="text-sm">{{ sup.name }}</span>
+                @if (sup.rating) {
+                  <span class="text-[10px] text-amber-500 font-bold">★ {{ sup.rating }}</span>
+                }
+              </div>
+            </ng-template>
+          </p-select>
         </div>
         <div>
           <label class="block text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-1"

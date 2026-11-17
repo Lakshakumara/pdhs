@@ -547,6 +547,17 @@
       <div class="flex gap-1">
         <button
           pButton
+          icon="pi pi-eye"
+          severity="info"
+          text
+          rounded
+          size="small"
+          pTooltip="View As — troubleshoot as this user (audited, 15 min)"
+          *appHasPermission="permission.AUTH_IMPERSONATE"
+          (click)="viewAs(user)"
+        ></button>
+        <button
+          pButton
           icon="pi pi-key"
           severity="warn"
           text

@@ -17,7 +17,9 @@
   </div>
 
   <!-- Search & Filters Bar -->
-  <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4">
+  <div
+    class="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 space-y-4"
+  >
     <!-- Search by Name -->
     <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
       <div class="relative flex-1 max-w-md">
@@ -56,7 +58,9 @@
     </div>
 
     <!-- Filter Chips: District & Facility Type -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-800"
+    >
       <!-- District Filter Chips -->
       <div>
         <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider block mb-2"
@@ -161,7 +165,9 @@
         >
           <td class="p-4 font-semibold text-zinc-900 dark:text-zinc-100">{{ inst.name }}</td>
           <td class="p-4">
-            <span class="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2.5 py-0.5 rounded-full text-xs font-medium">
+            <span
+              class="bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 px-2.5 py-0.5 rounded-full text-xs font-medium"
+            >
               {{ inst.type }}
             </span>
           </td>
@@ -172,11 +178,15 @@
           <td class="p-4 text-zinc-500 text-xs">{{ inst.tp || '-' }}</td>
           <td class="p-4">
             @if (inst.active) {
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
+              <span
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
+              >
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active
               </span>
             } @else {
-              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700">
+              <span
+                class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700"
+              >
                 <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span> Inactive
               </span>
             }
@@ -286,9 +296,7 @@
         class="w-full text-sm"
       />
       @if (institutionForm.get('email')?.touched && institutionForm.get('email')?.invalid) {
-        <small class="text-red-500 text-xs"
-          >Please enter a valid email address.</small
-        >
+        <small class="text-red-500 text-xs">Please enter a valid email address.</small>
       }
     </div>
 

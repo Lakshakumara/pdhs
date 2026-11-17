@@ -487,7 +487,7 @@
           (onClick)="openFeedbackModal()"
         />
       </ng-container>
-      <ng-container *appHasPermission="permission.REPAIR_PAYMENT">
+      <ng-container *appHasPermission="permission.PAYMENT_RECORD">
         <p-button
           *ngIf="isPaymentPending(selectedReq()?.workOrder)"
           label="Record Payment"
@@ -495,7 +495,7 @@
           (onClick)="openPaymentModal()"
         />
       </ng-container>
-      <ng-container *appHasPermission="permission.REPAIR_APPROVE_MS">
+      <ng-container *appHasPermission="permission.PAYMENT_APPROVE_MS">
         <p-button
           *ngIf="approvalStageFor(selectedReq()?.workOrder) === 'MS'"
           label="MS Approval"
@@ -503,7 +503,7 @@
           (onClick)="openApprovalModal('MS')"
         />
       </ng-container>
-      <ng-container *appHasPermission="permission.REPAIR_APPROVE_RDHS">
+      <ng-container *appHasPermission="permission.PAYMENT_APPROVE_RDHS">
         <p-button
           *ngIf="approvalStageFor(selectedReq()?.workOrder) === 'RDHS'"
           label="RDHS Approval"
@@ -511,7 +511,7 @@
           (onClick)="openApprovalModal('RDHS')"
         />
       </ng-container>
-      <ng-container *appHasPermission="permission.REPAIR_APPROVE_PDHS">
+      <ng-container *appHasPermission="permission.PAYMENT_APPROVE_PDHS">
         <p-button
           *ngIf="approvalStageFor(selectedReq()?.workOrder) === 'PDHS'"
           label="PDHD Approval"

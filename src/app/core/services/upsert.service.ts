@@ -232,7 +232,10 @@ export class UpsertService {
   createInstitution(payload: Partial<Institution>): Observable<Institution> {
     return this.http.post<Institution>(`${this.baseUrl}/institutions`, payload).pipe(
       tap((newInst) => {
-        this.notify.success('Institution created', `Institution "${newInst.name}" created successfully`);
+        this.notify.success(
+          'Institution created',
+          `Institution "${newInst.name}" created successfully`,
+        );
       }),
     );
   }
@@ -240,7 +243,10 @@ export class UpsertService {
   updateInstitution(id: string, payload: Partial<Institution>): Observable<Institution> {
     return this.http.put<Institution>(`${this.baseUrl}/institutions/${id}`, payload).pipe(
       tap((updated) => {
-        this.notify.success('Institution updated', `Institution "${updated.name}" updated successfully`);
+        this.notify.success(
+          'Institution updated',
+          `Institution "${updated.name}" updated successfully`,
+        );
       }),
     );
   }

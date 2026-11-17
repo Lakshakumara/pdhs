@@ -7,6 +7,7 @@ import {
   EquipmentCategory,
   Equipment,
   EquipmentSpareParts,
+  Supplier,
 } from '../../core/models/biomed.interface';
 import { QueryService } from '../../core/services/query.service';
 import { PermissionService } from '../../core/auth/permission.service';
@@ -65,12 +66,14 @@ import { Permission } from '../../core/constants/permissions';
 export class EquipmentComponent implements OnInit {
   readonly Permission = Permission;
   readonly institutions = signal<Institution[]>([]);
+  readonly suppliers = signal<Supplier[]>([]);
 
   // Filter properties bound to the table's header filter row
   public searchTerm = '';
   public selectedCategory = '';
   public selectedStatus = '';
   public selectedInstitutionId = '';
+  public selectedSupplierId = '';
 
   // Pagination / lazy-load state (driven by p-table)
   readonly total = signal(0);
@@ -114,7 +117,8 @@ export class EquipmentComponent implements OnInit {
   public newEqCat: EquipmentCategory = 'General Medical';
   public newEqMan = '';
   public newEqCountry = '';
-  public newEqSupplier = '';
+  // supplierId bound to the form dropdown; newEqSupplier kept for display/fallback
+  public selectedFormSupplierId: string | null = null;
   public newEqTender = '';
   public newEqPO = '';
   public newEqInvoice = '';
@@ -171,7 +175,15 @@ export class EquipmentComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.loadSuppliers();
+  }
+
+  loadSuppliers() {
+    this.queryService.getSuppliers(1, 200).subscribe((result) => {
+      this.suppliers.set(result.items);
+    });
+  }
 
   getInstitute() {
     if (this.userApi.currentSession() == null) {
@@ -217,6 +229,7 @@ export class EquipmentComponent implements OnInit {
         this.selectedCategory,
         this.selectedStatus,
         this.selectedInstitutionId,
+        this.selectedSupplierId || undefined,
       )
       .subscribe({
         next: (result) => {
@@ -353,6 +366,8 @@ export class EquipmentComponent implements OnInit {
       id: `eqc_${Date.now()}_${i}`,
     }));
 
+    const selectedSupplier = this.suppliers().find((s) => s.id === this.selectedFormSupplierId);
+
     const eqData: Omit<Equipment, 'id'> = {
       invoiceNumber: this.newEqInvoice,
       name: this.newEqName,
@@ -360,7 +375,8 @@ export class EquipmentComponent implements OnInit {
       category: this.newEqCat,
       manufacturer: this.newEqMan,
       countryOfOrigin: this.newEqCountry,
-      supplierName: this.newEqSupplier,
+      supplierId: this.selectedFormSupplierId ?? undefined,
+      supplierName: selectedSupplier?.name ?? '',
       tenderNumber: this.newEqTender,
       purchaseOrderNumber: this.newEqPO,
       modelNumber: this.newEqModel,
@@ -427,7 +443,7 @@ export class EquipmentComponent implements OnInit {
     this.newEqCat = 'General Medical';
     this.newEqMan = '';
     this.newEqCountry = '';
-    this.newEqSupplier = '';
+    this.selectedFormSupplierId = null;
     this.newEqTender = '';
     this.newEqPO = '';
     this.newEqModel = '';
@@ -466,7 +482,7 @@ export class EquipmentComponent implements OnInit {
     this.newEqCat = eq.category;
     this.newEqMan = eq.manufacturer ?? '';
     this.newEqCountry = eq.countryOfOrigin ?? '';
-    this.newEqSupplier = eq.supplierName ?? '';
+    this.selectedFormSupplierId = eq.supplierId ?? null;
     this.newEqTender = eq.tenderNumber ?? '';
     this.newEqPO = eq.purchaseOrderNumber ?? '';
 

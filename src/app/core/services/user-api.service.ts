@@ -15,11 +15,6 @@ export class UserApiService {
 
   constructor(private http: HttpClient) {}
 
-  dev_getAllUsers(page?: number, size?: number): Observable<PagedResult<UserDto>> {
-    let params = new HttpParams().set('page', page ?? 1).set('size', size ?? 20);
-    return this.http.get<PagedResult<UserDto>>(environment.apiUrl + '/developer/users', { params });
-  }
-
   getAllUsers(
     page: number = 1,
     size: number = 10,

@@ -3,12 +3,22 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
+import { AuthService } from '../auth/auth.service';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notify = inject(NotificationService);
+  const authService = inject(AuthService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      // A 401 while "View As" is running means the 15-minute
+      // impersonation token expired — unwind back to the admin session
+      // instead of stranding the user on a dead token.
+      if (error.status === 401 && authService.isImpersonating()) {
+        authService.handleImpersonationExpiry();
+        return throwError(() => error);
+      }
+
       switch (error.status) {
         case 400:
           notify.error('Validation Error', error.error?.message ?? 'Invalid request');

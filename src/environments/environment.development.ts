@@ -13,7 +13,7 @@ export const environment = {
   production: false,
   // LAN address so browsers on other machines reach THIS machine's API
   // (localhost would resolve to the visitor's own computer).
-  apiUrl: 'http://192.168.0.101:3000/api',
+  apiUrl: 'http://10.20.16.57:3000/api',
   
   /** Shared password for ALL seeded dev accounts (scripts/seed-data.ts). */
   devPassword: 'pdhs@123',

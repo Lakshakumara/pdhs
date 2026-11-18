@@ -1,4 +1,9 @@
-# deploy.ps1 - pulls latest code, builds, and redeploys both apps
+# pdhs.ps1 - pulls latest code, builds, and redeploys both apps
+#
+# ORDER MATTERS: the backend builds FIRST because its "prebuild" step
+# (npm run gen:perms) regenerates the frontend permission files in ../pdhs.
+# The frontend build must run AFTER that so it compiles the fresh files.
+#
 # Stops immediately on any error and shows what failed
 
 $ErrorActionPreference = "Stop"
@@ -10,9 +15,12 @@ function Run-Step {
     )
     Write-Host "=== $StepName ===" -ForegroundColor Cyan
     try {
+        # Reset the GLOBAL LASTEXITCODE: a local $null would shadow the real
+        # value (and a stale value from the caller's session caused false fails)
+        $global:LASTEXITCODE = $null
         & $Action
-        if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne $null) {
-            throw "$StepName failed with exit code $LASTEXITCODE"
+        if ($null -ne $global:LASTEXITCODE -and $global:LASTEXITCODE -ne 0) {
+            throw "$StepName failed with exit code $global:LASTEXITCODE"
         }
     }
     catch {
@@ -22,20 +30,68 @@ function Run-Step {
     }
 }
 
-$rootPath     = "D:\root"
+# Root = the folder this script lives in (E:\root on the server, D:\root on dev)
+$rootPath     = $PSScriptRoot
 $frontendRepo = "https://github.com/Lakshakumara/pdhs.git"
 $backendRepo  = "https://github.com/Lakshakumara/pdhs-api.git"
 $frontendPath = "$rootPath\pdhs"
 $backendPath  = "$rootPath\pdhs-api"
 
+Run-Step "Checking prerequisites" {
+    foreach ($cmd in 'git', 'node', 'npm', 'npx', 'pm2') {
+        if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
+            throw "'$cmd' is not installed or not on PATH. Install it before deploying."
+        }
+    }
+}
+
 Run-Step "Updating Frontend (Angular)" {
     if (Test-Path "$frontendPath\.git") {
         Set-Location $frontendPath
+        # Server must mirror GitHub: discard any local edits before pulling
+        git reset --hard HEAD
         git pull
     } else {
         Set-Location $rootPath
         git clone $frontendRepo
     }
+}
+
+Run-Step "Updating Backend (NestJS)" {
+    if (Test-Path "$backendPath\.git") {
+        Set-Location $backendPath
+        # Server must mirror GitHub: discard any local edits before pulling
+        # (safe: .env, client/, dist/, node_modules are all gitignored)
+        git reset --hard HEAD
+        git pull
+    } else {
+        Set-Location $rootPath
+        git clone $backendRepo
+    }
+}
+
+Run-Step "Checking .env exists" {
+    if (-not (Test-Path "$backendPath\.env")) {
+        throw ".env file missing in $backendPath - app will fail to connect to DB. Create it before continuing."
+    }
+}
+
+Run-Step "Installing Backend deps" {
+    Set-Location $backendPath
+    npm install
+}
+
+Run-Step "Generating Prisma client" {
+    Set-Location $backendPath
+    # Required after every schema change / fresh install: regenerates the
+    # typed client in node_modules\.prisma so nest build can type-check.
+    npx prisma generate
+}
+
+Run-Step "Building Backend" {
+    Set-Location $backendPath
+    # prebuild = gen:perms -> regenerates E:\root\pdhs permission files
+    npm run build
 }
 
 Run-Step "Installing Frontend deps" {
@@ -45,17 +101,10 @@ Run-Step "Installing Frontend deps" {
 
 Run-Step "Building Frontend" {
     Set-Location $frontendPath
-    ng build --configuration production
-}
-
-Run-Step "Updating Backend (NestJS)" {
-    if (Test-Path "$backendPath\.git") {
-        Set-Location $backendPath
-        git pull
-    } else {
-        Set-Location $rootPath
-        git clone $backendRepo
-    }
+    # 'ng' is not global on a clean server - use the package script
+    # (npm run build = ng build with the default production configuration).
+    # Runs AFTER the backend build so gen:perms output is compiled in.
+    npm run build
 }
 
 Run-Step "Copying Angular build into NestJS client folder" {
@@ -65,20 +114,9 @@ Run-Step "Copying Angular build into NestJS client folder" {
     Copy-Item -Recurse "$frontendPath\dist\pdhs\browser\*" $clientDest
 }
 
-Run-Step "Installing Backend deps" {
+Run-Step "Running DB migrations" {
     Set-Location $backendPath
-    npm install
-}
-
-Run-Step "Building Backend" {
-    Set-Location $backendPath
-    npm run build
-}
-
-Run-Step "Checking .env exists" {
-    if (-not (Test-Path "$backendPath\.env")) {
-        throw ".env file missing in $backendPath — app will fail to connect to DB. Create it before restarting PM2."
-    }
+    npx prisma migrate deploy
 }
 
 Run-Step "Restarting via PM2" {

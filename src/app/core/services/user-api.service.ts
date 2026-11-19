@@ -1,7 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { PagedResult, UserDto, UserRoleDto } from '../models/biomed.interface';
+import {
+  PagedResult,
+  UserDto,
+  UserPermissionRecord,
+  UserRoleDto,
+} from '../models/biomed.interface';
 import { RoleType } from '../models/permission.types';
 import { ScopeType } from '../models/permission.types';
 import { environment } from '../../../environments/environment';
@@ -21,20 +26,18 @@ export class UserApiService {
     search?: string,
     role?: string,
     active?: string, // 'true' | 'false' | undefined
+    districtId?: string,
   ): Observable<PagedResult<UserDto>> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (search) params = params.set('search', search);
     if (role) params = params.set('role', role);
     if (active !== undefined) params = params.set('active', active);
+    if (districtId) params = params.set('districtId', districtId);
     return this.http.get<PagedResult<UserDto>>(this.baseUrl, { params });
   }
 
   getUserById(userId: string): Observable<UserDto> {
     return this.http.get<UserDto>(`${this.baseUrl}/${userId}`);
-  }
-
-  getCurrentUser(): Observable<UserDto> {
-    return this.http.get<UserDto>(`${this.baseUrl}/me`);
   }
 
   // ─────────────────────────────
@@ -45,8 +48,13 @@ export class UserApiService {
     username: string;
     fullName: string;
     email?: string;
-    password: string;
-    institutionId?: string | null;
+    password?: string; // omitted → backend applies default pdhs@123
+    institutionId: string;
+    mustChangePassword?: boolean;
+    active?: boolean;
+    role: RoleType;
+    scopeType: ScopeType;
+    scopeId?: string | null;
   }): Observable<UserDto> {
     return this.http.post<UserDto>(this.baseUrl, payload);
   }
@@ -55,8 +63,16 @@ export class UserApiService {
   // UPDATE
   // ─────────────────────────────
 
-  updateUser(userId: string, payload: Partial<UserDto>): Observable<UserDto> {
-    return this.http.put<UserDto>(`${this.baseUrl}/${userId}`, payload);
+  updateUser(
+    userId: string,
+    payload: {
+      fullName?: string;
+      email?: string;
+      institutionId?: string;
+      mustChangePassword?: boolean;
+    },
+  ): Observable<UserDto> {
+    return this.http.patch<UserDto>(`${this.baseUrl}/${userId}`, payload);
   }
 
   updateUserStatus(userId: string, active: boolean): Observable<UserDto> {
@@ -90,23 +106,26 @@ export class UserApiService {
     return this.http.post<UserRoleDto>(`${this.baseUrl}/${userId}/roles`, payload);
   }
 
-  /*addPermission(userId: string,  permissions: Permission[]): Observable<Permission[]> {
-     return this.http.put<Permission[]>(
-      `${this.baseUrl}/${userId}/permissions`,
-     {permissions}
-    );
-  }*/
+  removeRole(userId: string, roleId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${userId}/roles/${roleId}`);
+  }
+
+  // ─────────────────────────────
+  // PERMISSIONS
+  // ─────────────────────────────
+
   addPermission(userId: string, permissions: string[]): Observable<Permission[]> {
     return this.http.put<Permission[]>(`${this.baseUrl}/${userId}/permissions`, { permissions });
   }
 
-  /**
-   *
-   * @param userId
-   * @param roleId
-   * @returns
-   */
-  removeRole(userId: string, roleId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${userId}/roles/${roleId}`);
+  grantPermission(
+    userId: string,
+    payload: { permission: string; expiresAt?: string | null; note?: string | null },
+  ): Observable<UserPermissionRecord> {
+    return this.http.post<UserPermissionRecord>(`${this.baseUrl}/${userId}/permissions`, payload);
+  }
+
+  revokePermission(userId: string, permissionId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${userId}/permissions/${permissionId}`);
   }
 }

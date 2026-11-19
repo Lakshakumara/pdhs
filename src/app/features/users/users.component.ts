@@ -6,6 +6,7 @@ import {
   inject,
   ChangeDetectionStrategy,
   effect,
+  DestroyRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -15,7 +16,7 @@ import {
   FormGroup,
   Validators,
 } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -94,11 +95,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 })
 export class UsersComponent implements OnInit {
   private permissionService = inject(PermissionService);
-  private http = inject(HttpClient);
   private msg = inject(MessageService);
   private confirm = inject(ConfirmationService);
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
+  private destroyRef = inject(DestroyRef);
 
   /** Exposed for *appHasPermission in the template. */
   readonly permission = Permission;
@@ -115,6 +116,7 @@ export class UsersComponent implements OnInit {
   search = signal('');
   filterRole = signal('');
   filterActive = signal<'true' | 'false' | null>(null);
+  filterDistrict = signal<string | null>(null);
 
   // Create/Edit dialog
   dialogVisible = signal(false);
@@ -141,7 +143,6 @@ export class UsersComponent implements OnInit {
   permForm!: FormGroup;
 
   // Permission matrix pending changes (sync)
-  //permMatrix = signal<Set<Permission>>(new Set());
   permMatrix = signal<Set<string>>(new Set());
   permMatrixDirty = signal(false);
   permSyncing = signal(false);
@@ -166,6 +167,7 @@ export class UsersComponent implements OnInit {
       const _s = this.search();
       const _r = this.filterRole();
       const _a = this.filterActive();
+      const _d = this.filterDistrict();
 
       // Debounce so rapid keystrokes don't spam the backend
       if (this._filterDebounce) clearTimeout(this._filterDebounce);
@@ -184,9 +186,6 @@ export class UsersComponent implements OnInit {
 
   get activeCount() {
     return this.users().filter((u) => u.active).length;
-  }
-  get inactiveCount() {
-    return this.users().filter((u) => !u.active).length;
   }
   get pendingPwCount() {
     return this.users().filter((u) => u.mustChangePassword).length;
@@ -231,15 +230,20 @@ export class UsersComponent implements OnInit {
   });
 
   // Institutions filtered by district (for create form)
-  filteredInstitutions = computed(() => {
-    const scopeId = this.createForm?.get('scopeId')?.value;
-    if (!scopeId) return this.institutions();
-    return this.institutions().filter((i) => i.districtId === scopeId);
-  });
-
   ngOnInit() {
     this.buildForms();
     this.loadRefData();
+
+    // Keep the INSTITUTE scope's scopeId in sync with the institution
+    // chosen on step 0 (auto-prefill + stays correct if edited later).
+    this.createForm
+      .get('institutionId')!
+      .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((id) => {
+        if (this.createForm.get('scopeType')?.value === ScopeType.INSTITUTE) {
+          this.createForm.patchValue({ scopeId: id ?? null }, { emitEvent: false });
+        }
+      });
   }
 
   private buildForms() {
@@ -250,9 +254,11 @@ export class UsersComponent implements OnInit {
       ],
       fullName: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      institutionId: [null],
+      // Optional — empty applies the default password (pdhs@123) server-side
+      password: ['', [Validators.minLength(8)]],
+      institutionId: [null, Validators.required],
       mustChangePassword: [true],
+      active: [true],
       scopeType: [null, Validators.required],
       role: [null, Validators.required],
       scopeId: [null],
@@ -282,7 +288,7 @@ export class UsersComponent implements OnInit {
         this.districts.set(districtsRes ?? []);
         this.institutions.set(institutionsRes.items ?? []);
       },
-      error: () => this.toast('error', 'Failed to load reference data'),
+      error: () => {},
     });
   }
 
@@ -298,6 +304,7 @@ export class UsersComponent implements OnInit {
         this.search() || undefined,
         this.filterRole() || undefined,
         this.filterActive() ?? undefined, // 'true' | 'false' | undefined
+        this.filterDistrict() || undefined,
       )
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
@@ -305,7 +312,7 @@ export class UsersComponent implements OnInit {
           this.users.set(res.items);
           this.totalRecords.set(res.total);
         },
-        error: () => this.toast('error', 'Failed to load users'),
+        error: () => {},
       });
   }
 
@@ -322,9 +329,37 @@ export class UsersComponent implements OnInit {
 
   openCreate() {
     this.dialogMode.set('create');
-    this.createForm.reset({ mustChangePassword: true });
+    this.createForm.reset({ mustChangePassword: true, active: true, password: '' });
+    this.setEditMode(false);
     this.createStep.set(0);
     this.dialogVisible.set(true);
+  }
+
+  openEdit(user: UserDto) {
+    this.dialogMode.set('edit');
+    this.selectedUser.set(user);
+    this.createForm.reset({ mustChangePassword: true, active: true, password: '' });
+    this.setEditMode(true);
+    this.createForm.patchValue({
+      username: user.username,
+      fullName: user.fullName,
+      email: user.email ?? '',
+      institutionId: user.institutionId ?? null,
+      mustChangePassword: user.mustChangePassword,
+    });
+    this.createStep.set(0);
+    this.dialogVisible.set(true);
+  }
+
+  /** Edit mode: username/role/scope are not editable here (roles use the
+   *  drawer's Add/Remove Role; password uses Reset Password). Disabling them
+   *  keeps the form's validity scoped to the fields this dialog can save. */
+  private setEditMode(edit: boolean) {
+    for (const name of ['username', 'scopeType', 'role', 'scopeId']) {
+      const control = this.createForm.get(name)!;
+      if (edit) control.disable();
+      else control.enable();
+    }
   }
 
   saveCreate() {
@@ -332,38 +367,57 @@ export class UsersComponent implements OnInit {
       this.createForm.markAllAsTouched();
       return;
     }
+    const payload = { ...this.createForm.value };
+    if (!payload.password) delete payload.password; // → backend default pdhs@123
     this.submitting.set(true);
-    this.userService.createUser(this.createForm.value).subscribe({
+    this.userService.createUser(payload).subscribe({
       next: (u) => {
         this.users.update((list) => [u, ...list]);
         this.dialogVisible.set(false);
-        this.toast('success', `UserDto ${u.fullName} created`);
+        this.toast('success', `User ${u.fullName} created`);
       },
-      error: (e) => this.toast('error', e?.error?.message ?? 'Failed to create user'),
+      error: () => {},
       complete: () => this.submitting.set(false),
     });
+  }
+
+  saveEdit() {
+    if (this.createForm.invalid) {
+      this.createForm.markAllAsTouched();
+      return;
+    }
+    const user = this.selectedUser();
+    if (!user) return;
+    const v = this.createForm.value;
+    this.submitting.set(true);
+    this.userService
+      .updateUser(user.id, {
+        fullName: v.fullName,
+        email: v.email || undefined,
+        institutionId: v.institutionId,
+        mustChangePassword: v.mustChangePassword,
+      })
+      .subscribe({
+        next: (u) => {
+          this.users.update((list) => list.map((x) => (x.id === u.id ? u : x)));
+          if (this.drawerUser()?.id === u.id) this.drawerUser.set(u);
+          this.dialogVisible.set(false);
+          this.toast('success', `User ${u.fullName} updated`);
+        },
+        error: () => {},
+        complete: () => this.submitting.set(false),
+      });
   }
 
   // ── Drawer (user detail) ──────────────────────────────────────────
   openDrawer(user: UserDto) {
     this.drawerUser.set(user);
     this.drawerTab.set(0);
-    //console.log('selected permissions', user.permissions)
-    // Init permission matrix from user's active permissions
-    /*const active = new Set<Permission>(
-      user.permissions.filter(p => p.active).map(p => p.permission) ?? [],);*/
-    const now = new Date();
+    // Init permission matrix from the user's active permissions
     const active = new Set<Permission>(
-      user.permissions
-        .filter((p) => {
-          return !p.expiresAt || new Date(p.expiresAt) > now;
-        })
-        .map((p) => p.permission) ?? [],
+      user.permissions.filter((p) => p.active).map((p) => p.permission),
     );
-    console.log('active permission', active);
     this.permMatrix.set(active);
-
-    console.log('matrix', this.permMatrix());
     this.permMatrixDirty.set(false);
     this.drawerVisible.set(true);
   }
@@ -372,7 +426,7 @@ export class UsersComponent implements OnInit {
   toggleActive(user: UserDto) {
     this.userService.updateUserStatus(user.id, !user.active).subscribe({
       next: (u) => this.users.update((list) => list.map((x) => (x.id === user.id ? u : x))),
-      error: () => this.toast('error', 'Failed to update status'),
+      error: () => {},
     });
   }
 
@@ -399,13 +453,7 @@ export class UsersComponent implements OnInit {
               detail: 'Use the amber banner to exit.',
             });
           },
-          error: (err) => {
-            this.msg.add({
-              severity: 'error',
-              summary: 'Could not start View As',
-              detail: err?.error?.message ?? 'Permission denied',
-            });
-          },
+          error: () => {},
         });
       },
     });
@@ -423,7 +471,7 @@ export class UsersComponent implements OnInit {
             this.toast('success', 'Password reset to default');
             this.reloadUser(user.id);
           },
-          error: () => this.toast('error', 'Failed to reset password'),
+          error: () => {},
         });
       },
     });
@@ -443,7 +491,7 @@ export class UsersComponent implements OnInit {
             this.toast('success', 'User deleted');
             this.loadUsers();
           },
-          error: (e) => this.toast('error', e?.error?.message ?? 'Delete failed'),
+          error: () => {},
         });
       },
     });
@@ -468,7 +516,7 @@ export class UsersComponent implements OnInit {
         this.reloadUser(userId);
         this.toast('success', 'Role assigned');
       },
-      error: (e) => this.toast('error', e?.error?.message ?? 'Failed to assign role'),
+      error: () => {},
       complete: () => this.roleSubmitting.set(false),
     });
   }
@@ -480,16 +528,13 @@ export class UsersComponent implements OnInit {
       header: 'Remove Role',
       icon: 'pi pi-minus-circle',
       accept: () => {
-        this.userService
-          .removeRole(userId, roleId)
-          //this.http.delete(`/api/users/${userId}/roles/${roleId}`)
-          .subscribe({
-            next: () => {
-              this.reloadUser(userId);
-              this.toast('success', 'Role removed');
-            },
-            error: (e) => this.toast('error', e?.error?.message ?? 'Failed to remove role'),
-          });
+        this.userService.removeRole(userId, roleId).subscribe({
+          next: () => {
+            this.reloadUser(userId);
+            this.toast('success', 'Role removed');
+          },
+          error: () => {},
+        });
       },
     });
   }
@@ -508,20 +553,15 @@ export class UsersComponent implements OnInit {
   syncPermissions() {
     const userId = this.drawerUser()!.id;
     this.permSyncing.set(true);
-    this.userService
-      .addPermission(userId, Array.from(this.permMatrix()))
-      /* this.http.put(`/api/users/${userId}/permissions`, {
-         permissions: Array.from(this.permMatrix()),
-       })*/
-      .subscribe({
-        next: () => {
-          this.reloadUser(userId);
-          this.permMatrixDirty.set(false);
-          this.toast('success', 'Permissions saved');
-        },
-        error: (e) => this.toast('error', e?.error?.message ?? 'Failed to save permissions'),
-        complete: () => this.permSyncing.set(false),
-      });
+    this.userService.addPermission(userId, Array.from(this.permMatrix())).subscribe({
+      next: () => {
+        this.reloadUser(userId);
+        this.permMatrixDirty.set(false);
+        this.toast('success', 'Permissions saved');
+      },
+      error: () => {},
+      complete: () => this.permSyncing.set(false),
+    });
   }
 
   resetPermMatrix() {
@@ -548,8 +588,8 @@ export class UsersComponent implements OnInit {
     const userId = this.drawerUser()!.id;
     const v = this.permForm.value;
     this.permSubmitting.set(true);
-    this.http
-      .post(`/api/users/${userId}/permissions`, {
+    this.userService
+      .grantPermission(userId, {
         permission: v.permission,
         expiresAt: v.temporary && v.expiresAt ? (v.expiresAt as Date).toISOString() : null,
         note: v.note || null,
@@ -560,7 +600,7 @@ export class UsersComponent implements OnInit {
           this.reloadUser(userId);
           this.toast('success', 'Permission granted');
         },
-        error: (e) => this.toast('error', e?.error?.message ?? 'Failed to grant permission'),
+        error: () => {},
         complete: () => this.permSubmitting.set(false),
       });
   }
@@ -573,12 +613,12 @@ export class UsersComponent implements OnInit {
       header: 'Revoke Permission',
       icon: 'pi pi-times-circle',
       accept: () => {
-        this.http.delete(`/api/users/${userId}/permissions/${perm.id}`).subscribe({
+        this.userService.revokePermission(userId, perm.id).subscribe({
           next: () => {
             this.reloadUser(userId);
             this.toast('success', 'Permission revoked');
           },
-          error: () => this.toast('error', 'Failed to revoke permission'),
+          error: () => {},
         });
       },
     });
@@ -623,17 +663,19 @@ export class UsersComponent implements OnInit {
     return !!p.expiresAt && new Date(p.expiresAt) < new Date();
   }
 
-  isTemporary(p: UserPermissionRecord) {
-    return !!p.expiresAt;
-  }
-
   districtOptions = computed(() => this.districts().map((d) => ({ label: d.name, value: d.id })));
   institutionOptions = computed(() =>
     this.institutions().map((i) => ({ label: i.name, value: i.id })),
   );
 
   onCreateScopeChange() {
-    this.createForm.patchValue({ role: null, scopeId: null });
+    const scope = this.createForm.get('scopeType')?.value;
+    const institutionId = this.createForm.get('institutionId')?.value;
+    // INSTITUTE scope: prefill scopeId with the institution chosen on step 0
+    this.createForm.patchValue({
+      role: null,
+      scopeId: scope === ScopeType.INSTITUTE ? (institutionId ?? null) : null,
+    });
   }
   onRoleScopeChange() {
     this.roleForm.patchValue({ role: null, scopeId: null });

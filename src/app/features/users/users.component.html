@@ -58,6 +58,15 @@
   />
 
   <p-select
+    [options]="districtOptions()"
+    [ngModel]="filterDistrict()"
+    (ngModelChange)="filterDistrict.set($event)"
+    placeholder="All Districts"
+    [showClear]="true"
+    styleClass="!rounded-xl text-sm min-w-[160px]"
+  />
+
+  <p-select
     [options]="activeOptions"
     [ngModel]="filterActive()"
     (ngModelChange)="filterActive.set($event)"
@@ -192,6 +201,18 @@
             ></button>
             <button
               pButton
+              icon="pi pi-pencil"
+              severity="secondary"
+              size="small"
+              text
+              rounded
+              class="!w-8 !h-8"
+              pTooltip="Edit"
+              *appHasPermission="permission.USER_UPDATE"
+              (click)="openEdit(user)"
+            ></button>
+            <button
+              pButton
               icon="pi pi-key"
               severity="warn"
               size="small"
@@ -234,14 +255,14 @@
   [maximizable]="true"
   [visible]="dialogVisible()"
   (visibleChange)="dialogVisible.set($event)"
-  header="Create New User"
+  [header]="dialogMode() === 'edit' ? 'Edit User' : 'Create New User'"
   [modal]="true"
   [draggable]="false"
   styleClass="!w-full !max-w-2xl"
 >
-  <form [formGroup]="createForm" class="pt-2">
+  <form [formGroup]="createForm" class="pt-2" autocomplete="off">
     <p-stepper [(value)]="createStep">
-      <p-step-list>
+      <p-step-list *ngIf="dialogMode() === 'create'">
         <p-step [value]="0">
           <div class="flex items-center gap-2">
             <i class="pi pi-user text-xs"></i>
@@ -260,6 +281,23 @@
         <p-step-panel [value]="0">
           <ng-template pTemplate="content" let-activateCallback="activateCallback">
             <div class="grid grid-cols-2 gap-4 py-4">
+              <div class="col-span-2">
+                <label
+                  class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5"
+                >
+                  Institution <span class="text-red-500">*</span>
+                </label>
+                <p-select
+                  formControlName="institutionId"
+                  [options]="institutionOptions()"
+                  placeholder="Select institution…"
+                  [filter]="true"
+                  styleClass="w-full !rounded-xl text-sm"
+                />
+                <small class="text-[10px] text-zinc-400 mt-0.5 block"
+                  >Required — scope and roles are based on the institution</small
+                >
+              </div>
               <div class="col-span-2 sm:col-span-1">
                 <label
                   class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5"
@@ -288,6 +326,7 @@
                   formControlName="username"
                   placeholder="UserName"
                   class="w-full !rounded-xl font-mono"
+                  autocomplete="off"
                   [ngClass]="{
                     'ng-invalid ng-dirty':
                       createForm.get('username')?.invalid && createForm.get('username')?.touched,
@@ -309,11 +348,11 @@
                   class="w-full !rounded-xl"
                 />
               </div>
-              <div class="col-span-2 sm:col-span-1">
+              <div class="col-span-2 sm:col-span-1" *ngIf="dialogMode() === 'create'">
                 <label
                   class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5"
                 >
-                  Password <span class="text-red-500">*</span>
+                  Password
                 </label>
                 <p-password
                   formControlName="password"
@@ -322,22 +361,12 @@
                   placeholder="Min. 8 characters"
                   styleClass="w-full"
                   inputStyleClass="w-full !rounded-xl"
+                  autocomplete="new-password"
                 />
-              </div>
-              <div class="col-span-2">
-                <label
-                  class="block text-xs font-bold uppercase tracking-wider text-zinc-500 mb-1.5"
-                >
-                  Institution
-                </label>
-                <p-select
-                  formControlName="institutionId"
-                  [options]="institutionOptions()"
-                  placeholder="Select institution (optional)"
-                  [showClear]="true"
-                  [filter]="true"
-                  styleClass="w-full !rounded-xl text-sm"
-                />
+                <small class="text-[10px] text-zinc-400 mt-0.5 block">
+                  Leave empty for the default <span class="font-mono font-semibold">pdhs@123</span>
+                  — user must change it on first login
+                </small>
               </div>
               <div
                 class="col-span-2 flex items-center gap-3 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-xl"
@@ -354,9 +383,31 @@
                   <span class="font-semibold">Require password change</span> on next login
                 </label>
               </div>
+              <div
+                *ngIf="dialogMode() === 'create'"
+                class="col-span-2 flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl"
+              >
+                <p-checkbox formControlName="active" [binary]="true" inputId="activeUser" />
+                <label
+                  for="activeUser"
+                  class="text-sm text-emerald-800 dark:text-emerald-300 cursor-pointer"
+                >
+                  <span class="font-semibold">Active user</span> — uncheck to create the account
+                  disabled (e.g., future recruit); enable later from the list
+                </label>
+              </div>
             </div>
-            <div class="flex justify-end pt-2">
+            <div class="flex justify-end gap-2 pt-2">
               <button
+                *ngIf="dialogMode() === 'edit'"
+                pButton
+                label="Cancel"
+                severity="secondary"
+                class="!rounded-xl"
+                (click)="dialogVisible.set(false)"
+              ></button>
+              <button
+                *ngIf="dialogMode() === 'create'"
                 pButton
                 label="Next: Role & Scope"
                 icon="pi pi-arrow-right"
@@ -366,15 +417,26 @@
                 [disabled]="
                   createForm.get('fullName')?.invalid ||
                   createForm.get('username')?.invalid ||
+                  createForm.get('institutionId')?.invalid ||
                   createForm.get('password')?.invalid
                 "
                 (click)="activateCallback(1)"
+              ></button>
+              <button
+                *ngIf="dialogMode() === 'edit'"
+                pButton
+                [label]="submitting() ? 'Saving…' : 'Save Changes'"
+                [icon]="submitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+                severity="success"
+                class="!rounded-xl"
+                [disabled]="createForm.invalid || submitting()"
+                (click)="saveEdit()"
               ></button>
             </div>
           </ng-template>
         </p-step-panel>
 
-        <p-step-panel [value]="1">
+        <p-step-panel [value]="1" *ngIf="dialogMode() === 'create'">
           <ng-template pTemplate="content" let-activateCallback="activateCallback">
             <div class="space-y-4 py-4">
               <div>
@@ -545,6 +607,17 @@
         </div>
       </div>
       <div class="flex gap-1">
+        <button
+          pButton
+          icon="pi pi-pencil"
+          severity="secondary"
+          text
+          rounded
+          size="small"
+          pTooltip="Edit user"
+          *appHasPermission="permission.USER_UPDATE"
+          (click)="openEdit(user)"
+        ></button>
         <button
           pButton
           icon="pi pi-eye"
@@ -920,12 +993,30 @@
     </div>
 
     <div
-      class="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-xl"
+      *ngIf="roleForm.get('role')?.value as selectedRole"
+      class="p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-xl"
     >
-      <p class="text-[10px] text-blue-700 dark:text-blue-400 leading-relaxed">
-        <i class="pi pi-info-circle mr-1"></i>
-        Adding a role will seed any <strong>new permissions</strong> from that role's defaults into
-        this user's permission set.
+      <p
+        class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2"
+      >
+        Default permissions seeded for this role
+      </p>
+      <div class="flex flex-wrap gap-1.5">
+        <span
+          *ngFor="let p of roleDefaults(selectedRole)"
+          class="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold"
+        >
+          {{ meta()?.definitions?.[p]?.label ?? p }}
+        </span>
+        <span
+          *ngIf="roleDefaults(selectedRole).length === 0"
+          class="text-[10px] text-zinc-500 italic"
+        >
+          No default permissions defined for this role.
+        </span>
+      </div>
+      <p class="text-[10px] text-zinc-400 mt-2 italic">
+        Adding this role seeds these permissions (and only new ones) into the user's set.
       </p>
     </div>
   </form>
